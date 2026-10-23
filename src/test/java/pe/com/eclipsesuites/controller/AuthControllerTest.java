@@ -13,6 +13,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import pe.com.eclipsesuites.config.SecurityConfig;
+import pe.com.eclipsesuites.service.IClienteAuthService;
 import pe.com.eclipsesuites.entity.Empleado;
 import pe.com.eclipsesuites.entity.RolEmpleado;
 import pe.com.eclipsesuites.service.IEmpleadoAuthService;
@@ -42,6 +43,9 @@ class AuthControllerTest {
 
     @MockitoBean
     private IEmpleadoAuthService empleadoAuthService;
+
+        @MockitoBean
+        private IClienteAuthService clienteAuthService;
 
     private Empleado empleadoAdmin() {
         RolEmpleado rol = RolEmpleado.builder()

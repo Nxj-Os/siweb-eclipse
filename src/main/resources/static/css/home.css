@@ -333,7 +333,8 @@ body {
     font-size: 13px;
 }
 
-.login-form input {
+.login-form input,
+.login-form select {
     width: 100%;
     min-height: 46px;
     margin-bottom: 20px;
@@ -465,4 +466,9 @@ body {
         justify-self: center;
         padding: 28px 24px;
     }
+}
+
+.login-form select option {
+    background: #0d1b19;
+    color: #fff;
 }

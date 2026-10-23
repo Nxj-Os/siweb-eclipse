@@ -10,7 +10,8 @@
 	<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 	<link rel="stylesheet" th:href="@{/css/home.css}">
 </head>
-<body class="login-page">
+<body class="login-page"
+	th:attr="data-tipo=${tipoLogin}">
 	<main class="login-layout">
 		<a class="login-brand" th:href="@{/}" aria-label="Volver al inicio">
 			<span class="brand__seal" aria-hidden="true"><span>E</span><i></i></span>
@@ -21,19 +22,19 @@
 		<section class="login-panel" aria-labelledby="login-title">
 			<p class="login-eyebrow">ECLIPSE SUITES HOTEL</p>
 			<h1 id="login-title">Iniciar sesión</h1>
-			<p class="login-intro">Accede con tus credenciales de empleado.</p>
+				<p class="login-intro"
+					th:text="${tipoLogin == 'cliente' ? 'Accede con el correo y la contraseña de tu cuenta.' : 'Accede con tus credenciales de empleado.'}">Accede con tus credenciales.</p>
 
-			<div class="login-notice" th:if="${param.registro != null}">
-				El registro de clientes todavía no está habilitado.
-			</div>
-			<div class="login-notice" th:if="${param.tipo != null and param.tipo[0] == 'cliente' and param.registro == null}">
-				El acceso de clientes todavía no está conectado. Por ahora, el inicio de sesión está disponible para empleados.
+				<div class="login-notice" th:if="${loginError}">
+				No se pudo iniciar sesión. Revisa tus datos e inténtalo nuevamente.
 			</div>
 
-			<form id="login-form" class="login-form" autocomplete="on"
-				  th:unless="${(param.tipo != null and param.tipo[0] == 'cliente') or param.registro != null}">
-				<label for="username">Usuario</label>
-				<input id="username" name="username" type="text" maxlength="50" autocomplete="username" required>
+			<form id="login-form" class="login-form" autocomplete="on">
+				<label for="identity"
+					  th:text="${tipoLogin == 'cliente' ? 'Correo electrónico' : 'Usuario'}">Usuario</label>
+				<input id="identity" name="identity"
+					  th:attr="type=${tipoLogin == 'cliente' ? 'email' : 'text'},autocomplete=${tipoLogin == 'cliente' ? 'email' : 'username'}"
+					   maxlength="100" required>
 
 				<label for="password">Contraseña</label>
 				<input id="password" name="password" type="password" maxlength="100" autocomplete="current-password" required>
@@ -42,7 +43,9 @@
 				<button id="login-submit" class="role-link login-submit" type="submit">Ingresar</button>
 			</form>
 
-			<a class="login-back" th:href="@{/}">Volver al inicio</a>
+				<a class="login-back" th:if="${tipoLogin == 'cliente'}"
+					th:href="@{/registro}">Crear una cuenta</a>
+				<a class="login-back" th:href="@{/}">Volver al inicio</a>
 		</section>
 	</main>
 	<script th:src="@{/js/auth-login.js}" defer></script>
