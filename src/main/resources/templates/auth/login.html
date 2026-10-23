@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="theme-color" content="#071514">
+	<title>Iniciar sesión | Hotel Eclipse</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+	<link rel="stylesheet" th:href="@{/css/home.css}">
+</head>
+<body class="login-page">
+	<main class="login-layout">
+		<a class="login-brand" th:href="@{/}" aria-label="Volver al inicio">
+			<span class="brand__seal" aria-hidden="true"><span>E</span><i></i></span>
+			<span class="brand__name">ECLIPSE</span>
+			<span class="brand__descriptor">SUITES HOTEL</span>
+		</a>
+
+		<section class="login-panel" aria-labelledby="login-title">
+			<p class="login-eyebrow">ECLIPSE SUITES HOTEL</p>
+			<h1 id="login-title">Iniciar sesión</h1>
+			<p class="login-intro">Accede con tus credenciales de empleado.</p>
+
+			<div class="login-notice" th:if="${param.registro != null}">
+				El registro de clientes todavía no está habilitado.
+			</div>
+			<div class="login-notice" th:if="${param.tipo != null and param.tipo[0] == 'cliente' and param.registro == null}">
+				El acceso de clientes todavía no está conectado. Por ahora, el inicio de sesión está disponible para empleados.
+			</div>
+
+			<form id="login-form" class="login-form" autocomplete="on"
+				  th:unless="${(param.tipo != null and param.tipo[0] == 'cliente') or param.registro != null}">
+				<label for="username">Usuario</label>
+				<input id="username" name="username" type="text" maxlength="50" autocomplete="username" required>
+
+				<label for="password">Contraseña</label>
+				<input id="password" name="password" type="password" maxlength="100" autocomplete="current-password" required>
+
+				<p id="login-message" class="login-message" role="status" aria-live="polite"></p>
+				<button id="login-submit" class="role-link login-submit" type="submit">Ingresar</button>
+			</form>
+
+			<a class="login-back" th:href="@{/}">Volver al inicio</a>
+		</section>
+	</main>
+	<script th:src="@{/js/auth-login.js}" defer></script>
+</body>
+</html>

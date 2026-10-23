@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#071514">
+    <title>Hotel Eclipse | Bienvenido</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/home.css">
+</head>
+<body class="welcome-page">
+    <main class="welcome" aria-labelledby="welcome-title">
+        <div class="welcome__photo" role="img" aria-label="Entrada iluminada de un hotel al anochecer"></div>
+        <div class="welcome__shade"></div>
+
+        <div class="welcome__content">
+            <div class="brand" aria-label="Eclipse Suites Hotel">
+                <span class="brand__seal" aria-hidden="true"><span>E</span><i></i></span>
+                <span class="brand__name">ECLIPSE</span>
+                <span class="brand__descriptor">SUITES HOTEL</span>
+            </div>
+
+            <h1 id="welcome-title">Bienvenido</h1>
+
+            <section class="welcome__actions" aria-labelledby="sign-in-title">
+                <h2 id="sign-in-title">Inicie sesión</h2>
+                <a class="role-link" href="/login?tipo=cliente">Como cliente</a>
+                <a class="role-link" href="/login?tipo=empleado">Como empleado</a>
+            </section>
+
+            <a class="register-link" href="/login?registro=true">¿Aún no tienes cuenta? Crea una ahora</a>
+        </div>
+    </main>
+</body>
+</html>
