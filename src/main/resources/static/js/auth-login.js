@@ -70,6 +70,9 @@ if (registerForm) {
         registerMessage.textContent = "Creando tu cuenta...";
         registerMessage.dataset.state = "pending";
         registerSubmit.disabled = true;
+        const phonePrefix = registerForm.querySelector("#telefonoPrefijo").value;
+        const phoneNumber = String(formData.get("telefono")).trim();
+        formData.set("telefono", `${phonePrefix} ${phoneNumber}`);
         formData.delete("confirmPassword");
 
         try {

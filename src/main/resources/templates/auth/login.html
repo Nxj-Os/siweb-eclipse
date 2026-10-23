@@ -43,9 +43,11 @@
 				<button id="login-submit" class="role-link login-submit" type="submit">Ingresar</button>
 			</form>
 
+			<nav class="login-links" aria-label="Enlaces de cuenta">
 				<a class="login-back" th:if="${tipoLogin == 'cliente'}"
 					th:href="@{/registro}">Crear una cuenta</a>
 				<a class="login-back" th:href="@{/}">Volver al inicio</a>
+			</nav>
 		</section>
 	</main>
 	<script th:src="@{/js/auth-login.js}" defer></script>

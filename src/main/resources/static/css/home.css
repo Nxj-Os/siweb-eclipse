@@ -13,7 +13,8 @@
 
 html,
 body {
-    min-width: 320px;
+    min-width: 0;
+    width: 100%;
     min-height: 100%;
     margin: 0;
 }
@@ -471,4 +472,343 @@ body {
 .login-form select option {
     background: #0d1b19;
     color: #fff;
+}
+
+.login-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 520px);
+    gap: clamp(36px, 7vw, 96px);
+    width: min(1160px, 100%);
+}
+
+.login-panel {
+    min-width: 0;
+}
+
+.login-form input,
+.login-form select {
+    margin-bottom: 0;
+}
+
+.login-form select:focus-visible {
+    border-color: var(--aqua);
+    outline: 2px solid rgb(154 217 215 / 32%);
+    outline-offset: 1px;
+}
+
+.register-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 16px;
+}
+
+.register-form .form-field {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 7px;
+    margin-bottom: 18px;
+}
+
+.register-form .form-field--full {
+    grid-column: 1 / -1;
+}
+
+.register-form .login-message {
+    align-self: end;
+    margin: 0 0 12px;
+}
+
+.login-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+}
+
+@media (min-width: 1200px) {
+    .login-panel {
+        padding: 44px;
+    }
+}
+
+@media (max-width: 719px) {
+    .login-layout {
+        grid-template-columns: minmax(0, 1fr);
+        align-content: start;
+        gap: 20px;
+        padding: 24px 16px 32px;
+    }
+
+    .login-panel {
+        width: min(100%, 520px);
+        justify-self: center;
+        padding: 26px 22px;
+    }
+
+    .register-form {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0;
+    }
+
+    .register-form .form-field--full {
+        grid-column: auto;
+    }
+
+    .register-form .login-message {
+        margin-bottom: 12px;
+    }
+
+    .login-links {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0;
+    }
+}
+
+@media (max-width: 380px) {
+    .login-layout {
+        padding-right: 12px;
+        padding-left: 12px;
+    }
+
+    .login-panel {
+        padding: 22px 16px;
+    }
+
+    .login-panel h1 {
+        font-size: 36px;
+    }
+}
+
+.login-layout {
+    grid-template-columns: minmax(280px, 1fr) minmax(420px, 600px);
+    gap: clamp(32px, 6vw, 88px);
+    width: min(1280px, 100%);
+    padding: 52px clamp(24px, 4vw, 64px);
+}
+
+.login-brand .brand__seal {
+    width: 100px;
+    height: 100px;
+    margin-bottom: 16px;
+    font-size: 64px;
+}
+
+.login-brand .brand__name {
+    font-size: 36px;
+}
+
+.login-brand .brand__descriptor {
+    margin-top: 6px;
+    font-size: 12px;
+}
+
+.login-panel {
+    padding: 48px;
+}
+
+.login-eyebrow {
+    margin-bottom: 12px;
+    font-size: 13px;
+}
+
+.login-panel h1 {
+    font-size: 48px;
+    line-height: 1.05;
+}
+
+.login-intro {
+    margin: 14px 0 32px;
+    font-size: 16px;
+}
+
+.login-form label {
+    font-size: 15px;
+}
+
+.login-form input,
+.login-form select {
+    min-height: 54px;
+    padding: 12px 14px;
+    font-size: 16px;
+}
+
+.register-form {
+    gap: 0 20px;
+}
+
+.register-form .form-field {
+    gap: 8px;
+    margin-bottom: 22px;
+}
+
+.register-form .login-message {
+    font-size: 15px;
+}
+
+.login-submit {
+    min-height: 54px;
+    font-size: 16px;
+}
+
+.login-back {
+    font-size: 15px;
+}
+
+@media (min-width: 720px) and (max-width: 959px) {
+    .login-layout {
+        grid-template-columns: minmax(180px, 0.7fr) minmax(420px, 1fr);
+        gap: 28px;
+        padding-right: 28px;
+        padding-left: 28px;
+    }
+
+    .login-brand .brand__seal {
+        width: 84px;
+        height: 84px;
+        font-size: 54px;
+    }
+
+    .login-brand .brand__name {
+        font-size: 32px;
+    }
+
+    .login-panel {
+        padding: 36px 32px;
+    }
+}
+
+@media (max-width: 719px) {
+    .login-layout {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 20px;
+        padding: 24px 16px 36px;
+    }
+
+    .login-brand .brand__seal {
+        width: 68px;
+        height: 68px;
+        margin-bottom: 10px;
+        font-size: 44px;
+    }
+
+    .login-brand .brand__name {
+        font-size: 28px;
+    }
+
+    .login-brand .brand__descriptor {
+        margin-top: 4px;
+        font-size: 10px;
+    }
+
+    .login-panel {
+        width: min(100%, 560px);
+        padding: 30px 24px;
+    }
+
+    .login-panel h1 {
+        font-size: 40px;
+    }
+
+    .login-intro {
+        margin-bottom: 24px;
+    }
+
+    .register-form {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0;
+    }
+
+    .register-form .form-field {
+        margin-bottom: 18px;
+    }
+
+    .register-form .form-field--full {
+        grid-column: auto;
+    }
+
+    .login-links {
+        gap: 0;
+    }
+}
+
+@media (max-width: 380px) {
+    .login-layout {
+        padding-right: 12px;
+        padding-left: 12px;
+    }
+
+    .login-panel {
+        padding: 26px 18px;
+    }
+
+    .login-panel h1 {
+        font-size: 38px;
+    }
+}
+
+.phone-input-group {
+    display: grid;
+    grid-template-columns: minmax(136px, 0.42fr) minmax(0, 1fr);
+    gap: 10px;
+    min-width: 0;
+}
+
+.phone-input-group > * {
+    min-width: 0;
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    clip-path: inset(50%);
+}
+
+@media (max-width: 380px) {
+    .phone-input-group {
+        grid-template-columns: minmax(116px, 0.45fr) minmax(0, 1fr);
+        gap: 8px;
+    }
+}
+
+.login-form:not(.register-form) > label:not(:first-child) {
+    margin-top: 18px;
+}
+
+.login-form:not(.register-form) .login-submit {
+    margin-top: 20px;
+}
+
+.login-links .login-back {
+    display: flex;
+    min-height: 48px;
+    align-items: center;
+    margin-top: 4px;
+    padding: 10px 12px;
+    border: 1px solid rgb(229 207 131 / 24%);
+    border-radius: 6px;
+    background: rgb(255 255 255 / 4%);
+    text-decoration: none;
+    transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.login-links .login-back:hover,
+.login-links .login-back:focus-visible {
+    border-color: rgb(229 207 131 / 60%);
+    background: rgb(229 207 131 / 9%);
+}
+
+.register-link {
+    display: inline-flex;
+    min-height: 48px;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 16px;
+    border: 1px solid rgb(229 207 131 / 38%);
+    border-radius: 6px;
+    font-size: 15px;
+    text-decoration: none;
 }

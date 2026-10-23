@@ -86,13 +86,34 @@ Las rutas API usan sesión HTTP y responden JSON. La API tiene CSRF desactivado;
 ## Requisitos
 
 - JDK 21 o superior.
-- PostgreSQL instalado y en ejecución.
-- Base de datos `siweb_eclipse` creada.
+- PostgreSQL instalado y en ejecución para el perfil normal.
+- Base de datos `siweb_eclipse` creada para el perfil normal.
 - Git.
+
+Para una demostración sin configurar PostgreSQL, el perfil `demo` usa H2 en memoria.
 
 No hace falta instalar Maven globalmente: el repositorio incluye `mvnw` y `mvnw.cmd`.
 
 ## Configuración y ejecución
+
+### Demostración sin PostgreSQL
+
+En Windows, desde la raíz del proyecto:
+
+```powershell
+$env:SPRING_PROFILES_ACTIVE = "demo"
+.\mvnw.cmd spring-boot:run
+```
+
+En Linux/macOS:
+
+```bash
+SPRING_PROFILES_ACTIVE=demo ./mvnw spring-boot:run
+```
+
+Abre [http://localhost:8080](http://localhost:8080). Puedes crear clientes desde `/registro` y entrar como empleado con una cuenta de desarrollo. La base H2 de demostración vive solo mientras la aplicación está abierta: al detenerla, sus registros se eliminan. Esto permite probar el flujo sin PostgreSQL; no uses este perfil para producción.
+
+### Ejecución con PostgreSQL
 
 Configura la contraseña de PostgreSQL mediante la variable `DB_PASSWORD`. En PowerShell, el siguiente comando la solicita sin mostrarla ni enviarla al chat:
 
