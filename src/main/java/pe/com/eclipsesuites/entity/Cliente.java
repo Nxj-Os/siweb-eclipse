@@ -6,13 +6,16 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "cliente")
+@Table(name = "cliente", uniqueConstraints = {
+    @UniqueConstraint(name = "uk_cliente_correo_electronico", columnNames = "correo_electronico")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -47,4 +50,7 @@ public class Cliente {
 
     @Column(name = "edad", nullable = false)
     private Integer edad;
+
+    @Column(name = "password_hash", length = 100)
+    private String passwordHash;
 }
