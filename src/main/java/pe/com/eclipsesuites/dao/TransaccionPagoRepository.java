@@ -1,5 +1,7 @@
 package pe.com.eclipsesuites.dao;
 
-public class TransaccionPagoRepository {
-    
+import org.springframework.data.jpa.repository.JpaRepository;
+import pe.com.eclipsesuites.entity.TransaccionPago;
+
+public interface TransaccionPagoRepository extends JpaRepository<TransaccionPago, Long> {
 }
