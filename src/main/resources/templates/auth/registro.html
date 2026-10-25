@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#071514">
+    <title>Crear cuenta | Hotel Eclipse</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+</head>
+<body class="login-page">
+    <main class="login-layout">
+        <a class="login-brand" th:href="@{/}" aria-label="Volver al inicio">
+            <span class="brand__seal" aria-hidden="true"><span>E</span><i></i></span>
+            <span class="brand__name">ECLIPSE</span>
+            <span class="brand__descriptor">SUITES HOTEL</span>
+        </a>
+
+        <section class="login-panel" aria-labelledby="register-title">
+            <p class="login-eyebrow">ECLIPSE SUITES HOTEL</p>
+            <h1 id="register-title">Crea tu cuenta</h1>
+            <p class="login-intro">Completa tus datos para registrarte como cliente.</p>
+
+            <form id="register-form" class="login-form register-form" autocomplete="on">
+                <div class="form-field">
+                    <label for="nombre">Nombre</label>
+                    <input id="nombre" name="nombre" maxlength="100" autocomplete="given-name" required>
+                </div>
+
+                <div class="form-field">
+                    <label for="apellido">Apellido</label>
+                    <input id="apellido" name="apellido" maxlength="100" autocomplete="family-name" required>
+                </div>
+
+                <div class="form-field">
+                    <label for="tipoDocumento">Tipo de documento</label>
+                    <select id="tipoDocumento" name="tipoDocumento" required>
+                        <option value="DNI">DNI</option>
+                        <option value="CE">Carné de extranjería</option>
+                        <option value="PASAPORTE">Pasaporte</option>
+                    </select>
+                </div>
+
+                <div class="form-field">
+                    <label for="numDocumento">Número de documento</label>
+                    <input id="numDocumento" name="numDocumento" maxlength="20" required>
+                </div>
+
+                <div class="form-field">
+                    <label for="paisEmisionDoc">País emisor</label>
+                    <select id="paisEmisionDoc" name="paisEmisionDoc" autocomplete="country" required>
+                        <option value="PER" selected>Perú</option>
+                        <option value="ARG">Argentina</option>
+                        <option value="BOL">Bolivia</option>
+                        <option value="BRA">Brasil</option>
+                        <option value="CAN">Canadá</option>
+                        <option value="CHL">Chile</option>
+                        <option value="COL">Colombia</option>
+                        <option value="CRI">Costa Rica</option>
+                        <option value="CUB">Cuba</option>
+                        <option value="DOM">República Dominicana</option>
+                        <option value="ECU">Ecuador</option>
+                        <option value="SLV">El Salvador</option>
+                        <option value="ESP">España</option>
+                        <option value="GTM">Guatemala</option>
+                        <option value="HND">Honduras</option>
+                        <option value="MEX">México</option>
+                        <option value="NIC">Nicaragua</option>
+                        <option value="PAN">Panamá</option>
+                        <option value="PRY">Paraguay</option>
+                        <option value="URY">Uruguay</option>
+                        <option value="USA">Estados Unidos</option>
+                        <option value="VEN">Venezuela</option>
+                    </select>
+                </div>
+
+                <div class="form-field form-field--full">
+                    <label for="telefono">Teléfono</label>
+                    <div class="phone-input-group">
+                        <label class="visually-hidden" for="telefonoPrefijo">Prefijo telefónico</label>
+                        <select id="telefonoPrefijo" aria-label="Prefijo telefónico" required>
+                            <option value="+51" selected>+51 Perú</option>
+                            <option value="+54">+54 Argentina</option>
+                            <option value="+591">+591 Bolivia</option>
+                            <option value="+55">+55 Brasil</option>
+                            <option value="+1">+1 Canadá / EE. UU.</option>
+                            <option value="+56">+56 Chile</option>
+                            <option value="+57">+57 Colombia</option>
+                            <option value="+506">+506 Costa Rica</option>
+                            <option value="+53">+53 Cuba</option>
+                            <option value="+1">+1 República Dominicana</option>
+                            <option value="+593">+593 Ecuador</option>
+                            <option value="+503">+503 El Salvador</option>
+                            <option value="+34">+34 España</option>
+                            <option value="+502">+502 Guatemala</option>
+                            <option value="+504">+504 Honduras</option>
+                            <option value="+52">+52 México</option>
+                            <option value="+505">+505 Nicaragua</option>
+                            <option value="+507">+507 Panamá</option>
+                            <option value="+595">+595 Paraguay</option>
+                            <option value="+598">+598 Uruguay</option>
+                            <option value="+58">+58 Venezuela</option>
+                        </select>
+                        <input id="telefono" name="telefono" type="tel" maxlength="16" placeholder="999 123 456" autocomplete="tel-national" required>
+                    </div>
+                </div>
+
+                <div class="form-field form-field--full">
+                    <label for="correoElectronico">Correo electrónico</label>
+                    <input id="correoElectronico" name="correoElectronico" type="email" maxlength="100" autocomplete="email" required>
+                </div>
+
+                <div class="form-field">
+                    <label for="edad">Edad</label>
+                    <input id="edad" name="edad" type="number" min="1" max="120" required>
+                </div>
+
+                <div class="form-field">
+                    <label for="password">Contraseña (mínimo 8 caracteres)</label>
+                    <input id="password" name="password" type="password" minlength="8" maxlength="72" autocomplete="new-password" required>
+                </div>
+
+                <div class="form-field form-field--full">
+                    <label for="confirmPassword">Repite la contraseña</label>
+                    <input id="confirmPassword" name="confirmPassword" type="password" minlength="8" maxlength="72" autocomplete="new-password" required>
+                </div>
+
+                <p id="register-message" class="login-message form-field--full" role="status" aria-live="polite"></p>
+                <button id="register-submit" class="role-link login-submit form-field--full" type="submit">Crear cuenta</button>
+            </form>
+
+            <nav class="login-links" aria-label="Enlaces de cuenta">
+                <a class="login-back" th:href="@{/login(tipo='cliente')}">Ya tengo una cuenta</a>
+                <a class="login-back" th:href="@{/}">Volver al inicio</a>
+            </nav>
+        </section>
+    </main>
+    <script th:src="@{/js/auth-login.js}" defer></script>
+</body>
+</html>
