@@ -58,8 +58,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiErrorDTO> manejarArgumentoInvalido(IllegalArgumentException ex,
                                                                 HttpServletRequest request) {
-        return construir(HttpStatus.BAD_REQUEST, "Solicitud inválida",
-                ex.getMessage(), null, request);
+        String mensaje = ex.getMessage() == null ? "Solicitud inválida" : ex.getMessage();
+        if (mensaje.toLowerCase().contains("ya existe")) {
+            return construir(HttpStatus.CONFLICT, "Conflicto", mensaje, null, request);
+        }
+        return construir(HttpStatus.BAD_REQUEST, "Solicitud inválida", mensaje, null, request);
     }
 
     private ResponseEntity<ApiErrorDTO> construir(HttpStatus status, String error, String mensaje,

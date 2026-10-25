@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#ffffff">
+    <title>Suites temáticas | Hotel Eclipse</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <link rel="stylesheet" th:href="@{/css/inicio-catalogo.css}">
+</head>
+<body class="inicio-page">
+    <header class="inicio-header">
+        <div class="inicio-header__titles">
+            <h1 class="inicio-header__title">Suites temáticas</h1>
+            <p class="inicio-header__subtitle">Elige tu próxima habitación para reservar</p>
+        </div>
+        <button class="inicio-header__user" type="button" aria-label="Usuario">
+            <span class="inicio-header__user-icon">
+                <i class="bi bi-person"></i>
+            </span>
+            <span>Usuario</span>
+        </button>
+    </header>
+
+    <main class="inicio-main">
+        <section class="filters-panel" aria-label="Filtros de búsqueda">
+            <div class="search-field">
+                <span class="search-field__icon" aria-hidden="true">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input id="buscar-sala" class="search-field__input" type="search" placeholder="Buscar sala" autocomplete="off">
+            </div>
+            <div class="filters-row">
+                <div class="filter-group">
+                    <div class="filter-field">
+                        <span class="filter-field__icon" aria-hidden="true">
+                            <i class="bi bi-calendar3"></i>
+                        </span>
+                        <input class="filter-field__input" type="text" placeholder="dd/mm/aaaa" inputmode="numeric" aria-label="Fecha">
+                    </div>
+                    <div class="filter-field">
+                        <span class="filter-field__icon" aria-hidden="true">
+                            <i class="bi bi-clock"></i>
+                        </span>
+                        <input class="filter-field__input" type="text" placeholder="hh:mm am/pm" aria-label="Hora">
+                    </div>
+                </div>
+                <button class="help-button" type="button" aria-label="Ayuda">
+                    <i class="bi bi-question-lg"></i>
+                </button>
+            </div>
+        </section>
+
+        <section class="suites-list" aria-label="Lista de suites temáticas">
+            <article class="suite-card" data-title="Suite VIP Deluxe" data-description="Elegancia moderna con detalles exclusivos para una experiencia premium." data-amenities="Cama matrimonial Smart TV Frigobar Agua caliente Luces psicodélicas">
+                <div class="suite-card__content">
+                    <header class="suite-card__header">
+                        <h2 class="suite-card__title">Suite VIP Deluxe</h2>
+                        <p class="suite-card__description">Elegancia moderna con detalles exclusivos para una experiencia premium.</p>
+                    </header>
+                    <ul class="suite-card__amenities">
+                        <li>Cama matrimonial</li>
+                        <li>Smart TV</li>
+                        <li>Frigobar</li>
+                        <li>Agua caliente</li>
+                        <li>Luces psicodélicas</li>
+                    </ul>
+                    <a class="suite-card__cta" href="#">Reservar desde S/.80</a>
+                </div>
+                <div class="suite-card__media suite-card__media--vip">
+                    <span class="suite-card__badge">
+                        <span class="suite-card__badge-dot"></span>
+                        3 disponibles
+                    </span>
+                </div>
+            </article>
+
+            <article class="suite-card" data-title="Suite Romana" data-description="Ambiente clásico con columnas, mármol y un toque de historia." data-amenities="Cama king Jacuzzi Agua caliente Aromaterapia Sistema de sonido">
+                <div class="suite-card__content">
+                    <header class="suite-card__header">
+                        <h2 class="suite-card__title">Suite Romana</h2>
+                        <p class="suite-card__description">Ambiente clásico con columnas, mármol y un toque de historia.</p>
+                    </header>
+                    <ul class="suite-card__amenities">
+                        <li>Cama king</li>
+                        <li>Jacuzzi</li>
+                        <li>Agua caliente</li>
+                        <li>Aromaterapia</li>
+                        <li>Sistema de sonido</li>
+                    </ul>
+                    <a class="suite-card__cta" href="#">Reservar desde S/.80</a>
+                </div>
+                <div class="suite-card__media suite-card__media--romana">
+                    <span class="suite-card__badge suite-card__badge--unavailable">
+                        <span class="suite-card__badge-dot"></span>
+                        Sin plazas
+                    </span>
+                </div>
+            </article>
+
+            <article class="suite-card" data-title="Suite Galaxia" data-description="Una experiencia futurista con cielos estelares y luces LED." data-amenities="Cama redonda Proyector estelar Smart TV Hidromasaje Iluminación RGB">
+                <div class="suite-card__content">
+                    <header class="suite-card__header">
+                        <h2 class="suite-card__title">Suite Galaxia</h2>
+                        <p class="suite-card__description">Una experiencia futurista con cielos estelares y luces LED.</p>
+                    </header>
+                    <ul class="suite-card__amenities">
+                        <li>Cama redonda</li>
+                        <li>Proyector estelar</li>
+                        <li>Smart TV</li>
+                        <li>Hidromasaje</li>
+                        <li>Iluminación RGB</li>
+                    </ul>
+                    <a class="suite-card__cta" href="#">Reservar desde S/.80</a>
+                </div>
+                <div class="suite-card__media suite-card__media--galaxia">
+                    <span class="suite-card__badge">
+                        <span class="suite-card__badge-dot"></span>
+                        3 disponibles
+                    </span>
+                </div>
+            </article>
+        </section>
+
+        <footer class="inicio-footer">
+            <p>© 2026 Hotel Eclipse Suites. Todos los derechos reservados.</p>
+        </footer>
+    </main>
+
+    <nav class="bottom-nav" aria-label="Navegación inferior">
+        <a class="bottom-nav__item bottom-nav__item--active" href="#">
+            <span class="bottom-nav__icon">
+                <i class="bi bi-house-door"></i>
+            </span>
+            <span>Inicio</span>
+        </a>
+        <a class="bottom-nav__item" href="#">
+            <span class="bottom-nav__icon">
+                <i class="bi bi-calendar-check"></i>
+            </span>
+            <span>Reserva</span>
+        </a>
+        <a class="bottom-nav__item" href="#">
+            <span class="bottom-nav__icon">
+                <i class="bi bi-bell"></i>
+            </span>
+            <span>Servicio</span>
+        </a>
+        <a class="bottom-nav__item" href="#">
+            <span class="bottom-nav__icon">
+                <i class="bi bi-question-circle"></i>
+            </span>
+            <span>Ayuda</span>
+        </a>
+    </nav>
+
+    <script th:src="@{/js/inicio-catalogo.js}" defer></script>
+</body>
+</html>
