@@ -45,6 +45,12 @@ class AuthPageControllerTest {
         mockMvc.perform(get("/registro"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Crea tu cuenta")))
-                .andExpect(content().string(containsString("confirmPassword")));
+                .andExpect(content().string(containsString("confirmPassword")))
+                .andExpect(content().string(containsString("confirmCorreoElectronico")))
+                .andExpect(content().string(containsString("Datos personales")))
+                .andExpect(content().string(containsString("Correo y contraseña")))
+                .andExpect(content().string(containsString("Paso 1 de 2")))
+                .andExpect(content().string(containsString("aceptaPoliticaPrivacidad")))
+                .andExpect(content().string(containsString("registration-progress")));
     }
 }

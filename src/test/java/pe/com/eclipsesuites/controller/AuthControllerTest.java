@@ -12,11 +12,15 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.mock.web.MockHttpSession;
 import pe.com.eclipsesuites.config.SecurityConfig;
 import pe.com.eclipsesuites.service.IClienteAuthService;
 import pe.com.eclipsesuites.entity.Empleado;
 import pe.com.eclipsesuites.entity.RolEmpleado;
 import pe.com.eclipsesuites.service.IEmpleadoAuthService;
+import pe.com.eclipsesuites.service.impl.DisponibilidadRateLimiter;
+import pe.com.eclipsesuites.service.impl.IntentosLoginService;
+import pe.com.eclipsesuites.service.impl.LoginTemporalmenteBloqueadoException;
 
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -24,10 +28,12 @@ import java.util.stream.Collectors;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -46,6 +52,12 @@ class AuthControllerTest {
 
         @MockitoBean
         private IClienteAuthService clienteAuthService;
+
+        @MockitoBean
+        private DisponibilidadRateLimiter disponibilidadRateLimiter;
+
+        @MockitoBean
+        private IntentosLoginService intentosLoginService;
 
     private Empleado empleadoAdmin() {
         RolEmpleado rol = RolEmpleado.builder()
@@ -78,7 +90,7 @@ class AuthControllerTest {
 
     @Test
     void login_camposVacios_retorna400ConMensajesDeValidacion() throws Exception {
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/auth/login").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"username\":\"\",\"password\":\"\"}"))
                 .andExpect(status().isBadRequest())
@@ -95,7 +107,7 @@ class AuthControllerTest {
         when(empleadoAuthService.autenticar("admin", "Admin@123")).thenReturn(empleado);
         when(empleadoAuthService.loadUserByUsername("admin")).thenReturn(userDetailsAdmin());
 
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/auth/login").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(LOGIN_JSON_VALIDO))
                 .andExpect(status().isOk())
@@ -112,7 +124,7 @@ class AuthControllerTest {
         when(empleadoAuthService.autenticar("admin", "Admin@123"))
                 .thenThrow(new BadCredentialsException("Credenciales inválidas"));
 
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/auth/login").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(LOGIN_JSON_VALIDO))
                 .andExpect(status().isUnauthorized())
@@ -121,15 +133,15 @@ class AuthControllerTest {
     }
 
     @Test
-    void login_usuarioInactivo_retorna401ConMensajeDeCuentaInactiva() throws Exception {
+    void login_usuarioInactivo_retorna401ConMensajeGenerico() throws Exception {
         when(empleadoAuthService.autenticar("admin", "Admin@123"))
                 .thenThrow(new DisabledException("La cuenta del empleado está inactiva"));
 
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/auth/login").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(LOGIN_JSON_VALIDO))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.mensaje").value(containsString("inactiva")));
+                .andExpect(jsonPath("$.mensaje").value("Credenciales inválidas"));
     }
 
     @Test
@@ -137,7 +149,7 @@ class AuthControllerTest {
         when(empleadoAuthService.autenticar("admin", "Admin@123"))
                 .thenThrow(new UsernameNotFoundException("No existe empleado con username: admin"));
 
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/auth/login").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(LOGIN_JSON_VALIDO))
                 .andExpect(status().isUnauthorized())
@@ -164,20 +176,83 @@ class AuthControllerTest {
 
     @Test
     void logout_conSesion_retorna200() throws Exception {
-        mockMvc.perform(post("/api/auth/logout").with(user(userDetailsAdmin())))
+        mockMvc.perform(post("/api/auth/logout").with(user(userDetailsAdmin())).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.mensaje").value("Sesión cerrada"));
     }
 
     @Test
-    void login_sinTokenCsrf_funcionaPorSerRutaApi() throws Exception {
-        Empleado empleado = empleadoAdmin();
-        when(empleadoAuthService.autenticar("admin", "Admin@123")).thenReturn(empleado);
-        when(empleadoAuthService.loadUserByUsername("admin")).thenReturn(userDetailsAdmin());
+    void disponibilidad_documentoDisponible_noCacheaRespuesta() throws Exception {
+        when(disponibilidadRateLimiter.permitir("127.0.0.1")).thenReturn(true);
+        when(clienteAuthService.estaDisponible("documento", "12345678", "DNI"))
+                .thenReturn(true);
 
+        mockMvc.perform(get("/api/auth/client/disponibilidad")
+                        .param("campo", "documento")
+                        .param("valor", "12345678")
+                        .param("tipoDocumento", "DNI"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.disponible").value(true))
+                .andExpect(jsonPath("$.mensaje").value("Disponible"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
+                        .header().string("Cache-Control", containsString("no-store")));
+    }
+
+    @Test
+    void disponibilidad_excesoDeConsultas_retorna429() throws Exception {
+        when(disponibilidadRateLimiter.permitir("127.0.0.1")).thenReturn(false);
+
+        mockMvc.perform(get("/api/auth/client/disponibilidad")
+                        .param("campo", "correo")
+                        .param("valor", "persona@gmail.com"))
+                .andExpect(status().isTooManyRequests());
+    }
+
+    @Test
+    void login_sinTokenCsrf_rechazaSolicitud() throws Exception {
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(LOGIN_JSON_VALIDO))
-                .andExpect(status().isOk());
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void login_conTokenCsrf_esAceptado() throws Exception {
+        Empleado empleado = empleadoAdmin();
+        when(empleadoAuthService.autenticar("admin", "Admin@123")).thenReturn(empleado);
+        when(empleadoAuthService.loadUserByUsername("admin")).thenReturn(userDetailsAdmin());
+        MockHttpSession sesionAnterior = new MockHttpSession();
+        String idSesionAnterior = sesionAnterior.getId();
+
+        mockMvc.perform(post("/api/auth/login").session(sesionAnterior).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(LOGIN_JSON_VALIDO))
+                .andExpect(status().isOk())
+                .andExpect(result -> org.junit.jupiter.api.Assertions.assertNotEquals(
+                        idSesionAnterior, result.getRequest().getSession(false).getId()));
+    }
+
+    @Test
+    void csrf_entregaTokenSinCache() throws Exception {
+        mockMvc.perform(get("/api/auth/csrf"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").isNotEmpty())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
+                        .header().string("Cache-Control", containsString("no-store")))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
+                        .header().string("Set-Cookie", containsString("XSRF-TOKEN")));
+    }
+
+    @Test
+    void login_bloqueadoRetorna429YTiempoRestante() throws Exception {
+        doThrow(new LoginTemporalmenteBloqueadoException(812))
+                .when(intentosLoginService).verificarPermitido("127.0.0.1", "admin");
+
+        mockMvc.perform(post("/api/auth/login").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(LOGIN_JSON_VALIDO))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.mensaje").value(
+                        "Credenciales inválidas. Intenta nuevamente en 812 segundos."));
     }
 }

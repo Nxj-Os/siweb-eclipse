@@ -1,7 +1,6 @@
 package pe.com.eclipsesuites.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -12,12 +11,13 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import pe.com.eclipsesuites.dto.response.ApiErrorDTO;
+import pe.com.eclipsesuites.service.impl.DatosRegistroNoDisponiblesException;
+import pe.com.eclipsesuites.service.impl.LoginTemporalmenteBloqueadoException;
 
 import java.time.OffsetDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -42,24 +42,39 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DisabledException.class)
     public ResponseEntity<ApiErrorDTO> manejarCuentaInactiva(DisabledException ex,
                                                              HttpServletRequest request) {
-        log.warn("Login rechazado por cuenta inactiva: {}", ex.getMessage());
         return construir(HttpStatus.UNAUTHORIZED, "No autorizado",
-                "La cuenta del empleado está inactiva", null, request);
+                "Credenciales inválidas", null, request);
     }
 
     @ExceptionHandler({BadCredentialsException.class, UsernameNotFoundException.class})
     public ResponseEntity<ApiErrorDTO> manejarCredencialesInvalidas(RuntimeException ex,
                                                                     HttpServletRequest request) {
-        log.warn("Login rechazado: {}", ex.getMessage());
         return construir(HttpStatus.UNAUTHORIZED, "No autorizado",
                 "Credenciales inválidas", null, request);
+    }
+
+    @ExceptionHandler(LoginTemporalmenteBloqueadoException.class)
+    public ResponseEntity<ApiErrorDTO> manejarLoginBloqueado(
+            LoginTemporalmenteBloqueadoException ex, HttpServletRequest request) {
+        return construir(HttpStatus.TOO_MANY_REQUESTS, "Acceso temporalmente bloqueado",
+                "Credenciales inválidas. Intenta nuevamente en "
+                        + ex.getSegundosRestantes() + " segundos.",
+                null, request);
+    }
+
+    @ExceptionHandler(DatosRegistroNoDisponiblesException.class)
+    public ResponseEntity<ApiErrorDTO> manejarDatosRegistroNoDisponibles(
+            DatosRegistroNoDisponiblesException ex, HttpServletRequest request) {
+        return construir(HttpStatus.CONFLICT, "Conflicto",
+                "No se pudo completar el registro; verifica la información ingresada",
+                null, request);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiErrorDTO> manejarArgumentoInvalido(IllegalArgumentException ex,
                                                                 HttpServletRequest request) {
-        return construir(HttpStatus.BAD_REQUEST, "Solicitud inválida",
-                ex.getMessage(), null, request);
+        String mensaje = ex.getMessage() == null ? "Solicitud inválida" : ex.getMessage();
+        return construir(HttpStatus.BAD_REQUEST, "Solicitud inválida", mensaje, null, request);
     }
 
     private ResponseEntity<ApiErrorDTO> construir(HttpStatus status, String error, String mensaje,

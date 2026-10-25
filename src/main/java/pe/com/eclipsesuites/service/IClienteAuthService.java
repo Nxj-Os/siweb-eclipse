@@ -13,4 +13,6 @@ public interface IClienteAuthService {
     Cliente buscarPorCorreo(String correoElectronico);
 
     UserDetails crearUserDetails(Cliente cliente);
+
+    boolean estaDisponible(String campo, String valor, String tipoDocumento);
 }

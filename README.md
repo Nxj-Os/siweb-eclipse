@@ -7,21 +7,23 @@ Aplicación web para la gestión de un hotel. El proyecto usa Spring Boot y est�
 ### Implementado
 
 - Portada de Hotel Eclipse y página 404 personalizadas.
-- Login de empleados con usuario y contraseña, usando el servicio de autenticación integrado desde `feature/login`.
-- Registro de clientes con datos personales, correo y contraseña; al registrarse, el cliente queda autenticado.
+- Login de empleados con usuario y contraseña, con roles y permisos cargados desde la base de datos.
+- Registro de clientes en dos pasos: datos personales y credenciales; al terminar se inicia la sesión sin depender de códigos por correo o SMS.
+- Aceptación de privacidad registrada con fecha al crear la cuenta.
 - Login de clientes por correo y contraseña.
 - Contraseñas de clientes y empleados almacenadas con BCrypt; nunca se guarda la contraseña en texto plano.
 - Sesiones HTTP para los accesos de cliente y empleado.
+- Bloqueo temporal de 3 minutos a partir del quinto fallo para la combinación de IP y usuario/correo.
 - Validación de datos, normalización de correos, rechazo de correo/documento duplicados y respuestas JSON de error.
+- Interfaz de autenticación adaptable a móvil, con fondo del hotel, wizard de registro, transiciones y animaciones breves; respeta `prefers-reduced-motion`.
 - Actualización del esquema mediante Hibernate con `spring.jpa.hibernate.ddl-auto=update`.
-- Pruebas unitarias, MVC y de integración con H2 en memoria. La prueba de integración registra un cliente, comprueba el hash persistido y vuelve a autenticarlo.
+- Pruebas unitarias, MVC y de integración con H2 en memoria para registro, autenticación, validaciones y sesión.
 
 ### Pendiente o limitado
 
-- Recuperación de contraseña, verificación de correo y confirmación de identidad.
-- Controles adicionales para producción, como límites de intentos, política de contraseñas y configuración de cookies seguras bajo HTTPS.
-- Redirección tras el login a un panel según el rol y controles visibles para cerrar sesión. El login actual muestra confirmación y mantiene la sesión, pero aún no dirige a un dashboard.
-- Conectar los módulos de reservas, recepción, room service, operaciones y reportes. Hay plantillas y clases preparadas, pero actualmente no se encontraron rutas MVC registradas para esos flujos.
+- Recuperación de contraseña y controles independientes contra abuso distribuido (los límites actuales viven en memoria).
+- Paneles distintos por rol y controles visibles para cerrar sesión. El login redirige a `/inicio`, pero esa página no diferencia todavía las capacidades por rol.
+- Activar los módulos de reservas, checkout, rack, room service, operaciones y reportes. Hay plantillas y archivos con nombres de controlador/servicio, pero no tienen implementación activa ni rutas MVC registradas en el estado actual.
 - Validar la actualización del esquema sobre una copia de la base PostgreSQL usada por el equipo. Las pruebas automáticas usan H2 y no modifican esa base.
 - Cambiar o eliminar las credenciales de empleados de prueba antes de desplegar.
 
@@ -39,30 +41,34 @@ Aplicación web para la gestión de un hotel. El proyecto usa Spring Boot y est�
 
 ## Arquitectura
 
+La aplicación es un monolito Spring Boot/MVC. La descripción de módulos, rutas, seguridad, persistencia y estado de implementación está en [ARCHITECTURE.md](./ARCHITECTURE.md).
+
 ```mermaid
 flowchart LR
-    U[Usuario] --> W[HTML y Thymeleaf]
-    W -->|Navegación| MVC[AuthPageController]
-    W -->|fetch JSON| API[AuthController]
-    MVC --> SEC[Spring Security]
+    U[Usuario] --> UI[Thymeleaf y recursos estáticos]
+    UI -->|GET de páginas| MVC[Controladores MVC]
+    UI -->|fetch JSON y CSRF| API[API /api/auth]
+    MVC --> SEC[Spring Security y sesión HTTP]
     API --> SEC
     API --> S[Servicios de autenticación]
     S --> R[Repositorios Spring Data JPA]
     R --> J[Hibernate / JPA]
     J --> DB[(PostgreSQL)]
-    T[Pruebas de integración] --> H2[(H2 en memoria)]
+    T[Pruebas] --> H2[(H2 en memoria)]
 ```
 
 ### Responsabilidades por capa
 
-- `controller`: recibe peticiones REST y solicitudes de páginas Thymeleaf.
-- `service`: valida y ejecuta reglas de negocio, como registro, normalización de correo y autenticación BCrypt.
+- `controller`: recibe solicitudes REST y de páginas; las rutas activas son portada/inicio y autenticación.
+- `service`: valida y ejecuta reglas de registro, política de correo, autenticación y bloqueo de intentos.
 - `dao`: repositorios Spring Data JPA para consultar y persistir entidades.
 - `entity`: modelo relacional persistido, incluyendo `Cliente` y `Empleado`.
 - `dto`: contratos de entrada/salida de la API; evita exponer directamente las entidades.
 - `config`: seguridad, codificador BCrypt, inicialización de empleados de desarrollo y configuración de Spring.
-- `resources/static`: portada, estilos y JavaScript que consume la API.
+- `resources/static`: portada, imagen de fondo, estilos y JavaScript que consume la API; las animaciones y transiciones están en `home.css`.
 - `resources/templates`: páginas Thymeleaf de login, registro, error y vistas de los módulos.
+
+La cadena API mantiene CSRF activo también para los endpoints públicos de login y registro; el JavaScript solicita el token antes de enviar operaciones POST.
 
 ## Rutas implementadas
 
@@ -72,23 +78,27 @@ flowchart LR
 | `GET` | `/login?tipo=empleado` | Formulario de login de empleado. |
 | `GET` | `/login?tipo=cliente` | Formulario de login de cliente. |
 | `GET` | `/registro` | Formulario de registro de cliente. |
+| `GET` | `/inicio` | Página de entrada con sesión; redirige al login si no hay sesión autenticada. |
+| `GET` | `/api/auth/csrf` | Emite el token CSRF que se usa en las solicitudes POST de la API. |
+| `GET` | `/api/auth/client/disponibilidad?campo=...&valor=...` | Verifica disponibilidad de correo, documento o teléfono; limitado por IP. |
 | `POST` | `/api/auth/login` | Login de empleado; recibe `username` y `password`. |
 | `GET` | `/api/auth/me` | Datos del empleado autenticado. |
-| `POST` | `/api/auth/client/register` | Registra y autentica un cliente. |
+| `POST` | `/api/auth/client/register` | Crea la cuenta de cliente e inicia su sesión. |
 | `POST` | `/api/auth/client/login` | Login de cliente; recibe `correoElectronico` y `password`. |
 | `GET` | `/api/auth/client/me` | Datos del cliente autenticado. |
-| `POST` | `/api/auth/logout` | Cierra la sesión API actual. |
+| `POST` | `/api/auth/logout` | Cierra la sesión API actual (filtro de logout de Spring Security). |
+| `POST` | `/logout` | Cierra sesión mediante la cadena web de Spring Security. |
 
-El registro de cliente recibe `tipoDocumento`, `numDocumento`, `paisEmisionDoc`, `correoElectronico`, `nombre`, `apellido`, `telefono`, `edad` y `password`. La confirmación de contraseña se comprueba en el navegador y no se envía al servidor.
+El registro de cliente recibe `tipoDocumento`, `numDocumento`, `paisEmisionDoc`, `correoElectronico`, `nombre`, `apellido`, `telefono`, `edad` y `password`. El formulario pide repetir el correo y la contraseña; compara ambos valores en el navegador y no envía los campos de confirmación al servidor.
 
-Las rutas API usan sesión HTTP y responden JSON. La API tiene CSRF desactivado; la cadena web mantiene CSRF activo. Las contraseñas se codifican con BCrypt. Los clientes tienen autoridad `ROLE_CLIENTE`; los empleados reciben sus roles y permisos desde la base.
+Las rutas API usan sesión HTTP y responden JSON. CSRF también está activo para la API; la interfaz obtiene el token con `GET /api/auth/csrf` y lo envía como `X-XSRF-TOKEN`. Las contraseñas se almacenan con BCrypt. Los clientes tienen autoridad `ROLE_CLIENTE`; los empleados reciben sus roles y permisos desde la base.
 
 ### Flujo de uso
 
 1. Arranca la aplicación con el perfil `demo` o con PostgreSQL.
 2. Abre `http://localhost:8080`; no abras el HTML estático directamente desde el explorador de archivos.
 3. Para un cliente nuevo, elige **Crear una cuenta** o abre `/registro`.
-4. Al completar el registro, el servidor guarda la cuenta y devuelve una sesión autenticada. El formulario valida que ambas contraseñas coincidan.
+4. Completa los dos pasos del registro. La cuenta se crea y la sesión se inicia al enviar el formulario.
 5. Para una cuenta de cliente existente, abre `/login?tipo=cliente` y usa el correo y la contraseña elegidos al registrarse.
 6. Para empleados, abre `/login?tipo=empleado` y usa username y contraseña de desarrollo o las credenciales de la base configurada.
 
@@ -123,14 +133,16 @@ Login de empleado, `POST /api/auth/login`:
 
 ```json
 {
-  "username": "admin",
-  "password": "Admin@123"
+  "username": "<usuario configurado>",
+  "password": "<contraseña ingresada por el usuario>"
 }
 ```
 
 Los logins y el registro devuelven datos básicos del usuario y guardan la autenticación en la sesión HTTP. En JavaScript las solicitudes usan `credentials: same-origin`, por lo que el navegador conserva la cookie de sesión. No se devuelve el hash de contraseña.
 
 La lista de países del formulario envía un código ISO de tres letras (`PER`, `CHL`, `USA`, etc.). El prefijo telefónico se combina con el número antes de enviarlo, por ejemplo `+51 999123456`, y se guarda en el campo `telefono` existente.
+
+El formulario requiere la aceptación expresa del tratamiento de datos; el servidor guarda esa aceptación y su marca de tiempo. La política explica el uso de los datos para administrar la cuenta y gestionar servicios de hospedaje. El registro no comprueba la titularidad del correo ni del teléfono; los códigos de verificación no forman parte del flujo.
 
 ## Requisitos
 
@@ -140,6 +152,16 @@ La lista de países del formulario envía un código ISO de tres letras (`PER`, 
 PostgreSQL y la base `siweb_eclipse` solo son necesarios para el perfil normal. Para probar el login sin PostgreSQL basta con JDK y Maven Wrapper; usa el perfil `demo` descrito abajo.
 
 No hace falta instalar Maven globalmente: el repositorio incluye `mvnw` y `mvnw.cmd`.
+
+### Estado de Java y compilación
+
+El proyecto todavía tiene Java 21 como versión objetivo en `pom.xml`; no se ha aplicado la actualización del runtime a Java 25. La compilación se verificó correctamente con Java 24 usando Maven Wrapper:
+
+```powershell
+.\mvnw.cmd compile
+```
+
+En Windows no uses `mvn compile` salvo que hayas instalado Maven globalmente. Usa `.\mvnw.cmd` desde la raíz del proyecto.
 
 ## Configuración y ejecución
 
@@ -158,33 +180,37 @@ En Linux/macOS:
 SPRING_PROFILES_ACTIVE=demo ./mvnw spring-boot:run
 ```
 
-Abre [http://localhost:8080](http://localhost:8080). Puedes crear clientes desde `/registro` y entrar como empleado con una cuenta de desarrollo. La base H2 de demostración vive solo mientras la aplicación está abierta: al detenerla, sus registros se eliminan. Esto permite probar el flujo sin PostgreSQL; no uses este perfil para producción.
+Abre [http://localhost:8080](http://localhost:8080). Puedes crear clientes desde `/registro` y entrar como empleado con una cuenta de desarrollo. La base H2 de demostración vive solo mientras la aplicación está abierta: al detenerla, sus registros se eliminan. No uses este perfil para producción.
 
 ### Ejecución con PostgreSQL
 
-Configura la contraseña de PostgreSQL mediante la variable `DB_PASSWORD`. En PowerShell, el siguiente comando la solicita sin mostrarla ni enviarla al chat:
+Usa esta opción si PostgreSQL está iniciado y ya existe la base `siweb_eclipse`. La aplicación se conecta a `localhost:5432` como el usuario `postgres`. No se activa el perfil `demo`.
+
+En PowerShell, desde la raíz del proyecto, solicita la contraseña nueva de PostgreSQL de forma oculta y guárdala en la variable de entorno solo para esta ventana:
 
 ```powershell
+Remove-Item Env:SPRING_PROFILES_ACTIVE -ErrorAction SilentlyContinue
 $secure = Read-Host "Contraseña de PostgreSQL" -AsSecureString
 $env:DB_PASSWORD = [System.Net.NetworkCredential]::new("", $secure).Password
-```
-
-Después, desde la raíz del proyecto:
-
-```powershell
 .\mvnw.cmd spring-boot:run
 ```
+
+Deja esa ventana abierta mientras uses la aplicación y abre [http://localhost:8080](http://localhost:8080). Para detenerla, presiona `Ctrl+C` en la terminal.
+
+Si ya configuraste `DB_PASSWORD` en esa misma ventana, no necesitas volver a introducirla; ejecuta solamente `.\mvnw.cmd spring-boot:run`. Si habías iniciado la aplicación con el perfil `demo`, detenla y abre una terminal nueva antes de seguir estos pasos.
 
 En Linux/macOS:
 
 ```bash
-export DB_PASSWORD="contraseña-local"
+read -s -p "Contraseña de PostgreSQL: " DB_PASSWORD
+echo
+export DB_PASSWORD
 ./mvnw spring-boot:run
 ```
 
 Abre [http://localhost:8080](http://localhost:8080). No abras `src/main/resources/static/index.html` directamente como archivo: sus rutas `/login` y `/registro` requieren que Spring Boot esté sirviendo la aplicación.
 
-La configuración normal usa `jdbc:postgresql://localhost:5432/siweb_eclipse` y el usuario `postgres`. La contraseña se lee de `DB_PASSWORD`; el archivo actual mantiene `123456` como valor de respaldo para desarrollo. Configura una variable de entorno y evita usar el valor de respaldo fuera de una máquina local.
+La configuración normal usa `jdbc:postgresql://localhost:5432/siweb_eclipse` y el usuario `postgres`. La contraseña se lee de `DB_PASSWORD`; no escribas la contraseña real en este README, en el código ni en el chat.
 
 Si la base todavía no existe, créala una vez desde `psql` o pgAdmin:
 
@@ -194,15 +220,50 @@ CREATE DATABASE siweb_eclipse;
 
 Al iniciar, `spring.jpa.hibernate.ddl-auto=update` crea/actualiza las tablas a partir de las entidades. No borra las tablas en el perfil PostgreSQL. Haz una copia de seguridad antes de ejecutar cambios de esquema sobre datos importantes.
 
+### Validaciones del registro
+
+- El correo se normaliza a minúsculas, debe pertenecer a un dominio permitido y ese dominio debe publicar registros MX. Por defecto se aceptan `gmail.com`, `hotmail.com`, `outlook.com` y `yahoo.com`; configura otros mediante `APP_AUTH_EMAIL_DOMINIOS_PERMITIDOS` (lista separada por comas).
+- Se rechazan algunos dominios temporales conocidos. La lista se puede ajustar con `APP_AUTH_EMAIL_DOMINIOS_DESECHABLES`.
+- El DNI debe tener 8 dígitos; CE y pasaporte aceptan de 6 a 20 caracteres alfanuméricos.
+- El teléfono se guarda en formato E.164, por ejemplo `+51999123456`, y debe ser único.
+- El formulario comprueba correo, documento y teléfono al salir de cada campo. La consulta usa `GET /api/auth/client/disponibilidad`, no almacena en caché sus respuestas y limita a 30 consultas por minuto y dirección IP en cada instancia. Como GET incluye el valor consultado en la URL, no habilites registros de acceso que almacenen sus query strings en servidores o proxies.
+- Para nuevas contraseñas de clientes se requieren entre 8 y 20 caracteres; la lista local de claves prohibidas en `src/main/resources/security/claves-prohibidas.txt` bloquea claves conocidas y también se rechazan contraseñas que contengan datos personales. El formulario muestra un indicador compacto de fortaleza, sin checklist de recomendaciones. BCrypt mantiene el límite técnico de 72 bytes UTF-8.
+- La lista de claves prohibidas incluida es una lista local compacta, no contiene 1.000 entradas. Para producción, incorpora y mantén una lista institucional revisada antes de afirmar que se bloquean las 1.000 contraseñas más usadas.
+- Antes de reiniciar PostgreSQL después de añadir la restricción de teléfono, comprueba si hay valores duplicados existentes:
+
+```sql
+SELECT telefono, COUNT(*)
+FROM cliente
+GROUP BY telefono
+HAVING COUNT(*) > 1;
+```
+
+Si aparecen filas, no las borres automáticamente: conserva los datos y resuelve los duplicados antes de aplicar la restricción única.
+
 ### Cuentas de empleado de desarrollo
 
 `DataInitializer` crea estas cuentas si no existen:
 
 | Usuario | Contraseña | Rol |
 | --- | --- | --- |
-| `admin` | `Admin@123` | `ADMIN` |
-| `recepcion1` | `Recep@123` | `RECEPCION` |
-| `roomservice1` | `Room@123` | `ROOMSERVICE` |
+| `admin` | Configurada por `APP_SEED_ADMIN_PASSWORD` | `ADMIN` |
+| `recepcion1` | Configurada por `APP_SEED_RECEPCION_PASSWORD` | `RECEPCION` |
+| `roomservice1` | Configurada por `APP_SEED_ROOMSERVICE_PASSWORD` | `ROOMSERVICE` |
+
+El inicializador solo se ejecuta con los perfiles `demo` y `dev`. Las contraseñas semilla no tienen valores predeterminados en el código. Si falta cualquiera de las tres variables al iniciar uno de esos perfiles, se crean los roles, pero se omite la creación de las cuentas nuevas. Las cuentas que ya existen no se modifican.
+
+En PowerShell, configura cada clave de desarrollo con una entrada oculta antes de iniciar con perfil `demo` o `dev`:
+
+```powershell
+foreach ($variable in @("APP_SEED_ADMIN_PASSWORD", "APP_SEED_RECEPCION_PASSWORD", "APP_SEED_ROOMSERVICE_PASSWORD")) {
+    $secure = Read-Host "Contraseña para $variable" -AsSecureString
+    [Environment]::SetEnvironmentVariable($variable, [System.Net.NetworkCredential]::new("", $secure).Password, "Process")
+}
+```
+
+La API requiere CSRF también para login, registro y cierre de sesión. La interfaz obtiene el token de `GET /api/auth/csrf` y lo envía en el encabezado `X-XSRF-TOKEN`. Las sesiones expiran tras 30 minutos de inactividad; la cookie es `HttpOnly` y `SameSite=Lax`. La cookie solo lleva `Secure` cuando se activa el perfil `prod`, por lo que ese perfil debe servirse por HTTPS.
+
+Tras cinco fallos para la misma combinación de IP e identidad, los siguientes intentos quedan bloqueados 3 minutos. El mensaje indica el tiempo restante; los contadores son locales a cada instancia y se borran al reiniciarla, por lo que un despliegue con varias instancias debe mover este control a almacenamiento compartido antes de depender de él como barrera distribuida.
 
 Son credenciales de desarrollo; cámbialas antes de cualquier despliegue. Las cuentas de cliente se crean desde `/registro`.
 
@@ -215,7 +276,7 @@ Los clientes que ya existían antes de añadir contraseña pueden tener `passwor
 - El cliente debe usar el endpoint `/api/auth/client/me` y el empleado `/api/auth/me` para consultar su sesión.
 - El endpoint de logout API es `POST /api/auth/logout`. La cadena web también reconoce `POST /logout`.
 - El perfil `demo` es solo local: H2 usa memoria y se pierde al apagar la JVM.
-- No hay recuperación de contraseña, verificación de correo, bloqueo por intentos ni límites de solicitudes.
+- No hay recuperación de contraseña; los límites de login y reenvío se mantienen en memoria/locales a cada instancia.
 - El login confirma la autenticación en la misma página; no hay dashboards de cliente/empleado conectados todavía.
 - No despliegues con las credenciales semilla. Configura HTTPS, cookies `Secure`, secretos externos y monitoreo antes de producción.
 
@@ -248,7 +309,7 @@ En Linux/macOS:
 ./mvnw test
 ```
 
-Las pruebas de contexto e integración configuran H2 en memoria. No requieren `DB_PASSWORD` ni escriben en PostgreSQL. La última ejecución completa registrada pasó 48 pruebas.
+Las pruebas de contexto e integración configuran H2 en memoria. No requieren `DB_PASSWORD` ni escriben en PostgreSQL. La última ejecución completa pasó 74 pruebas.
 
 ## Estructura del proyecto
 
