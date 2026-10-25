@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#071514">
+    <title>404 | Hotel Eclipse</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+</head>
+<body class="error-page">
+    <main class="error-content">
+        <div class="brand" aria-label="Eclipse Suites Hotel">
+            <span class="brand__seal" aria-hidden="true"><span>E</span><i></i></span>
+            <span class="brand__name">ECLIPSE</span>
+            <span class="brand__descriptor">SUITES HOTEL</span>
+        </div>
+        <p class="error-code" aria-hidden="true">404</p>
+        <h1>Esta suite no aparece</h1>
+        <p>La dirección que buscas no está disponible. Regresa al inicio y sigamos desde allí.</p>
+        <a class="home-link" th:href="@{/}">Volver al inicio</a>
+    </main>
+</body>
+</html>
