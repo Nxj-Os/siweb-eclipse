@@ -17,10 +17,7 @@ import lombok.ToString;
 
 import java.time.OffsetDateTime;
 
-/**
- * Orden de turnaround/limpieza de una habitación (RF-13 a RF-15).
- * Ciclo de vida de estadoLimpieza: PENDIENTE -> EN_LIMPIEZA -> LIMPIA.
- */
+
 @Entity
 @Table(name = "orden_limpieza")
 @Data
