@@ -17,10 +17,7 @@ import lombok.ToString;
 
 import java.time.OffsetDateTime;
 
-/**
- * Reporte de avería técnica de una habitación (RF-16).
- * gravedad esperada: BAJA, MEDIA, ALTA, CRITICA.
- */
+
 @Entity
 @Table(name = "reporte_averia")
 @Data
