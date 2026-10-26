@@ -20,11 +20,6 @@ import pe.com.eclipsesuites.service.ILimpiezaService;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-/**
- * API del módulo de Operaciones: turnaround de limpieza (RF-13 a RF-15)
- * y averías técnicas (RF-16). Pensada para el flujo móvil de 2 toques (RNF-06):
- * POST /iniciar (toque 1) y POST /finalizar (toque 2).
- */
 @RestController
 @RequestMapping("/api/operaciones")
 public class OperacionesController {
