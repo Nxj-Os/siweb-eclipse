@@ -284,15 +284,15 @@ body.inicio-page {
 }
 
 .suite-card__media--vip {
-    background-image: linear-gradient(180deg, rgba(15, 15, 20, 0.02) 0%, rgba(15, 15, 20, 0.08) 100%), url('../img/suite-vip-deluxe.svg');
+    background-image: linear-gradient(180deg, rgba(15, 15, 20, 0.02) 0%, rgba(15, 15, 20, 0.08) 100%), url('../img/suite-vip-deluxe.webp');
 }
 
 .suite-card__media--romana {
-    background-image: linear-gradient(180deg, rgba(15, 15, 20, 0.02) 0%, rgba(15, 15, 20, 0.08) 100%), url('../img/suite-romana.svg');
+    background-image: linear-gradient(180deg, rgba(15, 15, 20, 0.02) 0%, rgba(15, 15, 20, 0.08) 100%), url('../img/suite-romana.webp');
 }
 
 .suite-card__media--galaxia {
-    background-image: linear-gradient(180deg, rgba(15, 15, 20, 0.02) 0%, rgba(15, 15, 20, 0.08) 100%), url('../img/suite-galaxia.svg');
+    background-image: linear-gradient(180deg, rgba(15, 15, 20, 0.02) 0%, rgba(15, 15, 20, 0.08) 100%), url('../img/suite-galaxia.webp');
 }
 
 .suite-card__badge {

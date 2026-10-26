@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
@@ -21,6 +22,7 @@ import pe.com.eclipsesuites.service.IEmpleadoAuthService;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EmpleadoAuthServiceImpl implements IEmpleadoAuthService {
@@ -55,13 +57,16 @@ public class EmpleadoAuthServiceImpl implements IEmpleadoAuthService {
         UserDetails userDetails = loadUserByUsername(usernameLimpio);
 
         if (!userDetails.isEnabled()) {
-            throw new DisabledException("Credenciales inválidas");
+            log.warn("Intento de login con cuenta inactiva: {}", usernameLimpio);
+            throw new DisabledException("La cuenta del empleado est?? inactiva");
         }
 
         if (!passwordEncoder.matches(password, userDetails.getPassword())) {
-            throw new BadCredentialsException("Credenciales inválidas");
+            log.warn("Login fallido (password incorrecto) para usuario: {}", usernameLimpio);
+            throw new BadCredentialsException("Credenciales inv??lidas");
         }
 
+        log.info("Login exitoso para usuario: {}", usernameLimpio);
         return buscarPorUsername(usernameLimpio);
     }
 
@@ -72,7 +77,7 @@ public class EmpleadoAuthServiceImpl implements IEmpleadoAuthService {
         String usernameLimpio = StringUtils.trim(username);
         return empleadoRepository.findByUsernameLogin(usernameLimpio)
                 .orElseThrow(() -> new UsernameNotFoundException(
-                        "Credenciales inválidas"));
+                        "No existe empleado con username: " + usernameLimpio));
     }
 
     private List<GrantedAuthority> construirAuthorities(Empleado empleado) {
