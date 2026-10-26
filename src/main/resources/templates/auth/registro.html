@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/home.css}">
 </head>
-<body class="login-page">
+<body class="login-page" th:attr="data-dominios-permitidos=${dominiosCorreoPermitidos}">
     <main class="login-layout">
         <a class="login-brand" th:href="@{/}" aria-label="Volver al inicio">
             <span class="brand__seal" aria-hidden="true"><span>E</span><i></i></span>
@@ -21,31 +21,51 @@
         <section class="login-panel" aria-labelledby="register-title">
             <p class="login-eyebrow">ECLIPSE SUITES HOTEL</p>
             <h1 id="register-title">Crea tu cuenta</h1>
-            <p class="login-intro">Completa tus datos para registrarte como cliente.</p>
+            <p class="login-intro">Completa tus datos y accede a tu cuenta al instante.</p>
+
+            <nav class="registration-progress" aria-label="Progreso del registro">
+                <ol>
+                    <li data-registration-step="1" aria-current="step"><span>1</span> Datos personales</li>
+                    <li data-registration-step="2"><span>2</span> Correo y contraseña</li>
+                </ol>
+                <div class="registration-progress__track" role="progressbar"
+                     aria-label="Progreso del registro" aria-valuemin="1" aria-valuemax="2" aria-valuenow="1">
+                    <span id="registration-progress-bar"></span>
+                </div>
+                <p id="registration-step-label" class="registration-step-label" aria-live="polite">
+                    Paso 1 de 2: Datos personales
+                </p>
+            </nav>
 
             <form id="register-form" class="login-form register-form" autocomplete="on">
+                <fieldset class="registration-step" data-step="1" aria-labelledby="step-one-title">
+                    <legend id="step-one-title">Datos personales</legend>
                 <div class="form-field">
                     <label for="nombre">Nombre</label>
-                    <input id="nombre" name="nombre" maxlength="100" autocomplete="given-name" required>
+                    <input id="nombre" name="nombre" maxlength="100" autocomplete="given-name" aria-describedby="nombre-feedback" required>
+                    <small id="nombre-feedback" class="field-feedback" aria-live="polite"></small>
                 </div>
 
                 <div class="form-field">
                     <label for="apellido">Apellido</label>
-                    <input id="apellido" name="apellido" maxlength="100" autocomplete="family-name" required>
+                    <input id="apellido" name="apellido" maxlength="100" autocomplete="family-name" aria-describedby="apellido-feedback" required>
+                    <small id="apellido-feedback" class="field-feedback" aria-live="polite"></small>
                 </div>
 
                 <div class="form-field">
                     <label for="tipoDocumento">Tipo de documento</label>
-                    <select id="tipoDocumento" name="tipoDocumento" required>
+                    <select id="tipoDocumento" name="tipoDocumento" aria-describedby="tipoDocumento-feedback" required>
                         <option value="DNI">DNI</option>
                         <option value="CE">Carné de extranjería</option>
                         <option value="PASAPORTE">Pasaporte</option>
                     </select>
+                    <small id="tipoDocumento-feedback" class="field-feedback" aria-live="polite"></small>
                 </div>
 
                 <div class="form-field">
                     <label for="numDocumento">Número de documento</label>
-                    <input id="numDocumento" name="numDocumento" maxlength="20" required>
+                    <input id="numDocumento" name="numDocumento" maxlength="20" autocomplete="off" aria-describedby="numDocumento-feedback" required>
+                    <small id="numDocumento-feedback" class="field-feedback" aria-live="polite"></small>
                 </div>
 
                 <div class="form-field">
@@ -76,6 +96,13 @@
                     </select>
                 </div>
 
+                <div class="form-field">
+                    <label for="edad">Edad</label>
+                    <input id="edad" name="edad" type="number" min="18" max="120"
+                           aria-describedby="edad-feedback" required>
+                    <small id="edad-feedback" class="field-feedback" aria-live="polite"></small>
+                </div>
+
                 <div class="form-field form-field--full">
                     <label for="telefono">Teléfono</label>
                     <div class="phone-input-group">
@@ -103,37 +130,80 @@
                             <option value="+598">+598 Uruguay</option>
                             <option value="+58">+58 Venezuela</option>
                         </select>
-                        <input id="telefono" name="telefono" type="tel" maxlength="16" placeholder="999 123 456" autocomplete="tel-national" required>
+                        <input id="telefono" name="telefono" type="tel" maxlength="16" placeholder="999 123 456" autocomplete="tel-national" aria-describedby="telefono-feedback" required>
                     </div>
+                    <small id="telefono-feedback" class="field-feedback" aria-live="polite"></small>
                 </div>
 
+                <div class="form-field form-field--full privacy-consent">
+                    <label for="aceptaPoliticaPrivacidad">
+                        <input id="aceptaPoliticaPrivacidad" name="aceptaPoliticaPrivacidad"
+                               type="checkbox" value="true" required
+                               aria-describedby="aceptaPoliticaPrivacidad-feedback">
+                        Acepto el tratamiento de mis datos personales para gestionar mi cuenta y las reservas,
+                        conforme a la Ley 29733.
+                    </label>
+                    <details id="privacy-notice">
+                        <summary>¿Qué datos se recopilan y para qué?</summary>
+                        <p>Usamos los datos de identidad y contacto para crear y proteger tu cuenta
+                           y gestionar servicios de hospedaje. No solicitamos
+                           datos adicionales en este formulario para estos fines.</p>
+                    </details>
+                    <small id="aceptaPoliticaPrivacidad-feedback" class="field-feedback" aria-live="polite"></small>
+                </div>
+                </fieldset>
+
+                <fieldset class="registration-step" data-step="2" aria-labelledby="step-two-title" hidden>
+                    <legend id="step-two-title">Correo y contraseña</legend>
                 <div class="form-field form-field--full">
                     <label for="correoElectronico">Correo electrónico</label>
-                    <input id="correoElectronico" name="correoElectronico" type="email" maxlength="100" autocomplete="email" required>
-                </div>
-
-                <div class="form-field">
-                    <label for="edad">Edad</label>
-                    <input id="edad" name="edad" type="number" min="1" max="120" required>
-                </div>
-
-                <div class="form-field">
-                    <label for="password">Contraseña (mínimo 8 caracteres)</label>
-                    <input id="password" name="password" type="password" minlength="8" maxlength="72" autocomplete="new-password" required>
+                    <input id="correoElectronico" name="correoElectronico" type="email" maxlength="100" autocomplete="email" aria-describedby="correoElectronico-feedback" required>
+                    <small id="correoElectronico-feedback" class="field-feedback" aria-live="polite"></small>
                 </div>
 
                 <div class="form-field form-field--full">
+                    <label for="confirmCorreoElectronico">Repite tu correo electrónico</label>
+                    <input id="confirmCorreoElectronico" name="confirmCorreoElectronico" type="email" maxlength="100" autocomplete="email" aria-describedby="confirmCorreoElectronico-feedback" required>
+                    <small id="confirmCorreoElectronico-feedback" class="field-feedback" aria-live="polite"></small>
+                </div>
+
+                <div class="form-field">
+                    <label for="password">Contraseña (de 8 a 20 caracteres)</label>
+                    <div class="password-input-wrap">
+                        <input id="password" name="password" type="password" minlength="8" maxlength="20" autocomplete="new-password" aria-describedby="password-feedback password-meter-label" required>
+                        <button class="password-toggle" type="button" data-toggle-password="password" aria-label="Mostrar contraseña"><span class="visually-hidden">Mostrar contraseña</span></button>
+                    </div>
+                    <div class="password-meter" role="group" aria-labelledby="password-meter-label">
+                        <span id="password-meter-label">Fortaleza: <strong id="password-strength-label">Sin evaluar</strong></span>
+                        <span class="password-meter__track"><span id="password-strength-bar" class="password-meter__bar" data-strength="empty"></span></span>
+                    </div>
+                    <small id="password-feedback" class="field-feedback" aria-live="polite"></small>
+                </div>
+
+                <div class="form-field">
                     <label for="confirmPassword">Repite la contraseña</label>
-                    <input id="confirmPassword" name="confirmPassword" type="password" minlength="8" maxlength="72" autocomplete="new-password" required>
+                    <div class="password-input-wrap">
+                        <input id="confirmPassword" name="confirmPassword" type="password" minlength="8" maxlength="20" autocomplete="new-password" aria-describedby="confirmPassword-feedback" required>
+                        <button class="password-toggle" type="button" data-toggle-password="confirmPassword" aria-label="Mostrar confirmación de contraseña"><span class="visually-hidden">Mostrar confirmación de contraseña</span></button>
+                    </div>
+                    <small id="confirmPassword-feedback" class="field-feedback" aria-live="polite"></small>
                 </div>
 
                 <p id="register-message" class="login-message form-field--full" role="status" aria-live="polite"></p>
-                <button id="register-submit" class="role-link login-submit form-field--full" type="submit">Crear cuenta</button>
+                </fieldset>
+                <div class="registration-actions form-field--full">
+                    <button id="register-back" class="role-link registration-secondary" type="button" hidden>
+                        Anterior
+                    </button>
+                    <button id="register-next" class="role-link login-submit" type="button">Continuar</button>
+                    <button id="register-submit" class="role-link login-submit" type="submit" hidden
+                            aria-busy="false">Crear cuenta</button>
+                </div>
             </form>
 
             <nav class="login-links" aria-label="Enlaces de cuenta">
-                <a class="login-back" th:href="@{/login(tipo='cliente')}">Ya tengo una cuenta</a>
-                <a class="login-back" th:href="@{/}">Volver al inicio</a>
+                <a class="login-links__account" th:href="@{/login(tipo='cliente')}">¿Ya tienes cuenta? <strong>Inicia sesión</strong></a>
+                <a class="login-links__home" th:href="@{/}">Volver al inicio</a>
             </nav>
         </section>
     </main>

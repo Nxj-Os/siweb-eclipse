@@ -1,5 +1,6 @@
 package pe.com.eclipsesuites.dto.request;
 
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -41,8 +42,7 @@ public class ClienteRegistroRequestDTO {
     private String apellido;
 
     @NotBlank(message = "El teléfono es obligatorio")
-    @Size(min = 7, max = 25, message = "El teléfono debe tener entre 7 y 25 caracteres")
-    @Pattern(regexp = "^[0-9+\\s()-]+$", message = "El teléfono solo debe contener números, +, espacios, paréntesis o guiones")
+    @Pattern(regexp = "^\\+[1-9][0-9]{7,14}$", message = "Usa el formato internacional E.164, por ejemplo +51999123456")
     private String telefono;
 
     @NotNull(message = "La edad es obligatoria")
@@ -51,6 +51,9 @@ public class ClienteRegistroRequestDTO {
     private Integer edad;
 
     @NotBlank(message = "La contraseña es obligatoria")
-    @Size(min = 8, max = 72, message = "La contraseña debe tener entre 8 y 72 caracteres")
+    @Size(min = 8, max = 20, message = "La contraseña debe tener entre 8 y 20 caracteres")
     private String password;
+
+    @AssertTrue(message = "Debes aceptar el tratamiento de datos personales")
+    private boolean aceptaPoliticaPrivacidad;
 }

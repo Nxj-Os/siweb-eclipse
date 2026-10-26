@@ -7,9 +7,9 @@ import org.springframework.core.annotation.Order;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
@@ -25,7 +25,7 @@ import java.time.OffsetDateTime;
 public class SecurityConfig {
 
     /**
-     * Cadena REST para /api/**: responde JSON (401/403) y no exige token CSRF.
+     * Cadena REST para /api/**: responde JSON (401/403) y mantiene CSRF activo.
      */
     @Bean
     @Order(1)
@@ -34,10 +34,14 @@ public class SecurityConfig {
             throws Exception {
         http
                 .securityMatcher("/api/**")
-                .csrf(AbstractHttpConfigurer::disable)
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/login", "/api/auth/client/login",
-                                "/api/auth/client/register").permitAll()
+                                "/api/auth/client/register",
+                                "/api/auth/client/disponibilidad",
+                                "/api/auth/csrf").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(apiAuthenticationEntryPoint())
@@ -62,7 +66,7 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/index.html", "/login", "/registro", "/error", "/css/**", "/js/**",
-                                "/images/**", "/webjars/**", "/favicon.ico").permitAll()
+                                "/images/**", "/img/**", "/webjars/**", "/favicon.ico").permitAll()
                         .requestMatchers("/cliente/**").hasRole("CLIENTE")
                         .requestMatchers("/admin/**", "/reportes/**").hasRole("ADMIN")
                         .requestMatchers("/recepcion/**").hasAnyRole("RECEPCION", "ADMIN")
@@ -84,6 +88,28 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(10);
+    }
+
+    private static final class SpaCsrfTokenRequestHandler
+            implements org.springframework.security.web.csrf.CsrfTokenRequestHandler {
+
+        private final org.springframework.security.web.csrf.CsrfTokenRequestHandler plainHandler =
+                new org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler();
+
+        @Override
+        public void handle(jakarta.servlet.http.HttpServletRequest request,
+                           jakarta.servlet.http.HttpServletResponse response,
+                           java.util.function.Supplier<org.springframework.security.web.csrf.CsrfToken>
+                                   deferredCsrfToken) {
+            plainHandler.handle(request, response, deferredCsrfToken);
+            deferredCsrfToken.get().getToken();
+        }
+
+        @Override
+        public String resolveCsrfTokenValue(jakarta.servlet.http.HttpServletRequest request,
+                                             org.springframework.security.web.csrf.CsrfToken csrfToken) {
+            return plainHandler.resolveCsrfTokenValue(request, csrfToken);
+        }
     }
 
     private AuthenticationEntryPoint apiAuthenticationEntryPoint() {
