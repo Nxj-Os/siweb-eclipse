@@ -21,17 +21,14 @@ import java.util.NoSuchElementException;
 @Service
 public class LimpiezaServiceImpl implements ILimpiezaService {
 
-    // Estados propuestos para habitacion.estado_rack (a validar con el equipo / DBA).
     private static final String ESTADO_SUCIA = "SUCIA";
     private static final String ESTADO_EN_LIMPIEZA = "EN_LIMPIEZA";
     private static final String ESTADO_DISPONIBLE = "DISPONIBLE";
     private static final String ESTADO_MANTENIMIENTO = "MANTENIMIENTO";
 
-    // Estados de orden_limpieza.estado_limpieza.
     private static final String ORDEN_EN_LIMPIEZA = "EN_LIMPIEZA";
     private static final String ORDEN_LIMPIA = "LIMPIA";
 
-    // Gravedades de reporte_averia que bloquean la habitación automáticamente.
     private static final List<String> GRAVEDADES_BLOQUEANTES = List.of("ALTA", "CRITICA");
 
     private final HabitacionRepository habitacionRepository;
@@ -99,7 +96,6 @@ public class LimpiezaServiceImpl implements ILimpiezaService {
         orden.setDuracionTurnaroundMin((short) Math.max(minutos, 0));
         orden = ordenLimpiezaRepository.save(orden);
 
-        // RF-15: al concluir la limpieza, la habitación vuelve a estar disponible.
         Habitacion habitacion = orden.getHabitacion();
         habitacion.setEstadoRack(ESTADO_DISPONIBLE);
         habitacionRepository.save(habitacion);
@@ -128,7 +124,6 @@ public class LimpiezaServiceImpl implements ILimpiezaService {
                 .build();
         averia = reporteAveriaRepository.save(averia);
 
-        // RF-16: asigna la suite a mantenimiento cuando la gravedad lo amerita.
         if (bloquea) {
             habitacion.setEstadoRack(ESTADO_MANTENIMIENTO);
             habitacionRepository.save(habitacion);
