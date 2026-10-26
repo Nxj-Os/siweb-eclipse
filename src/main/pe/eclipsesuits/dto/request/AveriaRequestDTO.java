@@ -8,10 +8,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Datos que el personal (recepción o limpieza) envía al reportar
- * una avería técnica de una habitación (RF-16).
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
