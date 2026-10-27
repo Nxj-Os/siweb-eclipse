@@ -207,6 +207,30 @@ if (registerForm) {
         "admin123", "changeme", "iloveyou", "letmein", "password", "password1",
         "qwerty", "qwerty123", "welcome", "welcome1", "zaq12wsx"
     ]);
+    const reglasTelefono = {
+        AR: { longitudes: [10, 11, 12, 13] },
+        BO: { longitudes: [8] },
+        BR: { longitudes: [10, 11] },
+        CA: { longitudes: [10] },
+        CL: { longitudes: [9] },
+        CO: { longitudes: [10] },
+        CR: { longitudes: [8] },
+        CU: { longitudes: [8] },
+        DO: { longitudes: [10] },
+        EC: { longitudes: [8, 9] },
+        ES: { longitudes: [9] },
+        GT: { longitudes: [8] },
+        HN: { longitudes: [8] },
+        MX: { longitudes: [10] },
+        NI: { longitudes: [8] },
+        PA: { longitudes: [8] },
+        PE: { longitudes: [9], iniciaCon: "9" },
+        PY: { longitudes: [9] },
+        SV: { longitudes: [8] },
+        US: { longitudes: [10] },
+        UY: { longitudes: [8] },
+        VE: { longitudes: [10] }
+    };
     const pendingChecks = new Map();
     const availabilitySequence = new Map();
     const availabilityState = new Map();
@@ -221,6 +245,7 @@ if (registerForm) {
     const nextButton = document.querySelector("#register-next");
     const backButton = document.querySelector("#register-back");
     let currentStep = 1;
+    let continueAfterAvailability = false;
 
     function fieldFeedback(input) {
         return document.getElementById(`${input.id}-feedback`);
@@ -236,10 +261,130 @@ if (registerForm) {
         feedback.dataset.state = state;
     }
 
+    function phoneRegion() {
+        return registerForm.querySelector("#telefonoPrefijo").value;
+    }
+
+    function nombrePaisSeleccionado() {
+        const option = registerForm.querySelector("#telefonoPrefijo").selectedOptions[0];
+        return option.textContent.replace(/^\+\d+\s*/, "").trim();
+    }
+
+    function listarDigitos(longitudes) {
+        if (longitudes.length === 1) return String(longitudes[0]);
+        if (longitudes.length === 2) return `${longitudes[0]} o ${longitudes[1]}`;
+        return `${longitudes.slice(0, -1).join(", ")} o ${longitudes[longitudes.length - 1]}`;
+    }
+
+    function analizarTelefono() {
+        const input = registerForm.elements.telefono;
+        const option = registerForm.querySelector("#telefonoPrefijo").selectedOptions[0];
+        const region = option.value;
+        const prefijo = option.dataset.prefijo;
+        const codigo = prefijo.replace(/^\+/, "");
+        const regla = reglasTelefono[region];
+        const empezoConMas = input.value.trim().startsWith("+");
+        let nacional = input.value.replace(/\D/g, "");
+
+        if (empezoConMas) {
+            return {
+                region,
+                prefijo,
+                regla,
+                empezoConMas,
+                codigoCoincide: nacional.startsWith(codigo),
+                e164: `+${nacional}`,
+                nacional: nacional.startsWith(codigo) ? nacional.slice(codigo.length) : nacional
+            };
+        }
+
+        if (regla && nacional.startsWith(codigo) && nacional.length > codigo.length) {
+            const resto = nacional.slice(codigo.length);
+            if (regla.longitudes.includes(resto.length)) {
+                nacional = resto;
+            }
+        }
+        if (regla && nacional.startsWith("0") && regla.longitudes.includes(nacional.length - 1)) {
+            nacional = nacional.slice(1);
+        }
+
+        return {
+            region,
+            prefijo,
+            regla,
+            empezoConMas,
+            codigoCoincide: true,
+            e164: `${prefijo}${nacional}`,
+            nacional
+        };
+    }
+
     function normalizedPhone() {
-        const prefix = registerForm.querySelector("#telefonoPrefijo").value;
-        const localNumber = registerForm.querySelector("#telefono").value.replace(/\D/g, "");
-        return `${prefix}${localNumber}`;
+        return analizarTelefono().e164;
+    }
+
+    function evaluarTelefono() {
+        const analisis = analizarTelefono();
+        const regla = analisis.regla;
+        const digitos = analisis.nacional;
+
+        if (!digitos) {
+            return { ...analisis, valido: false, incompleto: true,
+                motivo: "El teléfono es obligatorio." };
+        }
+
+        if (!regla) {
+            const valido = /^\+[1-9]\d{7,14}$/.test(analisis.e164);
+            return { ...analisis, valido, incompleto: false,
+                motivo: "Ingresa un teléfono válido para el país seleccionado." };
+        }
+
+        const nombre = nombrePaisSeleccionado();
+        const textoLongitud = `debe tener ${listarDigitos(regla.longitudes)} dígitos`;
+
+        if (analisis.empezoConMas && !analisis.codigoCoincide) {
+            return { ...analisis, valido: false, incompleto: false,
+                motivo: `El número no corresponde al prefijo de ${nombre}.` };
+        }
+
+        const minima = Math.min(...regla.longitudes);
+        if (digitos.length < minima) {
+            return { ...analisis, valido: false, incompleto: true,
+                motivo: `El teléfono de ${nombre} ${textoLongitud}.` };
+        }
+
+        if (!regla.longitudes.includes(digitos.length)) {
+            return { ...analisis, valido: false, incompleto: false,
+                motivo: `El teléfono de ${nombre} ${textoLongitud}.` };
+        }
+
+        if (regla.iniciaCon && !digitos.startsWith(regla.iniciaCon)) {
+            return { ...analisis, valido: false, incompleto: false,
+                motivo: `El teléfono de ${nombre} ${textoLongitud} y debe empezar con ${regla.iniciaCon}.` };
+        }
+
+        return { ...analisis, valido: true, incompleto: false, motivo: "" };
+    }
+
+    function validatePhone(mostrarError) {
+        const input = registerForm.elements.telefono;
+        const resultado = evaluarTelefono();
+        if (resultado.valido) {
+            setFieldState(input, "", "");
+            return true;
+        }
+        if (resultado.incompleto && mostrarError !== true) {
+            setFieldState(input, "", "");
+            return false;
+        }
+        setFieldState(input, "error", resultado.motivo);
+        return false;
+    }
+
+    function aplicarMaximoTelefono() {
+        const regla = reglasTelefono[phoneRegion()];
+        const input = registerForm.elements.telefono;
+        input.maxLength = regla ? Math.max(...regla.longitudes) + 8 : 16;
     }
 
     function validateEmail() {
@@ -297,32 +442,28 @@ if (registerForm) {
         return true;
     }
 
-    function validatePhone() {
-        const input = registerForm.elements.telefono;
-        const value = normalizedPhone();
-        if (!/^\+[1-9]\d{7,14}$/.test(value)) {
-            setFieldState(input, "error", "Ingresa un teléfono válido con el prefijo internacional.");
-            return false;
-        }
-        setFieldState(input, "", "");
-        return true;
-    }
-
     function validateAge() {
         const input = registerForm.elements.edad;
         const age = Number(input.value);
         const valid = input.value !== "" && Number.isInteger(age) && age >= 18 && age <= 120;
         setFieldState(input, valid ? "success" : "error",
-            valid ? "Edad válida." : "Debes tener entre 18 y 120 años.");
+            valid ? "Edad válida." : "Debes ser mayor de 18 años.");
         return valid;
     }
 
     function validatePrivacyConsent() {
-        const input = registerForm.elements.aceptaPoliticaPrivacidad;
-        const valid = input.checked;
-        setFieldState(input, valid ? "success" : "error",
-            valid ? "Aceptación registrada al crear la cuenta." : "Debes aceptar el tratamiento de datos personales.");
-        return valid;
+        const aceptaTerminos = registerForm.elements.aceptaTerminos;
+        const aceptaPrivacidad = registerForm.elements.aceptaPoliticaPrivacidad;
+        const terminosOk = aceptaTerminos.checked;
+        const privacidadOk = aceptaPrivacidad.checked;
+
+        setFieldState(aceptaTerminos, terminosOk ? "success" : "error",
+            terminosOk ? "Aceptación de Términos registrada."
+                : "Debes aceptar los Términos y Condiciones.");
+        setFieldState(aceptaPrivacidad, privacidadOk ? "success" : "error",
+            privacidadOk ? "Aceptación de la Política registrada."
+                : "Debes aceptar la Política de Datos Personales.");
+        return terminosOk && privacidadOk;
     }
 
     function normalizePasswordText(value) {
@@ -415,7 +556,7 @@ if (registerForm) {
         return true;
     }
 
-    function validateAvailability(input, field, value, type) {
+    function validateAvailability(input, field, value, type, region) {
         clearTimeout(pendingChecks.get(field));
         if (!value) {
             availabilityState.set(field, "invalid");
@@ -425,10 +566,13 @@ if (registerForm) {
         const sequence = (availabilitySequence.get(field) || 0) + 1;
         availabilitySequence.set(field, sequence);
         availabilityState.set(field, "pending");
+        setFieldState(input, "pending",
+            field === "telefono" ? "Verificando el teléfono..." : "");
         refreshCreateButton();
         pendingChecks.set(field, setTimeout(async () => {
             const params = new URLSearchParams({ campo: field, valor: value });
             if (type) params.set("tipoDocumento", type);
+            if (region) params.set("paisTelefono", region);
             try {
                 const response = await fetch(`/api/auth/client/disponibilidad?${params}`, {
                     method: "GET",
@@ -444,9 +588,31 @@ if (registerForm) {
                 availabilityState.set(field, "error");
                 setFieldState(input, "error", "No se pudo comprobar la disponibilidad. Inténtalo de nuevo.");
             } finally {
-                if (availabilitySequence.get(field) === sequence) refreshCreateButton();
+                if (availabilitySequence.get(field) === sequence) {
+                    refreshCreateButton();
+                    avanzarSiDisponibilidadConfirmada();
+                }
             }
         }, 500));
+    }
+
+    function avanzarSiDisponibilidadConfirmada() {
+        if (!continueAfterAvailability
+                || ["documento", "telefono"].some((field) => availabilityState.get(field) === "pending")) {
+            return;
+        }
+
+        continueAfterAvailability = false;
+        if (["documento", "telefono"].every(
+            (field) => availabilityState.get(field) === "available")
+                && validarPasoPersonal()) {
+            registerMessage.textContent = "";
+            cambiarPaso(2);
+            return;
+        }
+
+        registerMessage.textContent = "No se pudo validar la disponibilidad. Revisa los campos marcados.";
+        registerMessage.dataset.state = "error";
     }
 
     function cambiarPaso(step) {
@@ -487,7 +653,7 @@ if (registerForm) {
         const nombreValido = validateName(registerForm.elements.nombre, "El nombre");
         const apellidoValido = validateName(registerForm.elements.apellido, "El apellido");
         const documentoValido = validateDocument();
-        const telefonoValido = validatePhone();
+        const telefonoValido = validatePhone(true);
         const edadValida = validateAge();
         const privacidadValida = validatePrivacyConsent();
         return nombreValido && apellidoValido && documentoValido && telefonoValido
@@ -510,9 +676,10 @@ if (registerForm) {
             && (fields.tipoDocumento.value === "DNI"
                 ? /^\d{8}$/.test(fields.numDocumento.value.trim())
                 : /^[A-Z0-9]{6,20}$/i.test(fields.numDocumento.value.trim()))
-            && /^\+[1-9]\d{7,14}$/.test(normalizedPhone())
+            && evaluarTelefono().valido
             && Number.isInteger(Number(fields.edad.value))
             && Number(fields.edad.value) >= 18 && Number(fields.edad.value) <= 120
+            && fields.aceptaTerminos.checked
             && fields.aceptaPoliticaPrivacidad.checked
             && availabilityState.get("documento") === "available"
             && availabilityState.get("telefono") === "available";
@@ -534,6 +701,7 @@ if (registerForm) {
     }
 
     function actualizarEstadoDisponible(field) {
+        continueAfterAvailability = false;
         availabilitySequence.set(field, (availabilitySequence.get(field) || 0) + 1);
         availabilityState.delete(field);
         refreshCreateButton();
@@ -579,17 +747,26 @@ if (registerForm) {
     registerForm.elements.telefono.addEventListener("input", () => {
         clearTimeout(pendingChecks.get("telefono"));
         actualizarEstadoDisponible("telefono");
-        validatePhone();
+        if (validatePhone()) {
+            validateAvailability(registerForm.elements.telefono, "telefono", normalizedPhone(),
+                null, phoneRegion());
+        }
     });
     registerForm.elements.telefono.addEventListener("blur", () => {
-        if (validatePhone()) {
-            validateAvailability(registerForm.elements.telefono, "telefono", normalizedPhone());
+        if (validatePhone(true) && availabilityState.get("telefono") !== "available"
+                && availabilityState.get("telefono") !== "pending") {
+            validateAvailability(registerForm.elements.telefono, "telefono", normalizedPhone(),
+                null, phoneRegion());
         }
     });
     registerForm.querySelector("#telefonoPrefijo").addEventListener("change", () => {
+        aplicarMaximoTelefono();
         clearTimeout(pendingChecks.get("telefono"));
         actualizarEstadoDisponible("telefono");
-        validatePhone();
+        if (validatePhone(true)) {
+            validateAvailability(registerForm.elements.telefono, "telefono", normalizedPhone(),
+                null, phoneRegion());
+        }
     });
     registerForm.elements.nombre.addEventListener("input", () => {
         validateName(registerForm.elements.nombre, "El nombre");
@@ -597,6 +774,7 @@ if (registerForm) {
     });
     registerForm.elements.apellido.addEventListener("input", () => validateName(registerForm.elements.apellido, "El apellido"));
     registerForm.elements.edad.addEventListener("input", validateAge);
+    registerForm.elements.aceptaTerminos.addEventListener("change", validatePrivacyConsent);
     registerForm.elements.aceptaPoliticaPrivacidad.addEventListener("change", validatePrivacyConsent);
     registerForm.elements.password.addEventListener("input", () => {
         validatePassword();
@@ -631,13 +809,15 @@ if (registerForm) {
         const datosDisponibles = ["documento", "telefono"].every(
             (field) => availabilityState.get(field) === "available");
         if (!datosDisponibles) {
+            continueAfterAvailability = true;
             if (availabilityState.get("documento") !== "available") {
                 validateAvailability(registerForm.elements.numDocumento, "documento",
                     registerForm.elements.numDocumento.value.trim().toUpperCase(),
                     registerForm.elements.tipoDocumento.value);
             }
             if (availabilityState.get("telefono") !== "available") {
-                validateAvailability(registerForm.elements.telefono, "telefono", normalizedPhone());
+                validateAvailability(registerForm.elements.telefono, "telefono", normalizedPhone(),
+                    null, phoneRegion());
             }
             registerMessage.textContent = "Comprobando que el documento y teléfono estén disponibles. Continúa cuando termine la consulta.";
             registerMessage.dataset.state = "pending";
@@ -673,8 +853,10 @@ if (registerForm) {
         registerSubmit.setAttribute("aria-busy", "true");
         backButton.disabled = true;
         formData.set("telefono", normalizedPhone());
+        formData.set("paisTelefono", phoneRegion());
         formData.delete("confirmPassword");
         formData.delete("confirmCorreoElectronico");
+        formData.delete("aceptaTerminos");
         formData.set("nombre", String(formData.get("nombre")).trim());
         formData.set("apellido", String(formData.get("apellido")).trim());
         formData.set("numDocumento", String(formData.get("numDocumento")).trim().toUpperCase());
@@ -705,5 +887,65 @@ if (registerForm) {
         }
     });
 
+    const termsModal = document.querySelector("#terms-modal");
+    const openTermsButton = document.querySelector("#open-terms");
+    let termsTrigger = null;
+
+    function elementosEnfocablesDelModal() {
+        if (!termsModal) return [];
+        return [...termsModal.querySelectorAll(
+            "button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])"
+        )].filter((elemento) => !elemento.disabled && elemento.offsetParent !== null);
+    }
+
+    function abrirModalTerminos() {
+        if (!termsModal) return;
+        termsTrigger = document.activeElement;
+        termsModal.hidden = false;
+        document.body.classList.add("modal-open");
+        termsModal.querySelector(".terms-modal__body")?.scrollTo({ top: 0 });
+        termsModal.querySelector(".terms-modal__close")?.focus();
+    }
+
+    function cerrarModalTerminos() {
+        if (!termsModal || termsModal.hidden) return;
+        termsModal.hidden = true;
+        document.body.classList.remove("modal-open");
+        if (termsTrigger && typeof termsTrigger.focus === "function") {
+            termsTrigger.focus();
+        }
+        termsTrigger = null;
+    }
+
+    openTermsButton?.addEventListener("click", abrirModalTerminos);
+    termsModal?.querySelectorAll("[data-close-terms]").forEach((elemento) => {
+        elemento.addEventListener("click", cerrarModalTerminos);
+    });
+    document.addEventListener("keydown", (event) => {
+        if (!termsModal || termsModal.hidden) return;
+        if (event.key === "Escape") {
+            event.preventDefault();
+            cerrarModalTerminos();
+            return;
+        }
+        if (event.key === "Tab") {
+            const foco = elementosEnfocablesDelModal();
+            if (!foco.length) return;
+            const primero = foco[0];
+            const ultimo = foco[foco.length - 1];
+            if (event.shiftKey && document.activeElement === primero) {
+                event.preventDefault();
+                ultimo.focus();
+            } else if (!event.shiftKey && document.activeElement === ultimo) {
+                event.preventDefault();
+                primero.focus();
+            } else if (!termsModal.contains(document.activeElement)) {
+                event.preventDefault();
+                primero.focus();
+            }
+        }
+    });
+
+    aplicarMaximoTelefono();
     refreshCreateButton();
 }

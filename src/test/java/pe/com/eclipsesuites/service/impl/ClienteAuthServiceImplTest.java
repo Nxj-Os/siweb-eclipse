@@ -94,8 +94,10 @@ class ClienteAuthServiceImplTest {
         request.setNombre("Ana");
         request.setApellido("Rojas");
         request.setTelefono("999888777");
+        request.setPaisTelefono("PE");
         request.setEdad(28);
         request.setPassword("Cliente@123");
+        request.setAceptaPoliticaPrivacidad(true);
         return request;
     }
 
