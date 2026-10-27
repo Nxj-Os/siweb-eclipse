@@ -34,3 +34,6 @@ build/
 
 ### Logs de la aplicacion ###
 logs/
+
+### Documento formal (no versionar) ###
+formal.html

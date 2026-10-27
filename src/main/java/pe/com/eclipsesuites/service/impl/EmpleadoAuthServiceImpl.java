@@ -58,12 +58,12 @@ public class EmpleadoAuthServiceImpl implements IEmpleadoAuthService {
 
         if (!userDetails.isEnabled()) {
             log.warn("Intento de login con cuenta inactiva: {}", usernameLimpio);
-            throw new DisabledException("La cuenta del empleado está inactiva");
+            throw new DisabledException("La cuenta del empleado est?? inactiva");
         }
 
         if (!passwordEncoder.matches(password, userDetails.getPassword())) {
             log.warn("Login fallido (password incorrecto) para usuario: {}", usernameLimpio);
-            throw new BadCredentialsException("Credenciales inválidas");
+            throw new BadCredentialsException("Credenciales inv??lidas");
         }
 
         log.info("Login exitoso para usuario: {}", usernameLimpio);

@@ -62,7 +62,7 @@ class ClienteAuthServiceImplTest {
         IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
                 () -> servicio.registrar(registroValido()));
 
-        assertEquals("Ya existe una cuenta con ese correo electrónico", error.getMessage());
+        assertEquals("Ya existe una cuenta con ese correo electr├│nico", error.getMessage());
     }
 
     @Test
@@ -94,8 +94,10 @@ class ClienteAuthServiceImplTest {
         request.setNombre("Ana");
         request.setApellido("Rojas");
         request.setTelefono("999888777");
+        request.setPaisTelefono("PE");
         request.setEdad(28);
         request.setPassword("Cliente@123");
+        request.setAceptaPoliticaPrivacidad(true);
         return request;
     }
 

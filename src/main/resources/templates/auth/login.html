@@ -37,16 +37,22 @@
 					   maxlength="100" required>
 
 				<label for="password">Contraseña</label>
-				<input id="password" name="password" type="password" maxlength="100" autocomplete="current-password" required>
+				<div class="password-input-wrap">
+					<input id="password" name="password" type="password" maxlength="100" autocomplete="current-password" aria-describedby="login-message" required>
+					<button class="password-toggle" type="button" data-toggle-password="password" aria-label="Mostrar contraseña"><span class="visually-hidden">Mostrar contraseña</span></button>
+				</div>
 
 				<p id="login-message" class="login-message" role="status" aria-live="polite"></p>
-				<button id="login-submit" class="role-link login-submit" type="submit">Ingresar</button>
+				<button id="login-submit" class="role-link login-submit" type="submit" aria-busy="false">
+					<span class="login-submit__label">Ingresar</span>
+					<span class="login-submit__loading" aria-hidden="true">Verificando…</span>
+				</button>
 			</form>
 
 			<nav class="login-links" aria-label="Enlaces de cuenta">
-				<a class="login-back" th:if="${tipoLogin == 'cliente'}"
+				<a class="login-links__account" th:if="${tipoLogin == 'cliente'}"
 					th:href="@{/registro}">Crear una cuenta</a>
-				<a class="login-back" th:href="@{/}">Volver al inicio</a>
+				<a class="login-links__home" th:href="@{/}">Volver al inicio</a>
 			</nav>
 		</section>
 	</main>
