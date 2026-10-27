@@ -14,6 +14,7 @@ import pe.com.eclipsesuites.dto.request.ClienteRegistroRequestDTO;
 import pe.com.eclipsesuites.entity.Cliente;
 import pe.com.eclipsesuites.service.IClienteAuthService;
 
+import java.time.Instant;
 import java.util.Locale;
 
 @Service
@@ -29,6 +30,9 @@ public class ClienteAuthServiceImpl implements IClienteAuthService {
         String correo = normalizarCorreo(request.getCorreoElectronico());
         String documento = StringUtils.trim(request.getNumDocumento());
 
+        if (!request.isAceptaPoliticaPrivacidad()) {
+            throw new IllegalArgumentException("Debes aceptar los Términos y la Política de Datos Personales");
+        }
         if (clienteRepository.existsByCorreoElectronicoIgnoreCase(correo)) {
             throw new IllegalArgumentException("Ya existe una cuenta con ese correo electr├│nico");
         }
@@ -46,6 +50,8 @@ public class ClienteAuthServiceImpl implements IClienteAuthService {
                 .telefono(StringUtils.trim(request.getTelefono()))
                 .edad(request.getEdad())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
+                .aceptoPoliticaPrivacidad(true)
+                .fechaAceptacionPrivacidad(Instant.now())
                 .build();
 
         return clienteRepository.save(cliente);

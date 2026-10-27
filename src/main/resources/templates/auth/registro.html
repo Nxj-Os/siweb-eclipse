@@ -98,7 +98,7 @@
 
                 <div class="form-field">
                     <label for="edad">Edad</label>
-                    <input id="edad" name="edad" type="number" min="18" max="120"
+                    <input id="edad" name="edad" type="number" min="18"
                            aria-describedby="edad-feedback" required>
                     <small id="edad-feedback" class="field-feedback" aria-live="polite"></small>
                 </div>
@@ -108,27 +108,28 @@
                     <div class="phone-input-group">
                         <label class="visually-hidden" for="telefonoPrefijo">Prefijo telefónico</label>
                         <select id="telefonoPrefijo" aria-label="Prefijo telefónico" required>
-                            <option value="+51" selected>+51 Perú</option>
-                            <option value="+54">+54 Argentina</option>
-                            <option value="+591">+591 Bolivia</option>
-                            <option value="+55">+55 Brasil</option>
-                            <option value="+1">+1 Canadá / EE. UU.</option>
-                            <option value="+56">+56 Chile</option>
-                            <option value="+57">+57 Colombia</option>
-                            <option value="+506">+506 Costa Rica</option>
-                            <option value="+53">+53 Cuba</option>
-                            <option value="+1">+1 República Dominicana</option>
-                            <option value="+593">+593 Ecuador</option>
-                            <option value="+503">+503 El Salvador</option>
-                            <option value="+34">+34 España</option>
-                            <option value="+502">+502 Guatemala</option>
-                            <option value="+504">+504 Honduras</option>
-                            <option value="+52">+52 México</option>
-                            <option value="+505">+505 Nicaragua</option>
-                            <option value="+507">+507 Panamá</option>
-                            <option value="+595">+595 Paraguay</option>
-                            <option value="+598">+598 Uruguay</option>
-                            <option value="+58">+58 Venezuela</option>
+                            <option value="PE" data-prefijo="+51" selected>+51 Perú</option>
+                            <option value="AR" data-prefijo="+54">+54 Argentina</option>
+                            <option value="BO" data-prefijo="+591">+591 Bolivia</option>
+                            <option value="BR" data-prefijo="+55">+55 Brasil</option>
+                            <option value="CA" data-prefijo="+1">+1 Canadá</option>
+                            <option value="US" data-prefijo="+1">+1 Estados Unidos</option>
+                            <option value="CL" data-prefijo="+56">+56 Chile</option>
+                            <option value="CO" data-prefijo="+57">+57 Colombia</option>
+                            <option value="CR" data-prefijo="+506">+506 Costa Rica</option>
+                            <option value="CU" data-prefijo="+53">+53 Cuba</option>
+                            <option value="DO" data-prefijo="+1">+1 República Dominicana</option>
+                            <option value="EC" data-prefijo="+593">+593 Ecuador</option>
+                            <option value="SV" data-prefijo="+503">+503 El Salvador</option>
+                            <option value="ES" data-prefijo="+34">+34 España</option>
+                            <option value="GT" data-prefijo="+502">+502 Guatemala</option>
+                            <option value="HN" data-prefijo="+504">+504 Honduras</option>
+                            <option value="MX" data-prefijo="+52">+52 México</option>
+                            <option value="NI" data-prefijo="+505">+505 Nicaragua</option>
+                            <option value="PA" data-prefijo="+507">+507 Panamá</option>
+                            <option value="PY" data-prefijo="+595">+595 Paraguay</option>
+                            <option value="UY" data-prefijo="+598">+598 Uruguay</option>
+                            <option value="VE" data-prefijo="+58">+58 Venezuela</option>
                         </select>
                         <input id="telefono" name="telefono" type="tel" maxlength="16" placeholder="999 123 456" autocomplete="tel-national" aria-describedby="telefono-feedback" required>
                     </div>
@@ -136,20 +137,24 @@
                 </div>
 
                 <div class="form-field form-field--full privacy-consent">
+                    <label for="aceptaTerminos">
+                        <input id="aceptaTerminos" name="aceptaTerminos"
+                               type="checkbox" value="true" required
+                               aria-describedby="aceptaTerminos-feedback">
+                        He leído y acepto los Términos y Condiciones de uso.
+                    </label>
+                    <small id="aceptaTerminos-feedback" class="field-feedback" aria-live="polite"></small>
+
                     <label for="aceptaPoliticaPrivacidad">
                         <input id="aceptaPoliticaPrivacidad" name="aceptaPoliticaPrivacidad"
                                type="checkbox" value="true" required
                                aria-describedby="aceptaPoliticaPrivacidad-feedback">
-                        Acepto el tratamiento de mis datos personales para gestionar mi cuenta y las reservas,
-                        conforme a la Ley 29733.
+                        He leído y acepto la Política de Tratamiento de Datos Personales conforme a la
+                        Ley N° 29733 y su Reglamento (D.S. N° 003-2013-JUS).
                     </label>
-                    <details id="privacy-notice">
-                        <summary>¿Qué datos se recopilan y para qué?</summary>
-                        <p>Usamos los datos de identidad y contacto para crear y proteger tu cuenta
-                           y gestionar servicios de hospedaje. No solicitamos
-                           datos adicionales en este formulario para estos fines.</p>
-                    </details>
                     <small id="aceptaPoliticaPrivacidad-feedback" class="field-feedback" aria-live="polite"></small>
+
+                    <button id="open-terms" class="privacy-consent__link" type="button">Leer documento completo</button>
                 </div>
                 </fieldset>
 
@@ -207,6 +212,79 @@
             </nav>
         </section>
     </main>
+
+    <div id="terms-modal" class="terms-modal" hidden>
+        <div class="terms-modal__backdrop" data-close-terms></div>
+        <div class="terms-modal__panel" role="dialog" aria-modal="true" aria-labelledby="terms-modal-title">
+            <header class="terms-modal__header">
+                <h2 id="terms-modal-title">Términos y Condiciones y Política de Datos Personales</h2>
+                <button class="terms-modal__close" type="button" aria-label="Cerrar documento" data-close-terms>&times;</button>
+            </header>
+            <div class="terms-modal__body" tabindex="0">
+                <section>
+                    <h3>Términos y Condiciones de uso</h3>
+                    <p><strong>1. Responsable del servicio.</strong> Hotel Eclipse Suites (en adelante, «el Hotel»),
+                       domiciliado en el Perú, es responsable del sitio web y de la gestión de cuentas de clientes
+                       para la contratación de servicios de hospedaje.</p>
+                    <p><strong>2. Objeto.</strong> Estos Términos regulan el uso de la plataforma de registro y
+                       acceso de clientes. Al crear una cuenta, usted acepta estas condiciones.</p>
+                    <p><strong>3. Cuenta de usuario.</strong> Usted se compromete a proporcionar datos veraces y a
+                       mantener la confidencialidad de su contraseña. El Hotel nunca solicita su contraseña por
+                       teléfono ni por correo. El uso de la cuenta es personal e intransferible.</p>
+                    <p><strong>4. Alcance del registro.</strong> Crear una cuenta no constituye por sí una reserva
+                       de habitación. Las reservas, cuando se contraten, se regirán por las condiciones
+                       específicas que se informen en cada momento.</p>
+                    <p><strong>5. Disponibilidad.</strong> El Hotel procura mantener el servicio disponible y
+                       seguro, pero no garantiza acceso ininterrumpido y podrá realizar mantenimientos
+                       programados o extraordinarios.</p>
+                    <p><strong>6. Modificaciones.</strong> Estos Términos pueden actualizarse. Cualquier cambio
+                       relevante se comunicará en esta página con su fecha de vigencia.</p>
+                    <p><strong>7. Ley aplicable.</strong> Estos Términos se rigen por las leyes de la República
+                       del Perú. Cualquier controversia se someterá a los juzgados y tribunales competentes
+                       de acuerdo con la legislación peruana.</p>
+                </section>
+
+                <section>
+                    <h3>Política de Tratamiento de Datos Personales</h3>
+                    <p><strong>1. Responsable.</strong> Hotel Eclipse Suites trata sus datos personales conforme a
+                       la Ley N° 29733, Ley de Protección de Datos Personales, y su Reglamento aprobado por
+                       Decreto Supremo N° 003-2013-JUS.</p>
+                    <p><strong>2. Datos que se recopilan.</strong> Datos de identidad (nombre, apellido, tipo y
+                       número de documento, país de emisión, edad), datos de contacto (correo electrónico y
+                       teléfono), la contraseña (almacenada cifrada con BCrypt) y el registro de su
+                       aceptación con fecha y hora.</p>
+                    <p><strong>3. Finalidades del tratamiento.</strong> Sus datos se usan para: crear y custodiar
+                       su cuenta, verificar su identidad al iniciar sesión, gestionar servicios de hospedaje
+                       y reservas, emitir comprobantes cuando corresponda, atender consultas y cumplir
+                       obligaciones legales aplicables a servicios de hospedaje.</p>
+                    <p><strong>4. Base legal.</strong> El tratamiento se basa en su consentimiento expreso,
+                       otorgado al marcar las casillas de aceptación al momento del registro
+                       (arts. 5° y 18 de la Ley N° 29733 y su Reglamento).</p>
+                    <p><strong>5. Derechos ARCO.</strong> Usted puede ejercer sus derechos de acceso,
+                       rectificación, cancelación y oposición sobre sus datos personales, así como revocar su
+                       consentimiento, escribiendo a <strong>privacidad@eclipsesuites.example</strong>. Atenderemos
+                       su solicitud dentro de los plazos establecidos por la normativa peruana.</p>
+                    <p><strong>6. Conservación.</strong> Sus datos se conservan mientras su cuenta permanezca
+                       activa y durante los plazos que exijan obligaciones legales. Si desea eliminar su
+                       cuenta, solicítelo por el canal de privacidad.</p>
+                    <p><strong>7. Seguridad.</strong> Aplicamos medidas técnicas y organizativas: contraseñas
+                       cifradas con BCrypt, sesiones con expiración por inactividad, cookies técnicas protegidas
+                       y controles de acceso por rol.</p>
+                    <p><strong>8. Destinatarios.</strong> No vendemos ni cedemos sus datos personales. Solo se
+                       comparten con proveedores técnicos indispensables para operar el servicio, bajo
+                       obligaciones de confidencialidad, o cuando la ley lo exija.</p>
+                    <p><strong>9. Menores de edad.</strong> El registro está reservado a personas mayores de
+                       18 años.</p>
+                    <p><strong>10. Vigencia.</strong> Esta política rige desde el 26 de octubre de 2026. Las
+                       modificaciones se publicarán en esta página con su fecha de vigencia.</p>
+                </section>
+            </div>
+            <footer class="terms-modal__footer">
+                <button id="close-terms" class="role-link login-submit" type="button" data-close-terms>Entendido</button>
+            </footer>
+        </div>
+    </div>
+
     <script th:src="@{/js/auth-login.js}" defer></script>
 </body>
 </html>
