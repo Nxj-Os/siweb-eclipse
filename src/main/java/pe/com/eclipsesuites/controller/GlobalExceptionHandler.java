@@ -65,9 +65,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DatosRegistroNoDisponiblesException.class)
     public ResponseEntity<ApiErrorDTO> manejarDatosRegistroNoDisponibles(
             DatosRegistroNoDisponiblesException ex, HttpServletRequest request) {
-        return construir(HttpStatus.CONFLICT, "Conflicto",
-                "No se pudo completar el registro; verifica la información ingresada",
-                null, request);
+        String mensaje = ex.getMessage() == null
+                ? "No se pudo completar el registro; verifica la información ingresada"
+                : ex.getMessage();
+        return construir(HttpStatus.CONFLICT, "Conflicto", mensaje, null, request);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

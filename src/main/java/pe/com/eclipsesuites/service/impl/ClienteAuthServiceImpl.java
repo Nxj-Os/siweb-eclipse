@@ -15,7 +15,6 @@ import pe.com.eclipsesuites.entity.Cliente;
 import pe.com.eclipsesuites.service.IClienteAuthService;
 
 import java.util.Locale;
-import java.time.Instant;
 
 @Service
 @RequiredArgsConstructor
@@ -23,48 +22,51 @@ public class ClienteAuthServiceImpl implements IClienteAuthService {
 
     private final ClienteRepository clienteRepository;
     private final PasswordEncoder passwordEncoder;
-    private final CorreoDomainPolicy correoDomainPolicy;
-    private final PasswordPolicy passwordPolicy;
 
     @Override
     @Transactional
     public Cliente registrar(ClienteRegistroRequestDTO request) {
-        if (!request.isAceptaPoliticaPrivacidad()) {
-            throw new IllegalArgumentException("Debes aceptar el tratamiento de datos personales");
-        }
         String correo = normalizarCorreo(request.getCorreoElectronico());
-        String tipoDocumento = StringUtils.upperCase(StringUtils.trim(request.getTipoDocumento()));
-        String documento = StringUtils.upperCase(StringUtils.trim(request.getNumDocumento()));
-        String telefono = normalizarTelefono(request.getTelefono());
+        String documento = StringUtils.trim(request.getNumDocumento());
 
-        passwordPolicy.validarRegistro(request);
-        correoDomainPolicy.validar(correo, true);
-        validarDocumento(tipoDocumento, documento);
         if (clienteRepository.existsByCorreoElectronicoIgnoreCase(correo)) {
-            throw new DatosRegistroNoDisponiblesException();
+            throw new IllegalArgumentException("Ya existe una cuenta con ese correo electr├│nico");
         }
         if (clienteRepository.existsByNumDocumento(documento)) {
-            throw new DatosRegistroNoDisponiblesException();
-        }
-        if (clienteRepository.existsByTelefono(telefono)) {
-            throw new DatosRegistroNoDisponiblesException();
+            throw new IllegalArgumentException("Ya existe una cuenta con ese documento");
         }
 
         Cliente cliente = Cliente.builder()
-                .tipoDocumento(tipoDocumento)
+                .tipoDocumento(StringUtils.trim(request.getTipoDocumento()))
                 .numDocumento(documento)
                 .paisEmisionDoc(StringUtils.upperCase(StringUtils.trim(request.getPaisEmisionDoc())))
                 .correoElectronico(correo)
                 .nombre(StringUtils.trim(request.getNombre()))
                 .apellido(StringUtils.trim(request.getApellido()))
-                .telefono(telefono)
+                .telefono(StringUtils.trim(request.getTelefono()))
                 .edad(request.getEdad())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
-                .aceptoPoliticaPrivacidad(true)
-                .fechaAceptacionPrivacidad(Instant.now())
                 .build();
 
         return clienteRepository.save(cliente);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Cliente autenticar(String correoElectronico, String password) {
+        if (StringUtils.isBlank(correoElectronico) || StringUtils.isBlank(password)) {
+            throw new BadCredentialsException("Credenciales inv├ílidas");
+        }
+
+        Cliente cliente = clienteRepository.findByCorreoElectronicoIgnoreCase(
+                        normalizarCorreo(correoElectronico))
+                .orElseThrow(() -> new BadCredentialsException("Credenciales inv├ílidas"));
+
+        if (StringUtils.isBlank(cliente.getPasswordHash())
+                || !passwordEncoder.matches(password, cliente.getPasswordHash())) {
+            throw new BadCredentialsException("Credenciales inv├ílidas");
+        }
+        return cliente;
     }
 
     @Override
@@ -73,39 +75,19 @@ public class ClienteAuthServiceImpl implements IClienteAuthService {
         if (StringUtils.isBlank(campo) || StringUtils.isBlank(valor)) {
             throw new IllegalArgumentException("Completa el dato que deseas verificar");
         }
+
         return switch (campo) {
-            case "correo" -> {
-                String correo = normalizarCorreo(valor);
-                correoDomainPolicy.validar(correo, false);
-                yield !clienteRepository.existsByCorreoElectronicoIgnoreCase(correo);
-            }
+            case "correo" -> !clienteRepository.existsByCorreoElectronicoIgnoreCase(
+                    normalizarCorreo(valor));
             case "documento" -> {
-                String documento = StringUtils.upperCase(StringUtils.trim(valor));
-                String tipo = StringUtils.upperCase(StringUtils.trim(tipoDocumento));
-                validarDocumento(tipo, documento);
-                yield !clienteRepository.existsByNumDocumento(documento);
+                if (StringUtils.isBlank(tipoDocumento)) {
+                    throw new IllegalArgumentException("El tipo de documento es obligatorio");
+                }
+                yield !clienteRepository.existsByNumDocumento(StringUtils.trim(valor));
             }
-            case "telefono" -> !clienteRepository.existsByTelefono(normalizarTelefono(valor));
+            case "telefono" -> !clienteRepository.existsByTelefono(StringUtils.trim(valor));
             default -> throw new IllegalArgumentException("Campo de disponibilidad no válido");
         };
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Cliente autenticar(String correoElectronico, String password) {
-        if (StringUtils.isBlank(correoElectronico) || StringUtils.isBlank(password)) {
-            throw new BadCredentialsException("Credenciales inválidas");
-        }
-
-        Cliente cliente = clienteRepository.findByCorreoElectronicoIgnoreCase(
-                        normalizarCorreo(correoElectronico))
-                .orElseThrow(() -> new BadCredentialsException("Credenciales inválidas"));
-
-        if (StringUtils.isBlank(cliente.getPasswordHash())
-                || !passwordEncoder.matches(password, cliente.getPasswordHash())) {
-            throw new BadCredentialsException("Credenciales inválidas");
-        }
-        return cliente;
     }
 
     @Override
@@ -126,24 +108,5 @@ public class ClienteAuthServiceImpl implements IClienteAuthService {
 
     private String normalizarCorreo(String correoElectronico) {
         return StringUtils.trim(correoElectronico).toLowerCase(Locale.ROOT);
-    }
-
-    private String normalizarTelefono(String telefono) {
-        String normalizado = StringUtils.trim(telefono).replaceAll("[\\s()-]", "");
-        if (!normalizado.matches("^\\+[1-9]\\d{7,14}$")) {
-            throw new IllegalArgumentException("Ingresa un teléfono válido en formato internacional");
-        }
-        return normalizado;
-    }
-
-    private void validarDocumento(String tipo, String documento) {
-        boolean valido = switch (tipo) {
-            case "DNI" -> documento.matches("^\\d{8}$");
-            case "CE", "PASAPORTE" -> documento.matches("^[A-Z0-9]{6,20}$");
-            default -> false;
-        };
-        if (!valido) {
-            throw new IllegalArgumentException("El número de documento no es válido para el tipo elegido");
-        }
     }
 }
