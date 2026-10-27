@@ -1417,3 +1417,931 @@ html {
         transition-duration: 0.01ms !important;
     }
 }
+
+.welcome-page {
+    color: #fff;
+    background: #f5f1e8;
+}
+
+.welcome--landing {
+    display: flex;
+    min-height: max(680px, 100svh);
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: space-between;
+    padding: 28px clamp(24px, 7vw, 104px) 34px;
+}
+
+.welcome--landing .welcome__photo {
+    background-image: url("../img/hotel-eclipse-background.png");
+    background-position: center 52%;
+}
+
+.welcome--landing .welcome__shade {
+    background:
+        linear-gradient(90deg, rgb(4 12 12 / 78%) 0%, rgb(4 12 12 / 52%) 45%, rgb(4 12 12 / 12%) 100%),
+        linear-gradient(180deg, rgb(4 12 12 / 36%) 0%, transparent 28%, rgb(4 12 12 / 36%) 100%);
+}
+
+.landing-header,
+.landing-brand,
+.landing-nav,
+.landing-hero__actions,
+.landing-scroll,
+.experience-note,
+.landing-footer {
+    display: flex;
+    align-items: center;
+}
+
+.landing-header {
+    justify-content: space-between;
+    gap: 24px;
+}
+
+.landing-brand {
+    gap: 12px;
+    color: var(--aqua);
+    text-decoration: none;
+}
+
+.landing-brand .brand__seal {
+    width: 48px;
+    height: 48px;
+    margin: 0;
+    font-size: 32px;
+}
+
+.landing-brand__text {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.landing-brand .brand__name {
+    font-size: 19px;
+    letter-spacing: 0.16em;
+}
+
+.landing-brand .brand__descriptor {
+    margin: 0;
+    font-size: 8px;
+    letter-spacing: 0.2em;
+}
+
+.landing-nav {
+    gap: clamp(18px, 4vw, 52px);
+}
+
+.landing-nav a,
+.landing-footer a {
+    color: rgb(255 255 255 / 84%);
+    font-size: 13px;
+    text-decoration: none;
+    transition: color 160ms ease;
+}
+
+.landing-nav a:hover,
+.landing-footer a:hover,
+.landing-text-link:hover {
+    color: var(--gold);
+}
+
+.landing-nav .landing-nav__login {
+    padding: 11px 18px;
+    border: 1px solid rgb(255 255 255 / 58%);
+    border-radius: 999px;
+    color: #fff;
+}
+
+.landing-nav__login span {
+    margin-left: 8px;
+    color: var(--gold);
+}
+
+.landing-hero {
+    width: min(100%, 720px);
+    margin: auto 0;
+    padding: 74px 0 66px;
+    animation: rise-in 700ms 100ms both;
+}
+
+.landing-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 24px;
+    color: var(--gold);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+}
+
+.landing-eyebrow > span {
+    width: 26px;
+    height: 1px;
+    background: currentColor;
+}
+
+.landing-hero h1,
+.experience-section h2 {
+    margin: 0;
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: clamp(62px, 9.5vw, 118px);
+    font-weight: 400;
+    line-height: 0.86;
+    letter-spacing: -0.035em;
+}
+
+.landing-hero h1 em,
+.experience-section h2 em {
+    color: var(--gold);
+    font-weight: 400;
+}
+
+.landing-hero__intro {
+    max-width: 430px;
+    margin: 28px 0 0;
+    color: rgb(255 255 255 / 80%);
+    font-size: 15px;
+    line-height: 1.8;
+}
+
+.landing-hero__actions {
+    flex-wrap: wrap;
+    gap: 24px;
+    margin-top: 32px;
+}
+
+.landing-button,
+.experience-link {
+    display: inline-flex;
+    min-height: 50px;
+    align-items: center;
+    justify-content: center;
+    gap: 22px;
+    padding: 0 22px;
+    background: var(--cream);
+    color: var(--ink);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.landing-button:hover,
+.experience-link:hover {
+    transform: translateY(-2px);
+    background: var(--cream-hover);
+}
+
+.landing-button span,
+.experience-link span {
+    color: #617e79;
+    font-size: 18px;
+}
+
+.landing-text-link {
+    color: #fff;
+    font-size: 13px;
+    text-underline-offset: 5px;
+    transition: color 160ms ease;
+}
+
+.landing-scroll {
+    gap: 12px;
+    margin: 0;
+    color: rgb(255 255 255 / 70%);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+}
+
+.landing-scroll span {
+    width: 1px;
+    height: 30px;
+    background: var(--gold);
+}
+
+.experience-section {
+    position: relative;
+    display: grid;
+    min-height: 470px;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 0.72fr);
+    align-content: center;
+    align-items: center;
+    gap: clamp(32px, 8vw, 120px);
+    padding: 88px clamp(24px, 12vw, 176px);
+    background: #f5f1e8;
+    color: var(--ink);
+}
+
+.experience-section__copy {
+    max-width: 520px;
+}
+
+.landing-eyebrow--dark {
+    color: #697e75;
+}
+
+.experience-section h2 {
+    font-size: clamp(48px, 6vw, 76px);
+    line-height: 0.96;
+}
+
+.experience-section h2 em {
+    color: #9c8152;
+}
+
+.experience-section__copy > p:not(.landing-eyebrow) {
+    max-width: 430px;
+    margin: 24px 0 26px;
+    color: #58625d;
+    font-size: 14px;
+    line-height: 1.8;
+}
+
+.experience-link {
+    background: #142320;
+    color: #fff;
+}
+
+.experience-link:hover {
+    background: #263d38;
+}
+
+.experience-link span {
+    color: var(--gold);
+}
+
+.experience-note {
+    display: grid;
+    align-content: center;
+    gap: 0;
+    border-top: 1px solid rgb(16 25 24 / 22%);
+}
+
+.experience-note__item {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 22px 0;
+    border-bottom: 1px solid rgb(16 25 24 / 22%);
+}
+
+.experience-note__number {
+    flex: 0 0 22px;
+    color: #9c8152;
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 24px;
+}
+
+.experience-note__item h3 {
+    margin: 3px 0 10px;
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 23px;
+    font-weight: 500;
+}
+
+.experience-note__item p {
+    margin: 0;
+    color: #58625d;
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+.landing-footer {
+    justify-content: space-between;
+    gap: 20px;
+    color: #75807a;
+    font-size: 11px;
+}
+
+.landing-footer a {
+    color: #58625d;
+    font-size: 11px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.landing-nav a:focus-visible,
+.landing-brand:focus-visible,
+.landing-button:focus-visible,
+.landing-text-link:focus-visible,
+.experience-link:focus-visible,
+.experience-note > a:focus-visible,
+.landing-footer a:focus-visible {
+    outline: 2px solid var(--aqua);
+    outline-offset: 5px;
+}
+
+@media (max-width: 720px) {
+    .welcome--landing {
+        min-height: max(700px, 100svh);
+        padding: 20px 24px 26px;
+    }
+
+    .welcome--landing .welcome__photo {
+        background-position: 52% center;
+    }
+
+    .welcome--landing .welcome__shade {
+        background:
+            linear-gradient(90deg, rgb(4 12 12 / 76%), rgb(4 12 12 / 34%)),
+            linear-gradient(180deg, rgb(4 12 12 / 40%), transparent 35%, rgb(4 12 12 / 50%));
+    }
+
+    .landing-nav {
+        gap: 0;
+    }
+
+    .landing-nav > a:first-child {
+        display: none;
+    }
+
+    .landing-nav .landing-nav__login {
+        padding: 10px 13px;
+        font-size: 12px;
+    }
+
+    .landing-hero {
+        padding: 70px 0;
+    }
+
+    .landing-hero h1 {
+        font-size: clamp(58px, 13vw, 88px);
+    }
+
+    .landing-hero__intro {
+        max-width: 360px;
+        font-size: 14px;
+    }
+
+    .experience-section {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 38px;
+        padding: 70px 24px;
+    }
+}
+
+@media (max-width: 420px) {
+    .landing-header {
+        gap: 12px;
+    }
+
+    .landing-brand {
+        gap: 8px;
+    }
+
+    .landing-brand .brand__seal {
+        width: 40px;
+        height: 40px;
+        font-size: 28px;
+    }
+
+    .landing-brand .brand__name {
+        font-size: 16px;
+    }
+
+    .landing-brand .brand__descriptor {
+        font-size: 7px;
+    }
+
+    .landing-eyebrow {
+        font-size: 9px;
+        letter-spacing: 0.14em;
+    }
+
+    .landing-hero__actions {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+}
+
+.promise-strip {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: clamp(18px, 3vw, 44px);
+    padding: 48px clamp(24px, 9vw, 132px);
+    border-top: 1px solid rgb(16 25 24 / 10%);
+    border-bottom: 1px solid rgb(16 25 24 / 10%);
+    background: #eee9dd;
+    color: var(--ink);
+}
+
+.promise-item {
+    display: grid;
+    align-content: start;
+    justify-items: start;
+}
+
+.promise-item__icon {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    margin-bottom: 18px;
+    border: 1px solid rgb(156 129 82 / 55%);
+    border-radius: 50%;
+    color: #9c8152;
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 22px;
+    place-items: center;
+}
+
+.promise-item h2 {
+    margin: 0 0 8px;
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 25px;
+    font-weight: 500;
+}
+
+.promise-item p {
+    max-width: 260px;
+    margin: 0;
+    color: #68716b;
+    font-size: 13px;
+    line-height: 1.65;
+}
+
+.suites-showcase {
+    padding: 96px clamp(24px, 9vw, 132px) 104px;
+    border-top: 1px solid rgb(229 207 131 / 22%);
+    background:
+        radial-gradient(ellipse at 50% 0, rgb(154 217 215 / 7%), transparent 48%),
+        #071514;
+    color: var(--cream);
+}
+
+.suites-showcase__header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 32px;
+    margin-bottom: 36px;
+}
+
+.suites-showcase__header .landing-eyebrow {
+    margin-bottom: 16px;
+}
+
+.suites-showcase__header h2 {
+    margin: 0;
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: clamp(44px, 6vw, 72px);
+    font-weight: 400;
+    line-height: 0.96;
+    color: var(--cream);
+}
+
+.suites-showcase__header h2 em {
+    color: var(--gold);
+    font-weight: 400;
+}
+
+.suites-showcase__header .experience-link {
+    flex-shrink: 0;
+}
+
+.suites-showcase .landing-eyebrow--dark {
+    color: var(--aqua);
+}
+
+.suites-showcase .experience-link {
+    border: 1px solid rgb(229 207 131 / 58%);
+    background: var(--cream);
+    color: var(--ink);
+}
+
+.suites-showcase .experience-link:hover {
+    border-color: var(--gold);
+    background: var(--cream-hover);
+}
+
+.suites-showcase .experience-link span {
+    color: #9c8152;
+}
+
+.suite-gallery {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(14px, 2.2vw, 30px);
+}
+
+.suite-tile {
+    min-width: 0;
+}
+
+.suite-tile__image {
+    position: relative;
+    display: flex;
+    min-height: 390px;
+    align-items: flex-start;
+    justify-content: space-between;
+    overflow: hidden;
+    padding: 20px;
+    border: 1px solid rgb(229 207 131 / 32%);
+    background-color: #10201e;
+    background-position: center;
+    background-size: cover;
+    color: #fff;
+    text-decoration: none;
+    isolation: isolate;
+}
+
+.suite-tile__image::before {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    background: linear-gradient(180deg, rgb(5 12 11 / 58%), transparent 32%, transparent 54%, rgb(5 12 11 / 76%));
+    content: "";
+    transition: background-color 240ms ease;
+}
+
+.suite-tile__image::after {
+    position: absolute;
+    z-index: -2;
+    inset: 0;
+    background: inherit;
+    background-position: center;
+    background-size: cover;
+    content: "";
+    transition: transform 450ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.suite-tile__image:hover::after,
+.suite-tile__image:focus-visible::after {
+    transform: scale(1.055);
+}
+
+.suite-tile__image--vip {
+    background-image: url("../img/suite-vip-deluxe.webp");
+}
+
+.suite-tile__image--romana {
+    background-image: url("../img/suite-romana.webp");
+}
+
+.suite-tile__image--galaxia {
+    background-image: url("../img/suite-galaxia.webp");
+}
+
+.suite-tile__index {
+    font-size: 9px;
+    letter-spacing: 0.15em;
+}
+
+.suite-tile__arrow {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    border: 1px solid rgb(255 255 255 / 62%);
+    border-radius: 50%;
+    font-size: 16px;
+    transition: background-color 180ms ease, color 180ms ease;
+    place-items: center;
+}
+
+.suite-tile__image:hover .suite-tile__arrow,
+.suite-tile__image:focus-visible .suite-tile__arrow {
+    background: var(--cream);
+    color: var(--ink);
+}
+
+.suite-tile__details {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 17px 0 0;
+}
+
+.suite-tile__details h3 {
+    margin: 0;
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 27px;
+    font-weight: 500;
+    color: var(--cream);
+}
+
+.suite-tile__details p {
+    margin: 5px 0 0;
+    color: rgb(246 240 223 / 68%);
+    font-size: 12px;
+}
+
+.suite-tile__type {
+    padding-top: 5px;
+    color: var(--gold);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+}
+
+.suite-tile__image:focus-visible {
+    outline: 2px solid var(--aqua);
+    outline-offset: 4px;
+}
+
+.landing-cta {
+    position: relative;
+    display: flex;
+    min-height: 500px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 82px 24px 116px;
+    background:
+        linear-gradient(90deg, rgb(5 16 15 / 91%), rgb(5 16 15 / 76%)),
+        url("../img/hotel-eclipse-background.png") center 58% / cover,
+        #071514;
+    color: #fff;
+    text-align: center;
+}
+
+.landing-cta .landing-eyebrow {
+    margin-bottom: 22px;
+}
+
+.landing-cta h2 {
+    margin: 0;
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: clamp(56px, 8vw, 92px);
+    font-weight: 400;
+    line-height: 0.9;
+}
+
+.landing-cta h2 em {
+    color: var(--gold);
+    font-weight: 400;
+}
+
+.landing-cta > .landing-button {
+    margin-top: 30px;
+}
+
+.landing-cta .landing-footer {
+    position: absolute;
+    right: clamp(24px, 7vw, 104px);
+    bottom: 26px;
+    left: clamp(24px, 7vw, 104px);
+    min-height: 42px;
+    border-top: 1px solid rgb(255 255 255 / 22%);
+    color: rgb(255 255 255 / 58%);
+}
+
+.landing-cta .landing-footer a {
+    color: rgb(255 255 255 / 74%);
+    font-size: 10px;
+}
+
+.landing-footer__brand {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 14px !important;
+    letter-spacing: 0.15em;
+}
+
+.landing-footer__brand span {
+    margin-left: 6px;
+    font-family: "DM Sans", "Segoe UI", sans-serif;
+    font-size: 8px;
+    letter-spacing: 0.1em;
+}
+
+@media (max-width: 820px) {
+    .promise-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        row-gap: 34px;
+    }
+
+    .suite-tile__image {
+        min-height: 320px;
+    }
+
+    .suite-tile__details h3 {
+        font-size: 23px;
+    }
+}
+
+@media (max-width: 620px) {
+    .promise-strip {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 22px;
+        padding: 30px 24px;
+    }
+
+    .promise-item {
+        grid-template-columns: 42px minmax(0, 1fr);
+        column-gap: 16px;
+    }
+
+    .promise-item__icon {
+        grid-row: span 2;
+        margin: 0;
+    }
+
+    .promise-item h2 {
+        align-self: end;
+        margin-bottom: 4px;
+    }
+
+    .promise-item p {
+        grid-column: 2;
+    }
+
+    .promise-item p {
+        max-width: 100%;
+    }
+
+    .suites-showcase {
+        padding: 70px 24px;
+    }
+
+    .suites-showcase__header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 22px;
+    }
+
+    .suite-gallery {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 30px;
+    }
+
+    .suite-tile__image {
+        min-height: min(112vw, 460px);
+    }
+
+    .landing-cta {
+        min-height: 470px;
+        padding-bottom: 134px;
+    }
+
+    .landing-cta .landing-footer {
+        right: 24px;
+        bottom: 20px;
+        left: 24px;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 10px;
+        padding-top: 12px;
+    }
+
+    .landing-footer > span {
+        display: none;
+    }
+}
+
+@media (max-width: 380px) {
+    .landing-cta .landing-footer {
+        font-size: 9px;
+    }
+
+    .landing-footer__brand {
+        font-size: 12px !important;
+    }
+
+    .landing-footer__brand span {
+        font-size: 7px;
+    }
+}
+
+.floating-menu {
+    position: fixed;
+    z-index: 20;
+    top: 24px;
+    right: clamp(20px, 4vw, 56px);
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-10px);
+    transition: opacity 180ms ease, transform 180ms ease, visibility 180ms ease;
+}
+
+.has-scrolled .floating-menu,
+.menu-is-open .floating-menu {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+.floating-menu__toggle {
+    display: flex;
+    width: 52px;
+    height: 52px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    border: 1px solid rgb(229 207 131 / 50%);
+    border-radius: 50%;
+    background: rgb(10 23 21 / 92%);
+    box-shadow: 0 8px 26px rgb(0 0 0 / 18%);
+    cursor: pointer;
+    backdrop-filter: blur(12px);
+    transition: background-color 180ms ease, border-color 180ms ease, transform 180ms ease;
+}
+
+.floating-menu__toggle:hover {
+    transform: translateY(-2px);
+    border-color: var(--gold);
+    background: #19302b;
+}
+
+.floating-menu__toggle > span {
+    width: 18px;
+    height: 1px;
+    background: var(--cream);
+    transition: transform 180ms ease, opacity 180ms ease;
+}
+
+.menu-is-open .floating-menu__toggle > span:first-child {
+    transform: translateY(6px) rotate(45deg);
+}
+
+.menu-is-open .floating-menu__toggle > span:nth-child(2) {
+    opacity: 0;
+}
+
+.menu-is-open .floating-menu__toggle > span:last-child {
+    transform: translateY(-6px) rotate(-45deg);
+}
+
+.floating-menu__panel {
+    position: absolute;
+    top: 64px;
+    right: 0;
+    display: grid;
+    width: min(340px, calc(100vw - 40px));
+    gap: 0;
+    padding: 22px 24px 16px;
+    border: 1px solid rgb(229 207 131 / 28%);
+    background: rgb(9 22 20 / 97%);
+    box-shadow: 0 20px 60px rgb(0 0 0 / 30%);
+    backdrop-filter: blur(18px);
+}
+
+.floating-menu__panel[hidden] {
+    display: none;
+}
+
+.floating-menu__eyebrow {
+    margin: 0 0 12px;
+    color: var(--gold);
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+}
+
+.floating-menu__panel > a {
+    display: flex;
+    min-height: 48px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-top: 1px solid rgb(255 255 255 / 13%);
+    color: #fff;
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 20px;
+    text-decoration: none;
+    transition: color 160ms ease;
+}
+
+.floating-menu__panel > a:hover {
+    color: var(--gold);
+}
+
+.floating-menu__panel > a > span {
+    color: rgb(255 255 255 / 56%);
+    font-family: "DM Sans", "Segoe UI", sans-serif;
+    font-size: 10px;
+}
+
+.floating-menu__panel > a > span > span {
+    margin-left: 4px;
+    color: var(--gold);
+}
+
+.floating-menu__toggle:focus-visible,
+.floating-menu__panel a:focus-visible {
+    outline: 2px solid var(--aqua);
+    outline-offset: 4px;
+}
+
+@media (max-width: 420px) {
+    .floating-menu {
+        top: 14px;
+        right: 16px;
+    }
+
+    .floating-menu__toggle {
+        width: 46px;
+        height: 46px;
+    }
+
+    .floating-menu__panel {
+        top: 56px;
+    }
+}

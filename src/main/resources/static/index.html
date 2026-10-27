@@ -4,34 +4,177 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#071514">
-    <title>Hotel Eclipse | Bienvenido</title>
+    <meta name="description" content="Descubre un espacio creado para desconectar y vivir una experiencia diferente en Eclipse Suites Hotel.">
+    <title>Hotel Eclipse | Bienvenido a nuestro mundo</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/home.css">
 </head>
 <body class="welcome-page">
-    <main class="welcome" aria-labelledby="welcome-title">
-        <div class="welcome__photo" role="img" aria-label="Entrada iluminada de un hotel al anochecer"></div>
-        <div class="welcome__shade"></div>
+    <main>
+        <section id="inicio" class="welcome welcome--landing" aria-labelledby="welcome-title">
+            <div class="welcome__photo" role="img" aria-label="Espacios exclusivos de Eclipse Suites Hotel"></div>
+            <div class="welcome__shade"></div>
 
-        <div class="welcome__content">
-            <div class="brand" aria-label="Eclipse Suites Hotel">
-                <span class="brand__seal" aria-hidden="true"><span>E</span><i></i></span>
-                <span class="brand__name">ECLIPSE</span>
-                <span class="brand__descriptor">SUITES HOTEL</span>
+            <header class="landing-header">
+                <a class="landing-brand" href="/" aria-label="Eclipse Suites Hotel, inicio">
+                    <span class="brand__seal" aria-hidden="true"><span>E</span><i></i></span>
+                    <span class="landing-brand__text">
+                        <span class="brand__name">ECLIPSE</span>
+                        <span class="brand__descriptor">SUITES HOTEL</span>
+                    </span>
+                </a>
+                <nav class="landing-nav" aria-label="Navegación principal">
+                    <a href="#experiencia">La experiencia</a>
+                    <a class="landing-nav__login" href="/login?tipo=cliente">Iniciar sesión <span aria-hidden="true">↗</span></a>
+                </nav>
+            </header>
+
+            <div class="landing-hero">
+                <p class="landing-eyebrow"><span></span> Tu próxima historia comienza aquí</p>
+                <h1 id="welcome-title">Bienvenido<br>a nuestro <em>mundo</em></h1>
+                <p class="landing-hero__intro">Un refugio pensado para desconectar, sorprenderte y disfrutar cada momento a tu manera.</p>
+                <div class="landing-hero__actions">
+                    <a class="landing-button" href="/login?tipo=cliente">Ingresar como cliente <span aria-hidden="true">→</span></a>
+                    <a class="landing-text-link" href="#experiencia">Conoce la experiencia</a>
+                </div>
             </div>
 
-            <h1 id="welcome-title">Bienvenido</h1>
+            <p class="landing-scroll" aria-hidden="true"><span></span> Desliza para descubrir</p>
+        </section>
 
-            <section class="welcome__actions" aria-labelledby="sign-in-title">
-                <h2 id="sign-in-title">Inicie sesión</h2>
-                <a class="role-link" href="/login?tipo=cliente">Como cliente</a>
-                <a class="role-link" href="/login?tipo=empleado">Como empleado</a>
-            </section>
+        <section id="experiencia" class="experience-section" aria-labelledby="experience-title">
+            <div class="experience-section__copy">
+                <p class="landing-eyebrow landing-eyebrow--dark"><span></span> Eclipse Suites Hotel</p>
+                <h2 id="experience-title">Un espacio para<br><em>sentir algo distinto.</em></h2>
+                <p>Cada detalle está pensado para que tu estadía se convierta en una experiencia para recordar. Encuentra tu suite ideal y déjate llevar.</p>
+                <a class="experience-link" href="/login?tipo=cliente">Explorar suites <span aria-hidden="true">→</span></a>
+            </div>
+            <aside class="experience-note">
+                <article class="experience-note__item">
+                    <span class="experience-note__number">01</span>
+                    <div>
+                        <h3>Privacidad y discreción</h3>
+                        <p>Un ambiente reservado para que disfrutes tu momento con tranquilidad.</p>
+                    </div>
+                </article>
+                <article class="experience-note__item">
+                    <span class="experience-note__number">02</span>
+                    <div>
+                        <h3>Comodidad a tu ritmo</h3>
+                        <p>Un espacio acogedor donde puedes desconectar y sentirte a gusto.</p>
+                    </div>
+                </article>
+                <article class="experience-note__item">
+                    <span class="experience-note__number">03</span>
+                    <div>
+                        <h3>Algo fuera de lo común</h3>
+                        <p>Suites temáticas para convertir una visita en una experiencia diferente.</p>
+                    </div>
+                </article>
+            </aside>
+        </section>
 
-            <a class="register-link" href="/registro">¿Aún no tienes cuenta? Crea una ahora</a>
-        </div>
+        <section class="promise-strip" aria-label="Beneficios de tu experiencia">
+            <article class="promise-item">
+                <span class="promise-item__icon" aria-hidden="true">✳</span>
+                <h2>Privacidad</h2>
+                <p>Un espacio reservado para disfrutar con calma y discreción.</p>
+            </article>
+            <article class="promise-item">
+                <span class="promise-item__icon" aria-hidden="true">⌂</span>
+                <h2>Comodidad</h2>
+                <p>Ambientes acogedores y detalles pensados para tu descanso.</p>
+            </article>
+            <article class="promise-item">
+                <span class="promise-item__icon" aria-hidden="true">✧</span>
+                <h2>Experiencias únicas</h2>
+                <p>Suites temáticas que te invitan a salir de la rutina.</p>
+            </article>
+            <article class="promise-item">
+                <span class="promise-item__icon" aria-hidden="true">◷</span>
+                <h2>A tu propio ritmo</h2>
+                <p>Elige tu suite y disfruta el momento como más te guste.</p>
+            </article>
+        </section>
+
+        <section id="suites" class="suites-showcase" aria-labelledby="suites-title">
+            <header class="suites-showcase__header">
+                <div>
+                    <p class="landing-eyebrow landing-eyebrow--dark"><span></span> Encuentra tu lugar</p>
+                    <h2 id="suites-title">Cada suite, un <em>universo.</em></h2>
+                </div>
+                <a class="experience-link" href="/login?tipo=cliente">Ver disponibilidad <span aria-hidden="true">→</span></a>
+            </header>
+            <div class="suite-gallery">
+                <article class="suite-tile">
+                    <a class="suite-tile__image suite-tile__image--vip" href="/login?tipo=cliente" aria-label="Explorar la Suite VIP Deluxe">
+                        <span class="suite-tile__index">01 / ECLIPSE</span>
+                        <span class="suite-tile__arrow" aria-hidden="true">↗</span>
+                    </a>
+                    <div class="suite-tile__details">
+                        <div>
+                            <h3>Suite VIP Deluxe</h3>
+                            <p>Elegancia moderna, detalles exclusivos.</p>
+                        </div>
+                        <span class="suite-tile__type">01</span>
+                    </div>
+                </article>
+                <article class="suite-tile">
+                    <a class="suite-tile__image suite-tile__image--romana" href="/login?tipo=cliente" aria-label="Explorar la Suite Romana">
+                        <span class="suite-tile__index">02 / CLÁSICA</span>
+                        <span class="suite-tile__arrow" aria-hidden="true">↗</span>
+                    </a>
+                    <div class="suite-tile__details">
+                        <div>
+                            <h3>Suite Romana</h3>
+                            <p>Un ambiente clásico con carácter.</p>
+                        </div>
+                        <span class="suite-tile__type">02</span>
+                    </div>
+                </article>
+                <article class="suite-tile">
+                    <a class="suite-tile__image suite-tile__image--galaxia" href="/login?tipo=cliente" aria-label="Explorar la Suite Galaxia">
+                        <span class="suite-tile__index">03 / INMERSIVA</span>
+                        <span class="suite-tile__arrow" aria-hidden="true">↗</span>
+                    </a>
+                    <div class="suite-tile__details">
+                        <div>
+                            <h3>Suite Galaxia</h3>
+                            <p>Una experiencia futurista y envolvente.</p>
+                        </div>
+                        <span class="suite-tile__type">03</span>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section class="landing-cta" aria-labelledby="landing-cta-title">
+            <p class="landing-eyebrow"><span></span> Tu próxima escapada te espera</p>
+            <h2 id="landing-cta-title">Haz espacio para<br><em>algo especial.</em></h2>
+            <a class="landing-button" href="/login?tipo=cliente">Encuentra tu suite <span aria-hidden="true">→</span></a>
+            <footer class="landing-footer">
+                <a class="landing-footer__brand" href="/" aria-label="Eclipse Suites Hotel, inicio">ECLIPSE <span>SUITES HOTEL</span></a>
+                <span>© 2026 Eclipse Suites Hotel</span>
+                <a href="/login?tipo=empleado">Acceso de personal <span aria-hidden="true">↗</span></a>
+            </footer>
+        </section>
     </main>
+    <div class="floating-menu" data-floating-menu>
+        <button class="floating-menu__toggle" type="button" aria-expanded="false" aria-controls="floating-menu-panel" aria-label="Abrir menú de navegación">
+            <span></span><span></span><span></span>
+        </button>
+        <nav id="floating-menu-panel" class="floating-menu__panel" aria-label="Menú de navegación" hidden>
+            <p class="floating-menu__eyebrow">Eclipse Suites Hotel</p>
+            <a href="#inicio">Inicio</a>
+            <a href="#experiencia">Nuestra experiencia</a>
+            <a href="#suites">Explorar suites</a>
+            <a href="/login?tipo=cliente">Iniciar sesión como cliente <span aria-hidden="true">↗</span></a>
+            <a href="/login?tipo=cliente">Reservar una suite <span aria-hidden="true">↗</span></a>
+            <a href="/login?tipo=empleado">Acceso de empleados <span aria-hidden="true">↗</span></a>
+        </nav>
+    </div>
+    <script src="js/landing-page.js" defer></script>
 </body>
 </html>
