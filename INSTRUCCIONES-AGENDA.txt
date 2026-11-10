@@ -1,0 +1,35 @@
+HOTEL ECLIPSE - Agenda, notificaciones y perfil
+
+1. Desde CMD, dentro de siweb-eclipse:
+   set "APP_SEED_ADMIN_PASSWORD=EclipseAdmin2026!"
+   set "APP_SEED_RECEPCION_PASSWORD=EclipseRecepcion2026!"
+   set "APP_SEED_ROOMSERVICE_PASSWORD=EclipseRoom2026!"
+   mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=demo
+
+2. Abre http://localhost:8080/login?tipo=empleado
+   Luego http://localhost:8080/empleado/agenda y /empleado/perfil
+
+3. Por defecto demo usa H2 en memoria, sin PostgreSQL y sin datos permanentes.
+   Para PostgreSQL de pruebas (nunca la BD original):
+   crea siweb_eclipse_demo en pgAdmin y define en CMD:
+   set "DB_USER=postgres"
+   set "DB_PASSWORD=TU_PASSWORD_POSTGRESQL"
+   mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=demo,demo-postgres
+   El perfil demo-postgres usa ddl-auto=update para conservar registros.
+
+INCLUIDO:
+- Agenda mensual y lista diaria con reservas y actividades.
+- Creación de eventos, validación de duración y conflicto de reservas de la misma suite.
+- Detalles, inicio/fin real, transiciones de estado, tiempos estimados/restantes/retrasos.
+- Notificaciones al crear/cambiar eventos, actualizadas por consulta cada 15 segundos.
+- Detalle de notificación enlazado a evento.
+- Perfil de empleado autenticado y cierre de sesión.
+- Enlaces de acceso desde las páginas operativas.
+
+LIMITACIONES:
+- La agenda nueva usa registros AgendaEvento independientes de ReservaEstadia y OrdenLimpieza existentes.
+  NO sincroniza automáticamente reservas web/checkout/roomservice previos; requiere adaptación de esos servicios.
+- Avisos globales leídos se recuerdan en localStorage del navegador, no por empleado/servidor.
+- El tiempo restante se calcula en el navegador; no son alertas push ni se ejecutan en segundo plano.
+- No se incluyen cambios de contraseña ni edición de perfil.
+- No se han ejecutado pruebas de compilación Maven en este entorno; comprobar al iniciar.
