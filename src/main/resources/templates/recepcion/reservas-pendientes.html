@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#071514">
+    <title>Validar reservas | Hotel Eclipse</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" th:href="@{/css/reservas.css}">
+    <script th:src="@{/js/checkin-qr.js}" defer></script>
+</head>
+<body class="reserva-page">
+    <header class="reserva-header">
+        <a class="reserva-brand" th:href="@{/inicio}">Eclipse <span>Recepcion</span></a>
+        <a class="reserva-header__link" th:href="@{/inicio}">Volver</a>
+    </header>
+    <main class="reserva-shell">
+        <section class="reserva-intro">
+            <p class="reserva-eyebrow">Gestion de reservas</p>
+            <h1>Solicitudes por validar</h1>
+            <p>Confirma solo después de verificar el pago por el método indicado. La disponibilidad se comprueba de nuevo antes de confirmar.</p>
+        </section>
+        <div class="reserva-alert reserva-alert--success" th:if="${mensaje}" th:text="${mensaje}"></div>
+        <div class="reserva-alert reserva-alert--error" th:if="${errorReserva}" th:text="${errorReserva}"></div>
+        <div class="empty-state" th:if="${#lists.isEmpty(reservas)}">
+            <h2>No hay pagos pendientes</h2>
+            <p>Las nuevas solicitudes de clientes apareceran aqui.</p>
+        </div>
+        <section class="reservation-list" th:if="${not #lists.isEmpty(reservas)}" aria-label="Reservas pendientes">
+            <article class="reservation-card" th:each="reserva : ${reservas}">
+                <div class="reservation-card__top">
+                    <div>
+                        <p class="reservation-code" th:text="${'Reserva #' + reserva.id}">Reserva #1</p>
+                        <h2 th:text="${reserva.tipoHabitacion.nombreTematico}">Suite</h2>
+                    </div>
+                    <span class="status-pill status-pill--pendiente_pago">Pendiente de validación</span>
+                </div>
+                <dl class="reservation-summary">
+                    <div><dt>Cliente</dt><dd th:text="${reserva.cliente.nombre + ' ' + reserva.cliente.apellido}">Cliente</dd></div>
+                    <div><dt>Correo</dt><dd th:text="${reserva.cliente.correoElectronico}">correo</dd></div>
+                    <div><dt>Fecha y turno</dt><dd th:text="${#temporals.format(reserva.fechaInicio, 'dd/MM/yyyy HH:mm')}">Fecha</dd></div>
+                    <div><dt>Personas</dt><dd th:text="${reserva.cantidadPersonas}">2</dd></div>
+                    <div><dt>Metodo de pago</dt><dd th:text="${reserva.metodoPago.etiqueta}">Metodo</dd></div>
+                    <div><dt>Total a validar</dt><dd th:text="${'S/ ' + #numbers.formatDecimal(reserva.montoTotal, 1, 2)}">S/ 0.00</dd></div>
+                </dl>
+                <div class="reservation-card__actions">
+                    <form th:action="@{/recepcion/reservas/{id}/confirmar(id=${reserva.id})}" method="post">
+                        <button class="button button--primary" type="submit">Validar pago y confirmar</button>
+                    </form>
+                    <form th:action="@{/recepcion/reservas/{id}/cancelar(id=${reserva.id})}" method="post">
+                        <button class="button button--secondary" type="submit">Cancelar solicitud</button>
+                    </form>
+                </div>
+            </article>
+        </section>
+
+        <section class="reserva-panel checkin-panel" aria-labelledby="checkin-title">
+            <div class="reserva-panel__heading">
+                <span class="reserva-panel__step"><i class="bi bi-qr-code-scan" aria-hidden="true"></i></span>
+                <div>
+                    <h2 id="checkin-title">Validar QR de check-in</h2>
+                    <p>Escanea el código del cliente o escribe el token para confirmar su ingreso.</p>
+                </div>
+            </div>
+            <form id="checkin-form" th:action="@{/recepcion/reservas/check-in}" method="post">
+                <label class="reserva-field" for="token-qr">
+                    <span>Token del QR</span>
+                    <input id="token-qr" name="tokenQr" type="text" autocomplete="off"
+                           placeholder="Pega o escanea el código QR" required>
+                </label>
+                <div class="reservation-card__actions">
+                    <button class="button button--secondary" id="start-qr-scan" type="button">
+                        Escanear con cámara
+                    </button>
+                    <button class="button button--primary" type="submit">Validar check-in</button>
+                </div>
+                <p id="qr-scan-status" class="field-hint" role="status" aria-live="polite"></p>
+                <video id="qr-camera" class="qr-camera" playsinline hidden></video>
+            </form>
+        </section>
+
+        <section class="checkin-list" th:if="${not #lists.isEmpty(reservasCheckIn)}"
+                 aria-labelledby="checkin-reservas-title">
+            <div class="reserva-panel__heading">
+                <span class="reserva-panel__step">QR</span>
+                <div>
+                    <h2 id="checkin-reservas-title">Reservas confirmadas</h2>
+                    <p>Reservas pagadas que aún esperan el check-in.</p>
+                </div>
+            </div>
+            <article class="reservation-card" th:each="reserva : ${reservasCheckIn}">
+                <div class="reservation-card__top">
+                    <div>
+                        <p class="reservation-code" th:text="${'Reserva #' + reserva.id}">Reserva #1</p>
+                        <h2 th:text="${reserva.tipoHabitacion.nombreTematico}">Suite</h2>
+                    </div>
+                    <span class="status-pill status-pill--confirmada">Pago confirmado</span>
+                </div>
+                <dl class="reservation-summary">
+                    <div><dt>Habitación</dt><dd th:text="${reserva.habitacion.numHabitacion}">509</dd></div>
+                    <div><dt>Cliente</dt><dd th:text="${reserva.cliente.nombre + ' ' + reserva.cliente.apellido}">Cliente</dd></div>
+                    <div><dt>Horario</dt><dd th:text="${#temporals.format(reserva.fechaInicio, 'dd/MM/yyyy HH:mm')}">Fecha</dd></div>
+                    <div><dt>Fin</dt><dd th:text="${#temporals.format(reserva.fechaFin, 'dd/MM/yyyy HH:mm')}">Fecha</dd></div>
+                </dl>
+            </article>
+        </section>
+    </main>
+</body>
+</html>

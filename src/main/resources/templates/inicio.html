@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -24,9 +24,14 @@
             </span>
             <span>Usuario</span>
         </button>
+        <a class="inicio-header__reservation-link" sec:authorize="hasAnyRole('RECEPCION', 'ADMIN')"
+           th:href="@{/recepcion/reservas}">Validar reservas</a>
     </header>
 
     <main class="inicio-main">
+        <p class="demo-notice" th:if="${demoMode}" role="status">
+            Modo demo: las tarifas y la disponibilidad son datos de muestra, no valores comerciales.
+        </p>
         <section class="filters-panel" aria-label="Filtros de búsqueda">
             <div class="search-field">
                 <span class="search-field__icon" aria-hidden="true">
@@ -56,74 +61,46 @@
         </section>
 
         <section class="suites-list" aria-label="Lista de suites temáticas">
-            <article class="suite-card" data-title="Suite VIP Deluxe" data-description="Elegancia moderna con detalles exclusivos para una experiencia premium." data-amenities="Cama matrimonial Smart TV Frigobar Agua caliente Luces psicodélicas">
+            <article class="suite-card" th:each="tipo : ${tiposHabitacion}"
+                     th:attr="data-title=${tipo.nombreTematico},
+                              data-description=${tipo.descripcionTematica},
+                              data-amenities=${tipo.descripcionTematica}">
                 <div class="suite-card__content">
                     <header class="suite-card__header">
-                        <h2 class="suite-card__title">Suite VIP Deluxe</h2>
-                        <p class="suite-card__description">Elegancia moderna con detalles exclusivos para una experiencia premium.</p>
+                        <h2 class="suite-card__title" th:text="${tipo.nombreTematico}">Suite</h2>
+                        <p class="suite-card__description" th:text="${tipo.descripcionTematica}">Descripción de la suite.</p>
                     </header>
-                    <ul class="suite-card__amenities">
-                        <li>Cama matrimonial</li>
-                        <li>Smart TV</li>
-                        <li>Frigobar</li>
-                        <li>Agua caliente</li>
-                        <li>Luces psicodélicas</li>
-                    </ul>
-                    <a class="suite-card__cta" href="#">Reservar desde S/.80</a>
+                    <p class="suite-card__capacity">
+                        Capacidad máxima: <span th:text="${tipo.capacidadMaxima}">2</span> personas
+                    </p>
+                    <div class="suite-card__price">
+                        <span>Desde</span>
+                        <strong data-suite-price>Consultando tarifa…</strong>
+                    </div>
+                    <div class="suite-card__rates" hidden>
+                        <span th:each="tarifa : ${tarifas}"
+                              th:if="${tarifa.id.idTipoHabitacion == tipo.id}"
+                              th:attr="data-price=${tarifa.precioEstadiaBase},
+                                       data-from=${tarifa.vigenciaDesde},
+                                       data-until=${tarifa.vigenciaHasta}"></span>
+                    </div>
+                    <a class="suite-card__cta"
+                       th:href="@{/cliente/reservas/nueva(tipoId=${tipo.id})}">Ver habitaciones</a>
                 </div>
-                <div class="suite-card__media suite-card__media--vip">
+                <div class="suite-card__media">
+                    <img th:src="${#strings.isEmpty(tipo.galeriaFotos) ? '/img/suite-placeholder.svg' : tipo.galeriaFotos}"
+                         th:alt="${'Vista de ' + tipo.nombreTematico}"
+                         data-fallback="/img/suite-placeholder.svg">
                     <span class="suite-card__badge">
                         <span class="suite-card__badge-dot"></span>
-                        3 disponibles
+                        Sujeto a disponibilidad
                     </span>
                 </div>
             </article>
 
-            <article class="suite-card" data-title="Suite Romana" data-description="Ambiente clásico con columnas, mármol y un toque de historia." data-amenities="Cama king Jacuzzi Agua caliente Aromaterapia Sistema de sonido">
-                <div class="suite-card__content">
-                    <header class="suite-card__header">
-                        <h2 class="suite-card__title">Suite Romana</h2>
-                        <p class="suite-card__description">Ambiente clásico con columnas, mármol y un toque de historia.</p>
-                    </header>
-                    <ul class="suite-card__amenities">
-                        <li>Cama king</li>
-                        <li>Jacuzzi</li>
-                        <li>Agua caliente</li>
-                        <li>Aromaterapia</li>
-                        <li>Sistema de sonido</li>
-                    </ul>
-                    <a class="suite-card__cta" href="#">Reservar desde S/.80</a>
-                </div>
-                <div class="suite-card__media suite-card__media--romana">
-                    <span class="suite-card__badge suite-card__badge--unavailable">
-                        <span class="suite-card__badge-dot"></span>
-                        Sin plazas
-                    </span>
-                </div>
-            </article>
-
-            <article class="suite-card" data-title="Suite Galaxia" data-description="Una experiencia futurista con cielos estelares y luces LED." data-amenities="Cama redonda Proyector estelar Smart TV Hidromasaje Iluminación RGB">
-                <div class="suite-card__content">
-                    <header class="suite-card__header">
-                        <h2 class="suite-card__title">Suite Galaxia</h2>
-                        <p class="suite-card__description">Una experiencia futurista con cielos estelares y luces LED.</p>
-                    </header>
-                    <ul class="suite-card__amenities">
-                        <li>Cama redonda</li>
-                        <li>Proyector estelar</li>
-                        <li>Smart TV</li>
-                        <li>Hidromasaje</li>
-                        <li>Iluminación RGB</li>
-                    </ul>
-                    <a class="suite-card__cta" href="#">Reservar desde S/.80</a>
-                </div>
-                <div class="suite-card__media suite-card__media--galaxia">
-                    <span class="suite-card__badge">
-                        <span class="suite-card__badge-dot"></span>
-                        3 disponibles
-                    </span>
-                </div>
-            </article>
+            <p class="suites-empty" th:if="${#lists.isEmpty(tiposHabitacion)}" role="status">
+                No hay suites configuradas en el catálogo todavía.
+            </p>
         </section>
 
         <footer class="inicio-footer">
@@ -138,7 +115,7 @@
             </span>
             <span>Inicio</span>
         </a>
-        <a class="bottom-nav__item" href="#">
+        <a class="bottom-nav__item" th:href="@{/cliente/reservas}">
             <span class="bottom-nav__icon">
                 <i class="bi bi-calendar-check"></i>
             </span>
@@ -158,6 +135,7 @@
         </a>
     </nav>
 
+    <script th:src="@{/js/suite-prices.js}" defer></script>
     <script th:src="@{/js/inicio-catalogo.js}" defer></script>
 </body>
 </html>
