@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#071514">
+    <title>Solicitar tiempo extra | Hotel Eclipse</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/reservas.css}">
+</head>
+<body class="reserva-page">
+    <header class="reserva-header">
+        <a class="reserva-brand" th:href="@{/inicio}">Eclipse <span>Suites</span></a>
+        <a class="reserva-header__link" th:href="@{/cliente/reservas/{id}(id=${reserva.id})}">Volver a la reserva</a>
+    </header>
+    <main class="reserva-shell reserva-shell--narrow">
+        <section class="reserva-intro">
+            <p class="reserva-eyebrow">Reserva <span th:text="${'#' + reserva.id}">#1</span></p>
+            <h1>¿Quieres más tiempo?</h1>
+            <p>La ampliación está sujeta a disponibilidad de la misma habitación.</p>
+        </section>
+        <p class="reserva-demo-notice" th:if="${demoMode}" role="status">
+            Modo demo: se simulará el pago y se actualizará la hora de salida de tu reserva.
+        </p>
+        <div class="reserva-alert reserva-alert--error" role="alert"
+             th:if="${errorReserva}" th:text="${errorReserva}"></div>
+        <section class="reserva-panel">
+            <dl class="reservation-summary">
+                <div><dt>Suite</dt><dd th:text="${reserva.tipoHabitacion.nombreTematico}">Suite</dd></div>
+                <div><dt>Habitación</dt><dd th:text="${reserva.habitacion.numHabitacion}">509</dd></div>
+                <div><dt>Salida actual</dt><dd th:text="${#temporals.format(reserva.fechaFin, 'dd/MM/yyyy HH:mm')}">Fecha</dd></div>
+            </dl>
+            <form th:action="@{/cliente/reservas/{id}/extensiones(id=${reserva.id})}"
+                  th:object="${extensionRequest}" method="post">
+                <fieldset class="duration-selection">
+                    <legend>Elige cuánto tiempo adicional necesitas</legend>
+                    <div class="duration-options">
+                        <label class="duration-option" th:each="modalidad : ${modalidades}">
+                            <input type="radio" th:field="*{modalidadId}"
+                                   th:value="${modalidad.id}" required>
+                            <span class="duration-option__hours"
+                                  th:text="${#numbers.formatDecimal(modalidad.duracionHoras, 1, 0) + ' h'}">4 h</span>
+                            <span class="duration-option__name"
+                                  th:text="${modalidad.nombreTurno}">4 horas</span>
+                        </label>
+                    </div>
+                </fieldset>
+                <div class="reservation-card__actions">
+                    <a class="button button--secondary"
+                       th:href="@{/cliente/reservas/{id}(id=${reserva.id})}">Volver</a>
+                    <button class="button button--primary" type="submit">Revisar disponibilidad y pagar</button>
+                </div>
+            </form>
+        </section>
+    </main>
+</body>
+</html>

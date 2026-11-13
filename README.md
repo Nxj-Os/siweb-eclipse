@@ -13,6 +13,10 @@ Aplicación web para la gestión de un hotel. El proyecto usa Spring Boot y est�
 - Login de clientes por correo y contraseña.
 - Contraseñas de clientes y empleados almacenadas con BCrypt; nunca se guarda la contraseña en texto plano.
 - Sesiones HTTP para los accesos de cliente y empleado.
+- Catálogo de siete suites y flujo de reserva por habitación física, con disponibilidad por intervalo, duración de 4, 6 o 12 horas y vista previa.
+- Retención de cinco minutos mientras se paga; en el perfil `demo` los métodos de pago se simulan y no se captura ni procesa dinero.
+- Código QR tras el pago para check-in de recepción; ampliaciones de estadía disponibles en el flujo demo después del check-in.
+- Catálogo de demostración con precios de muestra e inventario aislados en el perfil `demo`.
 - Bloqueo temporal de 3 minutos a partir del quinto fallo para la combinación de IP y usuario/correo.
 - Validación de datos, normalización de correos, rechazo de correo/documento duplicados y respuestas JSON de error.
 - Interfaz de autenticación adaptable a móvil, con fondo del hotel, wizard de registro, transiciones y animaciones breves; respeta `prefers-reduced-motion`.
@@ -23,7 +27,8 @@ Aplicación web para la gestión de un hotel. El proyecto usa Spring Boot y est�
 
 - Recuperación de contraseña y controles independientes contra abuso distribuido (los límites actuales viven en memoria).
 - Paneles distintos por rol y controles visibles para cerrar sesión. El login redirige a `/inicio`, pero esa página no diferencia todavía las capacidades por rol.
-- Activar los módulos de reservas, checkout, rack, room service, operaciones y reportes. Hay plantillas y archivos con nombres de controlador/servicio, pero no tienen implementación activa ni rutas MVC registradas en el estado actual.
+- Activar checkout, rack, room service, operaciones y reportes. Esos módulos todavía no tienen implementación activa ni rutas MVC registradas.
+- Cargar en PostgreSQL el catálogo, inventario e importes reales del hotel. El perfil `demo` solo usa precios de muestra.
 - Validar la actualización del esquema sobre una copia de la base PostgreSQL usada por el equipo. Las pruebas automáticas usan H2 y no modifican esa base.
 - Cambiar o eliminar las credenciales de empleados de prueba antes de desplegar.
 
@@ -59,8 +64,8 @@ flowchart LR
 
 ### Responsabilidades por capa
 
-- `controller`: recibe solicitudes REST y de páginas; las rutas activas son portada/inicio y autenticación.
-- `service`: valida y ejecuta reglas de registro, política de correo, autenticación y bloqueo de intentos.
+- `controller`: recibe solicitudes REST y de páginas; incluye autenticación, catálogo, reserva de clientes y operaciones de recepción para pagos y check-in.
+- `service`: valida y ejecuta reglas de autenticación, reserva por habitación, retenciones, pago demo, QR y ampliaciones.
 - `dao`: repositorios Spring Data JPA para consultar y persistir entidades.
 - `entity`: modelo relacional persistido, incluyendo `Cliente` y `Empleado`.
 - `dto`: contratos de entrada/salida de la API; evita exponer directamente las entidades.
@@ -79,6 +84,20 @@ La cadena API mantiene CSRF activo también para los endpoints públicos de logi
 | `GET` | `/login?tipo=cliente` | Formulario de login de cliente. |
 | `GET` | `/registro` | Formulario de registro de cliente. |
 | `GET` | `/inicio` | Página de entrada con sesión; redirige al login si no hay sesión autenticada. |
+| `GET` | `/cliente/reservas/nueva?tipoId={id}` | Requiere rol `CLIENTE`; permite elegir habitación física, fecha, hora y duración. |
+| `GET` | `/cliente/reservas/disponibilidad` | Devuelve habitaciones libres para el intervalo seleccionado. |
+| `POST` | `/cliente/reservas` | Retiene una habitación durante cinco minutos y crea la reserva pendiente de pago. |
+| `GET` | `/cliente/reservas/{id}/pago` | Muestra el método de pago y la cuenta regresiva de la retención. |
+| `POST` | `/cliente/reservas/{id}/pagar` | Simula el pago en demo; en modo normal registra el método para validación manual. |
+| `GET` | `/cliente/reservas/{id}/qr` | Entrega el QR privado de una reserva pagada. |
+| `GET` | `/cliente/reservas` | Lista las reservas del cliente autenticado. |
+| `GET` | `/cliente/reservas/{id}` | Muestra el estado, habitación, horario y QR de una reserva propia. |
+| `GET/POST` | `/cliente/reservas/{id}/extensiones/**` | En demo, retiene y cobra una ampliación después del check-in. |
+| `POST` | `/cliente/reservas/{id}/cancelar` | Cancela una reserva propia aún pendiente de pago. |
+| `GET` | `/recepcion/reservas` | Bandeja para validar pagos y consultar reservas que esperan check-in. |
+| `POST` | `/recepcion/reservas/check-in` | Valida el token QR y registra el check-in. |
+| `POST` | `/recepcion/reservas/{id}/confirmar` | En modo normal, confirma una solicitud después de revisar el pago. |
+| `POST` | `/recepcion/reservas/{id}/cancelar` | Cancela una solicitud desde recepción. |
 | `GET` | `/api/auth/csrf` | Emite el token CSRF que se usa en las solicitudes POST de la API. |
 | `GET` | `/api/auth/client/disponibilidad?campo=...&valor=...` | Verifica disponibilidad de correo, documento o teléfono; limitado por IP. |
 | `POST` | `/api/auth/login` | Login de empleado; recibe `username` y `password`. |
@@ -93,7 +112,7 @@ El registro de cliente recibe `tipoDocumento`, `numDocumento`, `paisEmisionDoc`,
 
 Las rutas API usan sesión HTTP y responden JSON. CSRF también está activo para la API; la interfaz obtiene el token con `GET /api/auth/csrf` y lo envía como `X-XSRF-TOKEN`. Las contraseñas se almacenan con BCrypt. Los clientes tienen autoridad `ROLE_CLIENTE`; los empleados reciben sus roles y permisos desde la base.
 
-### Flujo de uso
+### Flujo de reserva demo
 
 1. Arranca la aplicación con el perfil `demo` o con PostgreSQL.
 2. Abre `http://localhost:8080`; no abras el HTML estático directamente desde el explorador de archivos.
@@ -101,6 +120,10 @@ Las rutas API usan sesión HTTP y responden JSON. CSRF también está activo par
 4. Completa los dos pasos del registro. La cuenta se crea y la sesión se inicia al enviar el formulario.
 5. Para una cuenta de cliente existente, abre `/login?tipo=cliente` y usa el correo y la contraseña elegidos al registrarse.
 6. Para empleados, abre `/login?tipo=empleado` y usa username y contraseña de desarrollo o las credenciales de la base configurada.
+7. El cliente elige una suite, una habitación libre, la fecha, la hora y una duración de 4, 6 o 12 horas.
+8. El pago simulado retiene la habitación por cinco minutos; al confirmarse se muestra el QR para presentarlo a recepción.
+9. Recepción escanea el QR con la cámara cuando el navegador lo permite o introduce el token manualmente. Tras validar el check-in, el cliente puede solicitar y pagar tiempo extra en demo.
+10. La emisión de boletas PDF y el envío por correo quedan fuera de esta demo.
 
 ### Contratos JSON
 
@@ -181,6 +204,8 @@ SPRING_PROFILES_ACTIVE=demo ./mvnw spring-boot:run
 ```
 
 Abre [http://localhost:8080](http://localhost:8080). Puedes crear clientes desde `/registro` y entrar como empleado con una cuenta de desarrollo. La base H2 de demostración vive solo mientras la aplicación está abierta: al detenerla, sus registros se eliminan. No uses este perfil para producción.
+
+El perfil `demo` carga siete tipos de suite, tres duraciones (4, 6 y 12 horas), 16 habitaciones y tarifas simuladas. El sitio muestra un aviso de modo demo; los importes sirven para recorrer el flujo, no son precios comerciales. Los datos no se cargan en PostgreSQL.
 
 ### Ejecución con PostgreSQL
 
@@ -309,7 +334,7 @@ En Linux/macOS:
 ./mvnw test
 ```
 
-Las pruebas de contexto e integración configuran H2 en memoria. No requieren `DB_PASSWORD` ni escriben en PostgreSQL. La última ejecución completa pasó 74 pruebas.
+Las pruebas de contexto e integración configuran H2 en memoria. No requieren `DB_PASSWORD` ni escriben en PostgreSQL. La última ejecución completa pasó 108 pruebas.
 
 ## Estructura del proyecto
 

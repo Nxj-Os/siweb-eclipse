@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#071514">
+    <title>Estado de reserva | Hotel Eclipse</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/reservas.css}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body class="reserva-page">
+    <header class="reserva-header">
+        <a class="reserva-brand" th:href="@{/inicio}">Eclipse <span>Suites</span></a>
+        <a class="reserva-header__link" th:href="@{/cliente/reservas}">Mis reservas</a>
+    </header>
+    <main class="reserva-shell reserva-shell--narrow">
+        <section class="confirmation-card">
+            <span class="confirmation-icon" aria-hidden="true">
+                <i class="bi" th:classappend="${reserva.estadoReserva.name() == 'CHECKED_IN' ? ' bi-check-lg' : ' bi-calendar-check'}"></i>
+            </span>
+            <p class="reserva-eyebrow">Reserva <span th:text="${'#' + reserva.id}">#1</span></p>
+            <h1 th:text="${reserva.estadoReserva.name() == 'CHECKED_IN' ? 'Check-in completado' : (reserva.estadoReserva.name() == 'CONFIRMADA' ? 'Tu reserva está confirmada' : 'Estado de tu reserva')}">
+                Estado de tu reserva
+            </h1>
+            <p th:if="${reserva.estadoReserva.name() == 'PENDIENTE_PAGO'}">
+                Tu habitación está retenida por cinco minutos. Completa el pago para confirmar la reserva.
+            </p>
+            <p th:if="${reserva.estadoReserva.name() == 'CONFIRMADA'}">
+                El pago se confirmó. Presenta este código QR al personal al llegar para realizar el check-in.
+            </p>
+            <p th:if="${reserva.estadoReserva.name() == 'CHECKED_IN' and demoMode}">
+                El personal validó tu código. Ya puedes solicitar tiempo extra mientras tu estadía siga activa.
+            </p>
+            <p th:if="${reserva.estadoReserva.name() == 'CHECKED_IN' and not demoMode}">
+                El personal validó tu código QR y tu check-in quedó registrado.
+            </p>
+            <p th:if="${reserva.estadoReserva.name() == 'CANCELADA'}">
+                Esta reserva fue cancelada. Puedes elegir otra suite cuando quieras.
+            </p>
+            <p th:if="${reserva.estadoReserva.name() == 'EXPIRADA'}">
+                El tiempo de pago terminó y la habitación volvió a estar disponible.
+            </p>
+            <div class="status-pill"
+                 th:classappend="${' status-pill--' + #strings.toLowerCase(reserva.estadoReserva.name())}"
+                 th:text="${reserva.estadoReserva.etiqueta}">Pendiente de pago</div>
+            <dl class="reservation-summary">
+                <div><dt>Suite</dt><dd th:text="${reserva.tipoHabitacion.nombreTematico}">Suite</dd></div>
+                <div><dt>Habitación</dt><dd th:text="${reserva.habitacion.numHabitacion}">509</dd></div>
+                <div><dt>Ingreso</dt><dd th:text="${#temporals.format(reserva.fechaInicio, 'dd/MM/yyyy HH:mm')}">Fecha</dd></div>
+                <div><dt>Salida</dt><dd th:text="${#temporals.format(reserva.fechaFin, 'dd/MM/yyyy HH:mm')}">Fecha</dd></div>
+                <div><dt>Duración inicial</dt><dd th:text="${reserva.modalidadTurno.nombreTurno}">4 horas</dd></div>
+                <div><dt>Personas</dt><dd th:text="${reserva.cantidadPersonas}">2</dd></div>
+                <div><dt>Método de pago</dt><dd th:text="${reserva.metodoPago.etiqueta}">Yape</dd></div>
+                <div><dt>Total</dt><dd th:text="${'S/ ' + #numbers.formatDecimal(reserva.montoTotal, 1, 2)}">S/ 0.00</dd></div>
+            </dl>
+            <section class="qr-confirmation" th:if="${reserva.tokenQr != null}">
+                <h2>Código QR para check-in</h2>
+                <img class="reservation-qr" th:src="@{/cliente/reservas/{id}/qr(id=${reserva.id})}"
+                     alt="Código QR de la reserva">
+                <p>Este QR es personal y solo puede validarse una vez durante el horario de tu reserva.</p>
+            </section>
+            <div class="reserva-alert reserva-alert--success"
+                 th:if="${reserva.estadoReserva.name() == 'CHECKED_IN'}" role="status">
+                <i class="bi bi-check-circle" aria-hidden="true"></i> Check-in validado por recepción.
+            </div>
+            <div class="confirmation-actions">
+                <a class="button button--primary"
+                   th:if="${reserva.estadoReserva.name() == 'PENDIENTE_PAGO'}"
+                   th:href="@{/cliente/reservas/{id}/pago(id=${reserva.id})}">Completar pago</a>
+                <a class="button button--primary"
+                   th:if="${demoMode and reserva.estadoReserva.name() == 'CHECKED_IN'}"
+                   th:href="@{/cliente/reservas/{id}/extensiones/nueva(id=${reserva.id})}">Solicitar tiempo extra</a>
+                <a class="button button--secondary" th:href="@{/cliente/reservas}">Ver mis reservas</a>
+                <a class="button button--secondary" th:href="@{/inicio}">Volver a suites</a>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

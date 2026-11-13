@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#071514">
+    <title>Mis reservas | Hotel Eclipse</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/reservas.css}">
+</head>
+<body class="reserva-page">
+    <header class="reserva-header">
+        <a class="reserva-brand" th:href="@{/inicio}">Eclipse <span>Suites</span></a>
+        <a class="reserva-header__link" th:href="@{/inicio}">Nueva reserva</a>
+    </header>
+    <main class="reserva-shell">
+        <section class="reserva-intro">
+            <p class="reserva-eyebrow">Tu historial</p>
+            <h1>Mis reservas</h1>
+            <p>Revisa el estado de tus solicitudes y el metodo de pago que elegiste.</p>
+        </section>
+        <div class="reserva-alert reserva-alert--success" th:if="${mensaje}" th:text="${mensaje}"></div>
+        <div class="reserva-alert reserva-alert--error" th:if="${errorReserva}" th:text="${errorReserva}"></div>
+        <div class="empty-state" th:if="${#lists.isEmpty(reservas)}">
+            <h2>Aun no tienes reservas</h2>
+            <p>Cuando solicites una suite, su estado aparecera aqui.</p>
+            <a class="button button--primary" th:href="@{/inicio}">Explorar suites</a>
+        </div>
+        <section class="reservation-list" th:if="${not #lists.isEmpty(reservas)}" aria-label="Reservas">
+            <article class="reservation-card" th:each="reserva : ${reservas}">
+                <div class="reservation-card__top">
+                    <div>
+                        <p class="reservation-code" th:text="${'Reserva #' + reserva.id}">Reserva #1</p>
+                        <h2 th:text="${reserva.tipoHabitacion.nombreTematico}">Suite</h2>
+                    </div>
+                    <span class="status-pill" th:classappend="${' status-pill--' + #strings.toLowerCase(reserva.estadoReserva.name())}"
+                          th:text="${reserva.estadoReserva.etiqueta}">Pendiente</span>
+                </div>
+                <dl class="reservation-summary">
+                    <div><dt>Fecha</dt><dd th:text="${#temporals.format(reserva.fechaInicio, 'dd/MM/yyyy')}">01/01/2026</dd></div>
+                    <div><dt>Turno</dt><dd th:text="${reserva.modalidadTurno.nombreTurno}">Turno</dd></div>
+                    <div><dt>Personas</dt><dd th:text="${reserva.cantidadPersonas}">2</dd></div>
+                    <div><dt>Pago</dt><dd th:text="${reserva.metodoPago.etiqueta}">Metodo</dd></div>
+                </dl>
+                <div class="reservation-card__actions">
+                    <a class="text-link" th:href="@{/cliente/reservas/{id}(id=${reserva.id})}">Ver detalle</a>
+                    <form th:if="${reserva.estadoReserva.name() == 'PENDIENTE_PAGO'}"
+                          th:action="@{/cliente/reservas/{id}/cancelar(id=${reserva.id})}" method="post">
+                        <button class="text-link text-link--danger" type="submit">Cancelar solicitud</button>
+                    </form>
+                </div>
+            </article>
+        </section>
+    </main>
+</body>
+</html>

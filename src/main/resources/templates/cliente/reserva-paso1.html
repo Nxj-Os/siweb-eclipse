@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#071514">
+    <title>Elige habitación y horario | Hotel Eclipse</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" th:href="@{/css/reservas.css}">
+    <script th:src="@{/js/suite-prices.js}" defer></script>
+    <script th:src="@{/js/reservas.js}" defer></script>
+</head>
+<body class="reserva-page">
+    <header class="reserva-header">
+        <a class="reserva-brand" th:href="@{/inicio}">Eclipse <span>Suites</span></a>
+        <a class="reserva-header__link" th:href="@{/cliente/reservas}">Mis reservas</a>
+    </header>
+
+    <main class="reserva-shell">
+        <p class="reserva-demo-notice" th:if="${demoMode}" role="status">
+            Modo demo: disponibilidad y tarifas simuladas. El pago no realiza un cobro real.
+        </p>
+        <section class="reserva-intro">
+            <p class="reserva-eyebrow">Suite seleccionada</p>
+            <h1 th:text="${tipoHabitacion.nombreTematico}">Suite Panorámica</h1>
+            <p>Elige una habitación disponible, la fecha y cuánto tiempo deseas quedarte.</p>
+        </section>
+
+        <div class="reserva-alert reserva-alert--error" role="alert"
+             th:if="${errorReserva}" th:text="${errorReserva}"></div>
+
+        <form class="reserva-form" th:action="@{/cliente/reservas}"
+              th:object="${reservaRequest}"
+              th:attr="data-tipo-id=${tipoHabitacion.id},
+                       data-disponibilidad-url=@{/cliente/reservas/disponibilidad}"
+              method="post">
+            <input type="hidden" th:field="*{tipoHabitacionId}">
+            <div class="reserva-layout">
+                <div class="reserva-layout__steps">
+                    <section class="reserva-panel">
+                        <div class="reserva-panel__heading">
+                            <span class="reserva-panel__step">01</span>
+                            <div>
+                                <h2>Habitaciones de esta suite</h2>
+                                <p id="disponibilidad-resumen" aria-live="polite">
+                                    Consulta la disponibilidad para el horario elegido.
+                                </p>
+                            </div>
+                        </div>
+                        <label class="suite-search">
+                            <i class="bi bi-search" aria-hidden="true"></i>
+                            <span class="visually-hidden">Buscar habitación</span>
+                            <input id="buscar-habitacion" type="search"
+                                   placeholder="Buscar número de habitación" autocomplete="off">
+                        </label>
+                        <div class="room-selection-grid">
+                            <label class="room-option" th:each="habitacion : ${habitaciones}"
+                                   th:classappend="${#sets.contains(habitacionesDisponibles, habitacion.id) ? '' : ' room-option--unavailable'}"
+                                   th:attr="data-room-number=${habitacion.numHabitacion}">
+                                <input type="radio" th:field="*{habitacionId}"
+                                       th:value="${habitacion.id}" required
+                                       th:disabled="${not #sets.contains(habitacionesDisponibles, habitacion.id)}">
+                                <span class="room-option__image">
+                                    <img th:src="${#strings.isEmpty(tipoHabitacion.galeriaFotos) ? '/img/suite-placeholder.svg' : tipoHabitacion.galeriaFotos}"
+                                         th:alt="${'Habitación ' + habitacion.numHabitacion}"
+                                         data-fallback="/img/suite-placeholder.svg">
+                                </span>
+                                <span class="room-option__details">
+                                    <strong th:text="${'Habitación ' + habitacion.numHabitacion}">Habitación 509</strong>
+                                    <span class="availability-pill" data-room-status
+                                          th:text="${#sets.contains(habitacionesDisponibles, habitacion.id) ? 'Disponible' : 'Ocupada'}">Disponible</span>
+                                </span>
+                            </label>
+                        </div>
+                        <p class="empty-search" id="sin-resultados" hidden>
+                            No encontramos habitaciones con ese número.
+                        </p>
+                        <p class="field-error" th:if="${#fields.hasErrors('habitacionId')}"
+                           th:errors="*{habitacionId}"></p>
+                    </section>
+
+                    <section class="reserva-panel">
+                        <div class="reserva-panel__heading">
+                            <span class="reserva-panel__step">02</span>
+                            <div>
+                                <h2>Fecha, hora y duración</h2>
+                                <p>Elige tu hora de ingreso; la salida se calcula según la duración.</p>
+                            </div>
+                        </div>
+                        <div class="reserva-fields reserva-fields--schedule">
+                            <label class="reserva-field">
+                                <span>Fecha de ingreso</span>
+                                <input type="date" th:field="*{fechaReserva}"
+                                       th:attr="min=${fechaMinima}" required>
+                                <small class="field-error" th:if="${#fields.hasErrors('fechaReserva')}"
+                                       th:errors="*{fechaReserva}"></small>
+                            </label>
+                            <label class="reserva-field">
+                                <span>Hora de ingreso</span>
+                                <input type="time" th:field="*{horaInicio}" required>
+                                <small class="field-error" th:if="${#fields.hasErrors('horaInicio')}"
+                                       th:errors="*{horaInicio}"></small>
+                            </label>
+                            <label class="reserva-field">
+                                <span>Personas</span>
+                                <input type="number" th:field="*{cantidadPersonas}"
+                                       min="1" th:attr="max=${tipoHabitacion.capacidadMaxima}" required>
+                                <small class="field-hint"
+                                       th:text="${'Capacidad máxima: ' + tipoHabitacion.capacidadMaxima + ' personas'}">
+                                    Capacidad máxima: 2 personas
+                                </small>
+                                <small class="field-error" th:if="${#fields.hasErrors('cantidadPersonas')}"
+                                       th:errors="*{cantidadPersonas}"></small>
+                            </label>
+                        </div>
+                        <fieldset class="duration-selection">
+                            <legend>Tiempo de reserva</legend>
+                            <div class="duration-options">
+                                <label class="duration-option" th:each="modalidad : ${modalidades}">
+                                    <input type="radio" th:field="*{modalidadId}"
+                                           th:value="${modalidad.id}" required
+                                           th:attr="data-duracion-minutos=${modalidad.duracionHoras * 60},
+                                                    data-nombre=${modalidad.nombreTurno}">
+                                    <span class="duration-option__hours"
+                                          th:text="${#numbers.formatDecimal(modalidad.duracionHoras, 1, 0) + ' h'}">4 h</span>
+                                    <span class="duration-option__name"
+                                          th:text="${modalidad.nombreTurno}">4 horas</span>
+                                </label>
+                            </div>
+                        </fieldset>
+                        <small class="field-error" th:if="${#fields.hasErrors('modalidadId')}"
+                               th:errors="*{modalidadId}"></small>
+                        <p class="reserva-price" id="tarifa-seleccionada" aria-live="polite">
+                            Selecciona habitación, fecha y duración para consultar el precio.
+                        </p>
+                        <div class="reservation-card__actions">
+                            <a class="button button--secondary" th:href="@{/inicio}">Volver a suites</a>
+                            <button class="button button--primary" type="submit"
+                                    th:disabled="${#lists.isEmpty(habitaciones)}">
+                                Reservar esta habitación
+                            </button>
+                        </div>
+                    </section>
+                </div>
+
+                <aside class="reservation-preview" aria-labelledby="preview-title">
+                    <div class="reservation-preview__image">
+                        <img id="preview-image"
+                             th:src="${#strings.isEmpty(tipoHabitacion.galeriaFotos) ? '/img/suite-placeholder.svg' : tipoHabitacion.galeriaFotos}"
+                             th:alt="${'Vista de ' + tipoHabitacion.nombreTematico}"
+                             data-fallback="/img/suite-placeholder.svg">
+                    </div>
+                    <p class="reserva-eyebrow">Vista previa</p>
+                    <h2 id="preview-title" th:text="${tipoHabitacion.nombreTematico}">Suite Panorámica</h2>
+                    <p class="reservation-preview__description" id="preview-description"
+                       th:text="${tipoHabitacion.descripcionTematica}">Descripción</p>
+                    <div class="reservation-preview__facts">
+                        <div><span>Habitación</span><strong id="preview-room">Por elegir</strong></div>
+                        <div><span>Fecha y hora</span><strong id="preview-start">Por elegir</strong></div>
+                        <div><span>Duración</span><strong id="preview-duration">Por elegir</strong></div>
+                        <div><span>Salida</span><strong id="preview-end">Por elegir</strong></div>
+                        <div><span>Personas</span><strong id="preview-guests">1</strong></div>
+                    </div>
+                    <h3>Qué incluye</h3>
+                    <div class="reservation-preview__includes" id="preview-includes"
+                         th:attr="data-incluye=${#strings.containsIgnoreCase(tipoHabitacion.nombreTematico, 'panorám') ? 'Cama matrimonial|Smart TV|Frigobar|Agua caliente|Luces psicodélicas|Ventilador|Vista al exterior|Espejo pared|Wi-Fi gratis|Videos 30' : ''}">
+                        <span th:if="${#strings.containsIgnoreCase(tipoHabitacion.nombreTematico, 'panorám')}">Cama matrimonial</span>
+                        <span th:if="${#strings.containsIgnoreCase(tipoHabitacion.nombreTematico, 'panorám')}">Smart TV</span>
+                        <span th:if="${#strings.containsIgnoreCase(tipoHabitacion.nombreTematico, 'panorám')}">Frigobar</span>
+                        <span th:unless="${#strings.containsIgnoreCase(tipoHabitacion.nombreTematico, 'panorám')}"
+                              th:text="${tipoHabitacion.descripcionTematica}">Características de la suite</span>
+                    </div>
+                </aside>
+            </div>
+
+            <ul id="tarifa-data" hidden>
+                <li th:each="tarifa : ${tarifas}"
+                    th:if="${tarifa.id.idTipoHabitacion == tipoHabitacion.id}"
+                    th:attr="data-tipo=${tarifa.id.idTipoHabitacion},
+                             data-modalidad=${tarifa.id.idModalidad},
+                             data-precio=${tarifa.precioEstadiaBase},
+                             data-desde=${tarifa.vigenciaDesde},
+                             data-hasta=${tarifa.vigenciaHasta}"></li>
+            </ul>
+        </form>
+    </main>
+</body>
+</html>
