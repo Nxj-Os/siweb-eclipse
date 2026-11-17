@@ -34,32 +34,39 @@ public class DemoCatalogInitializer implements ApplicationRunner {
             new DemoSuite("BASICA", "Suite Básica",
                     "Una opción clásica y confortable para una estadía breve.",
                     "/img/suite-romana.webp", (short) 2, List.of("201", "202"),
-                    List.of(50, 80, 120)),
+                    List.of(50, 80, 120),
+                    "Wi-Fi|Smart TV|Agua caliente|Frigobar"),
             new DemoSuite("JUNIOR", "Suite Junior",
                     "Un ambiente temático para descansar y relajarse.",
                     "/img/suite-vip-deluxe.webp", (short) 2, List.of("301", "303"),
-                    List.of(80, 120, 170)),
+                    List.of(60, 90, 140),
+                    "Wi-Fi|Smart TV|Agua caliente|Frigobar|Aire acondicionado"),
             new DemoSuite("PANORAMICA", "Suite Panorámica",
                     "Disfruta de una vista panorámica al exterior. Incluye cama matrimonial, Smart TV, frigobar, agua caliente, luces psicodélicas, ventilador, espejo de pared, Wi-Fi y videos.",
                     "/img/suite-galaxia.webp", (short) 2,
                     List.of("302", "316", "318", "402", "502", "509", "510", "512"),
-                    List.of(80, 120, 170)),
+                    List.of(80, 120, 170),
+                    "Vista panorámica|Cama matrimonial|Smart TV|Frigobar|Agua caliente|Luces psicodélicas|Wi-Fi|Ventilador"),
             new DemoSuite("ROJA", "Suite Roja",
                     "Una suite temática con ambientación en tonos rojos.",
                     "/img/suite-placeholder.svg", (short) 2, List.of("401"),
-                    List.of(150, 200, 270)),
+                    List.of(100, 150, 180),
+                    "Ambientación temática|Smart TV|Frigobar|Agua caliente|Wi-Fi"),
             new DemoSuite("JACUZZI", "Suite Jacuzzi",
                     "Una suite privada para disfrutar de un momento de descanso.",
                     "/img/suite-galaxia.webp", (short) 2, List.of("501"),
-                    List.of(170, 230, 310)),
+                    List.of(120, 160, 190),
+                    "Jacuzzi privado|Smart TV|Frigobar|Agua caliente|Wi-Fi"),
             new DemoSuite("SAUNA_JACUZZI", "Sauna con Jacuzzi",
-                    "Un espacio privado de demostración con sauna y jacuzzi.",
+                    "Un espacio privado con sauna y jacuzzi para una experiencia de relajación completa.",
                     "/img/suite-placeholder.svg", (short) 2, List.of("601"),
-                    List.of(200, 260, 350)),
+                    List.of(150, 200, 250),
+                    "Sauna privada|Jacuzzi privado|Smart TV|Frigobar|Wi-Fi"),
             new DemoSuite("PRESIDENCIAL", "Suite Presidencial",
                     "Una suite de categoría superior para una estadía especial.",
                     "/img/suite-vip-deluxe.webp", (short) 2, List.of("701"),
-                    List.of(250, 320, 420))
+                    List.of(160, 200, 260),
+                    "Jacuzzi privado|Sala de estar|Smart TV|Frigobar|Aire acondicionado|Wi-Fi")
     );
 
     private final TipoHabitacionRepository tipoHabitacionRepository;
@@ -104,12 +111,21 @@ public class DemoCatalogInitializer implements ApplicationRunner {
 
     private TipoHabitacion obtenerOCrearSuite(DemoSuite demoSuite) {
         return tipoHabitacionRepository.findByCodTipo(demoSuite.codigo())
+                .map(tipo -> {
+                    tipo.setNombreTematico(demoSuite.nombre());
+                    tipo.setDescripcionTematica(demoSuite.descripcion());
+                    tipo.setGaleriaFotos(demoSuite.imagen());
+                    tipo.setCapacidadMaxima(demoSuite.capacidad());
+                    tipo.setAmenidades(demoSuite.amenidades());
+                    return tipoHabitacionRepository.save(tipo);
+                })
                 .orElseGet(() -> tipoHabitacionRepository.save(TipoHabitacion.builder()
                         .codTipo(demoSuite.codigo())
                         .nombreTematico(demoSuite.nombre())
                         .descripcionTematica(demoSuite.descripcion())
                         .galeriaFotos(demoSuite.imagen())
                         .capacidadMaxima(demoSuite.capacidad())
+                        .amenidades(demoSuite.amenidades())
                         .build()));
     }
 
@@ -120,14 +136,23 @@ public class DemoCatalogInitializer implements ApplicationRunner {
         for (int index = 0; index < modalidades.size(); index++) {
             ModalidadTurno modalidad = modalidades.get(index);
             TarifaHabitacionPK tarifaId = new TarifaHabitacionPK(tipo.getId(), modalidad.getId());
-            if (tarifaHabitacionRepository.existsById(tarifaId)) {
+            BigDecimal precio = BigDecimal.valueOf(precios.get(index));
+            TarifaHabitacion existente = tarifaHabitacionRepository.findById(tarifaId)
+                    .orElse(null);
+            if (existente != null) {
+                existente.setPrecioEstadiaBase(precio);
+                existente.setCostoHoraAdicional(BigDecimal.ZERO);
+                existente.setEsTarifaFinSemana(false);
+                existente.setVigenciaDesde(vigenciaDesde);
+                existente.setVigenciaHasta(vigenciaHasta);
+                tarifaHabitacionRepository.save(existente);
                 continue;
             }
             tarifaHabitacionRepository.save(TarifaHabitacion.builder()
                     .id(tarifaId)
                     .tipoHabitacion(tipo)
                     .modalidadTurno(modalidad)
-                    .precioEstadiaBase(BigDecimal.valueOf(precios.get(index)))
+                    .precioEstadiaBase(precio)
                     .costoHoraAdicional(BigDecimal.ZERO)
                     .esTarifaFinSemana(false)
                     .vigenciaDesde(vigenciaDesde)
@@ -155,6 +180,7 @@ public class DemoCatalogInitializer implements ApplicationRunner {
     private record DemoSuite(String codigo, String nombre,
                              String descripcion, String imagen, short capacidad,
                              List<String> habitaciones,
-                             List<Integer> precios) {
+                             List<Integer> precios,
+                             String amenidades) {
     }
 }

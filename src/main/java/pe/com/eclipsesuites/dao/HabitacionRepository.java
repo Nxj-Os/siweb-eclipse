@@ -20,6 +20,8 @@ public interface HabitacionRepository extends JpaRepository<Habitacion, Integer>
 
     long countByTipoHabitacionId(Integer idTipoHabitacion);
 
+    long countByTipoHabitacionIdAndEstadoRackIgnoreCase(Integer idTipoHabitacion, String estadoRack);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select h from Habitacion h where h.tipoHabitacion.id = :tipoId order by h.id")
     List<Habitacion> findAllByTipoHabitacionIdForUpdate(@Param("tipoId") Integer tipoId);

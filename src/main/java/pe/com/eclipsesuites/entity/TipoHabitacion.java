@@ -38,4 +38,11 @@ public class TipoHabitacion {
 
     @Column(name = "capacidad_maxima", nullable = false)
     private Short capacidadMaxima;
+
+    /**
+     * Amenidades de la suite separadas por "|". Se deja nullable para no romper
+     * bases de datos existentes creadas con ddl-auto=update.
+     */
+    @Column(name = "amenidades", columnDefinition = "TEXT")
+    private String amenidades;
 }

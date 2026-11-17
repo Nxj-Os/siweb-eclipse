@@ -8,7 +8,10 @@ import pe.com.eclipsesuites.dao.HabitacionRepository;
 import pe.com.eclipsesuites.dao.ModalidadTurnoRepository;
 import pe.com.eclipsesuites.dao.TarifaHabitacionRepository;
 import pe.com.eclipsesuites.dao.TipoHabitacionRepository;
+import pe.com.eclipsesuites.entity.TarifaHabitacionPK;
 import pe.com.eclipsesuites.entity.TipoHabitacion;
+
+import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -47,5 +50,33 @@ class DemoCatalogInitializerTest {
         assertThat(habitacionRepository.findAll()).hasSize(16);
         assertThat(suites).allSatisfy(suite ->
                 assertThat(habitacionRepository.countByTipoHabitacionId(suite.getId())).isPositive());
+    }
+
+    @Test
+    void demoProfileSeedsAmenitiesAndOfficialPrices() {
+        var suites = tipoHabitacionRepository.findAll();
+        assertThat(suites).allSatisfy(suite ->
+                assertThat(suite.getAmenidades()).isNotBlank());
+
+        assertThat(precioDe("BASICA", "4 horas")).isEqualByComparingTo("50.00");
+        assertThat(precioDe("JUNIOR", "6 horas")).isEqualByComparingTo("90.00");
+        assertThat(precioDe("PANORAMICA", "12 horas")).isEqualByComparingTo("170.00");
+        assertThat(precioDe("ROJA", "4 horas")).isEqualByComparingTo("100.00");
+        assertThat(precioDe("JACUZZI", "6 horas")).isEqualByComparingTo("160.00");
+        assertThat(precioDe("SAUNA_JACUZZI", "12 horas")).isEqualByComparingTo("250.00");
+        assertThat(precioDe("PRESIDENCIAL", "12 horas")).isEqualByComparingTo("260.00");
+    }
+
+    private BigDecimal precioDe(String codTipo, String nombreModalidad) {
+        Integer tipoId = tipoHabitacionRepository.findByCodTipo(codTipo)
+                .orElseThrow()
+                .getId();
+        Integer modalidadId = modalidadTurnoRepository.findByNombreTurno(nombreModalidad)
+                .orElseThrow()
+                .getId();
+        return tarifaHabitacionRepository
+                .findById(new TarifaHabitacionPK(tipoId, modalidadId))
+                .orElseThrow()
+                .getPrecioEstadiaBase();
     }
 }

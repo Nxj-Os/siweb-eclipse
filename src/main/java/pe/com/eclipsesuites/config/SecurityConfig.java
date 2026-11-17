@@ -41,7 +41,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/login", "/api/auth/client/login",
                                 "/api/auth/client/register",
                                 "/api/auth/client/disponibilidad",
-                                "/api/auth/csrf").permitAll()
+                                "/api/auth/csrf",
+                                "/api/catalogo", "/api/catalogo/**").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(apiAuthenticationEntryPoint())
@@ -66,7 +67,8 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/index.html", "/login", "/registro", "/error", "/css/**", "/js/**",
-                                "/images/**", "/img/**", "/webjars/**", "/favicon.ico").permitAll()
+                                "/images/**", "/img/**", "/webjars/**", "/favicon.ico",
+                                "/catalogo", "/catalogo/**").permitAll()
                         .requestMatchers("/cliente/**").hasRole("CLIENTE")
                         .requestMatchers("/admin/**", "/reportes/**").hasRole("ADMIN")
                         .requestMatchers("/recepcion/**").hasAnyRole("RECEPCION", "ADMIN")
