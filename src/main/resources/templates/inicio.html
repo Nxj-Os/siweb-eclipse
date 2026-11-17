@@ -24,6 +24,7 @@
             </span>
             <span>Usuario</span>
         </button>
+        <a class="inicio-header__reservation-link" th:href="@{/catalogo}">Catálogo público</a>
         <a class="inicio-header__reservation-link" sec:authorize="hasAnyRole('RECEPCION', 'ADMIN')"
            th:href="@{/recepcion/reservas}">Validar reservas</a>
     </header>
