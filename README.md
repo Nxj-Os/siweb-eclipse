@@ -14,6 +14,7 @@ Aplicación web para la gestión de un hotel. El proyecto usa Spring Boot y est�
 - Contraseñas de clientes y empleados almacenadas con BCrypt; nunca se guarda la contraseña en texto plano.
 - Sesiones HTTP para los accesos de cliente y empleado.
 - Catálogo de siete suites y flujo de reserva por habitación física, con disponibilidad por intervalo, duración de 4, 6 o 12 horas y vista previa.
+- Catálogo público `/catalogo` con disponibilidad operativa y por fecha/hora, filtros por texto, disponibilidad, duración y orden, ficha de detalle por suite, amenidades y API JSON reutilizable.
 - Retención de cinco minutos mientras se paga; en el perfil `demo` los métodos de pago se simulan y no se captura ni procesa dinero.
 - Código QR tras el pago para check-in de recepción; ampliaciones de estadía disponibles en el flujo demo después del check-in.
 - Catálogo de demostración con precios de muestra e inventario aislados en el perfil `demo`.
@@ -84,6 +85,11 @@ La cadena API mantiene CSRF activo también para los endpoints públicos de logi
 | `GET` | `/login?tipo=cliente` | Formulario de login de cliente. |
 | `GET` | `/registro` | Formulario de registro de cliente. |
 | `GET` | `/inicio` | Página de entrada con sesión; redirige al login si no hay sesión autenticada. |
+| `GET` | `/catalogo` | Catálogo público con filtros `q`, `fecha`, `hora`, `modalidadId`, `soloDisponibles` y `orden`. |
+| `GET` | `/catalogo/{codTipo}` | Ficha pública de una suite con amenidades, tarifas y habitaciones. |
+| `GET` | `/api/catalogo` | API JSON pública con los mismos filtros del catálogo. |
+| `GET` | `/api/catalogo/{codTipo}` | Detalle JSON de una suite. |
+| `GET` | `/api/catalogo/disponibilidad?tipoHabitacionId=...&fecha=...&hora=...` | Disponibilidad pública por intervalo; acepta `modalidadId` y limita consultas por IP. |
 | `GET` | `/cliente/reservas/nueva?tipoId={id}` | Requiere rol `CLIENTE`; permite elegir habitación física, fecha, hora y duración. |
 | `GET` | `/cliente/reservas/disponibilidad` | Devuelve habitaciones libres para el intervalo seleccionado. |
 | `POST` | `/cliente/reservas` | Retiene una habitación durante cinco minutos y crea la reserva pendiente de pago. |

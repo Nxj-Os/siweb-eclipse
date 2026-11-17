@@ -60,6 +60,7 @@ Las cantidades se obtuvieron contando los archivos `.java` presentes, incluidos 
 
 - `SiwebEclipseApplication.main`: inicializa Spring Boot.
 - `HomeController`: sirve `/inicio` con los tipos de suite y tarifas actuales; exige una sesión autenticada y, de lo contrario, redirige a `/login`.
+- `CatalogoController`: sirve `/catalogo` y `/catalogo/{codTipo}` sin sesión y expone `/api/catalogo/**` como JSON público.
 - `AuthPageController`: sirve los formularios Thymeleaf de login y registro.
 - `AuthController`: API de autenticación bajo `/api/auth`.
 - `SecurityConfig`: configura una cadena para `/api/**` y otra para las páginas web.
@@ -73,6 +74,11 @@ Las cantidades se obtuvieron contando los archivos `.java` presentes, incluidos 
 | `GET` | `/login?tipo=empleado` o `?tipo=cliente` | Formulario público; el parámetro selecciona la identidad a pedir. |
 | `GET` | `/registro` | Formulario público; Thymeleaf incluye los dominios permitidos configurados. |
 | `GET` | `/inicio` | Requiere autenticación; no diferencia la vista por rol. |
+| `GET` | `/catalogo` | Público; lista suites con disponibilidad, precio desde y filtros `q`, `fecha`, `hora`, `modalidadId`, `soloDisponibles` y `orden`. |
+| `GET` | `/catalogo/{codTipo}` | Público; ficha de la suite con amenidades, tarifas y habitaciones. |
+| `GET` | `/api/catalogo` | Público; la misma lista del catálogo en JSON. |
+| `GET` | `/api/catalogo/{codTipo}` | Público; detalle JSON de una suite. |
+| `GET` | `/api/catalogo/disponibilidad` | Público; disponibilidad real por fecha, hora y modalidad, con límite de consultas por IP. |
 | `GET` | `/cliente/reservas/nueva?tipoId={id}` | Requiere rol `CLIENTE`; permite elegir habitación física, fecha, hora y duración. |
 | `GET` | `/cliente/reservas/disponibilidad` | Requiere rol `CLIENTE`; devuelve habitaciones libres para el intervalo solicitado. |
 | `POST` | `/cliente/reservas` | Requiere rol `CLIENTE`; retiene la habitación por cinco minutos y crea una reserva pendiente de pago. |
@@ -96,6 +102,22 @@ Las cantidades se obtuvieron contando los archivos `.java` presentes, incluidos 
 En `/api/**`, los errores de autenticación/autorización tienen respuestas JSON. Los patrones web `/cliente/**`, `/admin/**`, `/reportes/**`, `/recepcion/**` y `/roomservice/**` tienen reglas de rol en Spring Security; que exista una regla no implica que haya una ruta o módulo implementado detrás.
 
 `SecurityConfig` usa BCrypt con costo 10 y `HttpSessionSecurityContextRepository`. Las sesiones tienen 30 minutos de inactividad; la cookie es `HttpOnly` y `SameSite=Lax`. `Secure` es falso en desarrollo y se activa con el perfil `prod`. El ID de sesión cambia tras login/registro.
+
+### Catálogo público
+
+`CatalogoController` sirve dos vistas Thymeleaf (`catalogo/index` y `catalogo/detalle`) y tres rutas JSON. Las rutas están permitidas en ambas cadenas de `SecurityConfig`; reservar sigue exigiendo `ROLE_CLIENTE`, por lo que el botón de reserva redirige al login cuando no hay sesión.
+
+`CatalogoServiceImpl` reutiliza `IReservaService` para no duplicar las reglas de reserva:
+
+- `listarTiposHabitacion()`, `listarTarifas()` y `listarModalidades()` alimentan las tarjetas.
+- Sin fecha/hora, la disponibilidad de la tarjeta cuenta habitaciones con `estado_rack` `LIBRE` o `DISPONIBLE`.
+- Con fecha/hora y modalidad, delega en `listarHabitacionesDisponibles(...)`, que descarta cruces con reservas y extensiones activas.
+- El precio "desde" es el menor de las tarifas vigentes; si no hay vigentes, usa todas las tarifas configuradas.
+- Las amenidades se guardan en `tipo_habitacion.amenidades` como texto separado por `|`. La columna es nullable para que `ddl-auto=update` no falle sobre bases existentes.
+
+`GET /api/catalogo/disponibilidad` es la versión pública de la consulta de disponibilidad y usa `DisponibilidadRateLimiter` (30 solicitudes por minuto e IP) para evitar abuso. La API no requiere CSRF porque solo expone lecturas GET.
+
+En el perfil `demo`, `DemoCatalogInitializer` carga siete suites con las tarifas oficiales, amenidades y 16 habitaciones. Los datos se actualizan de forma idempotente al arrancar.
 
 ### Registro de cliente
 
