@@ -47,9 +47,9 @@ public class Habitacion {
     @Column(name = "token_qr_dinamico", nullable = false, unique = true, length = 255)
     private String tokenQrDinamico;
 
-    @Column(name = "fecha_expiracion_token", nullable = false, columnDefinition = "timestamptz")
+    @Column(name = "fecha_expiracion_token", nullable = false)
     private OffsetDateTime fechaExpiracionToken;
 
-    @Column(name = "bloqueo_temporal_hasta", nullable = false, columnDefinition = "timestamptz")
+    @Column(name = "bloqueo_temporal_hasta", nullable = false)
     private OffsetDateTime bloqueoTemporalHasta;
 }

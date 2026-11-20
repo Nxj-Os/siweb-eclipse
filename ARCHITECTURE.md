@@ -6,7 +6,7 @@ Este documento describe el código que existe hoy en el workspace. Es una fotogr
 
 Siweb Eclipse es una aplicación web monolítica construida con Spring Boot. El backend Java sirve páginas Thymeleaf y recursos estáticos; el navegador usa `auth-login.js` para autenticar y registrar clientes mediante una API JSON. Spring Security administra autenticación basada en sesión y Hibernate/JPA persiste el modelo disponible en PostgreSQL.
 
-El flujo de acceso, registro de clientes, catálogo y reservas están implementados. En demo, el cliente elige una suite y una habitación física, retiene el horario durante cinco minutos, simula el pago y recibe un QR; recepción registra el check-in y el cliente puede ampliar su estadía. En el perfil normal el pago sigue siendo externo y se valida manualmente. Room service, operaciones y reportes aún tienen artefactos parciales.
+El flujo de acceso, registro de clientes, la página `/inicio` y el asistente conversacional de `/asistente` están implementados. Las áreas de reservas, recepción, room service, operaciones y reportes tienen artefactos parciales (plantillas, repositorios o archivos Java vacíos), pero no se deben considerar módulos funcionales de punta a punta.
 
 ## Vista de contexto y componentes
 
@@ -14,13 +14,14 @@ El flujo de acceso, registro de clientes, catálogo y reservas están implementa
 flowchart LR
     Usuario --> Browser[Navegador]
     Browser -->|GET páginas| Thymeleaf[Spring MVC y Thymeleaf]
-    Browser -->|fetch JSON + X-XSRF-TOKEN| API[/api/auth]
+    Browser -->|fetch JSON + X-XSRF-TOKEN| API[/api/auth y /api/chatbot]
     Browser -->|CSS, JS e imágenes| Static[Recursos estáticos]
     Thymeleaf --> Security[Spring Security]
     API --> Security
     Security --> Session[Sesión HTTP]
-    API --> Controller[AuthController]
-    Controller --> AuthService[Servicios de autenticación]
+    API --> Controller[AuthController y ChatbotController]
+    Controller --> AuthService[Servicios de autenticación y chatbot]
+    AuthService --> Gemini[Cliente HTTP de Gemini]
     AuthService --> Repository[Repositorios Spring Data JPA]
     Repository --> Hibernate[Hibernate / JPA]
     Hibernate --> PostgreSQL[(PostgreSQL)]
@@ -37,6 +38,16 @@ flowchart LR
 6. Al autenticar o crear un cliente, el controlador crea/rota el identificador de sesión, guarda el `SecurityContext` y devuelve un DTO JSON.
 7. El navegador conserva la sesión y redirige a `/inicio`.
 
+### Petición típica del asistente
+
+1. `AsistentePageController` sirve `/asistente` con Thymeleaf; el widget flotante se carga en la portada y en `/inicio`.
+2. El JavaScript pide `GET /api/chatbot/estado` y `GET /api/chatbot/catalogo`; el catálogo se arma desde `Habitacion`, `TipoHabitacion` y `TarifaHabitacion`.
+3. El formulario envía `POST /api/chatbot/mensaje` con `credentials: same-origin` y `X-XSRF-TOKEN`.
+4. `ChatbotController` identifica al usuario por sesión o por la cookie `ECLIPSE_CHAT_SID` (anónima, `HttpOnly`, `SameSite=Lax`, 30 días) y delega en `IChatbotService`.
+5. `ChatbotServiceImpl` aplica el límite de mensajes, clasifica la intención, decide el modo (público, cliente o cliente con respaldo) y arma el contexto con el catálogo real y el resumen de la conversación.
+6. Según la intención, responde con una respuesta predefinida o llama a `GeminiClient`, que hace una petición HTTP a la API de Gemini con `GEMINI_API_KEY`.
+7. Los mensajes se persisten en `conversacion_chatbot` y `mensaje_chatbot`; la derivación a recepción solo actualiza `derivo_a_reserva` y el estado de cola en memoria.
+
 ## Capas y paquetes
 
 Raíz Java: `src/main/java/pe/com/eclipsesuites`.
@@ -44,14 +55,16 @@ Raíz Java: `src/main/java/pe/com/eclipsesuites`.
 | Paquete | Archivos Java encontrados | Responsabilidad/estado |
 | --- | ---: | --- |
 | raíz | 1 | Punto de entrada `SiwebEclipseApplication`. |
-| `config` | 3 | Cadenas de seguridad, codificador BCrypt, configuración de caché y carga de datos de desarrollo. |
-| `controller` | 11 | Rutas API/MVC y manejo de errores. Incluye autenticación, páginas, reservas de clientes y validación de reservas por recepción. |
-| `dao` | 17 | Interfaces Spring Data JPA para los datos del hotel. |
-| `dto/request` | 7 | Contratos de solicitudes, incluidos login y registro. |
-| `dto/response` | 5 | Respuestas JSON, errores y datos de disponibilidad. |
-| `entity` | 23 | Modelos Java. Hay 12 clases `@Entity`, un tipo `@Embeddable` y estados de reserva/pago. |
-| `service` | 8 | Interfaces de autenticación, reserva y política de consulta MX. |
-| `service/impl` | 13 | Reglas de autenticación, reservas, correo, contraseña y límites; algunos archivos de otros dominios están vacíos. |
+| `config` | 5 | Cadenas de seguridad, codificador BCrypt, configuración del chatbot, carga de suites de demo y datos de desarrollo. |
+| `controller` | 12 | Rutas API/MVC y manejo de errores. `AuthController`, `AuthPageController`, `ChatbotController`, `AsistentePageController`, `HomeController` y `GlobalExceptionHandler` tienen contenido; el resto son marcadores vacíos. |
+| `dao` | 19 | Interfaces Spring Data JPA para los datos del hotel, incluidos `ConversacionChatbotRepository` y `MensajeChatbotRepository`. |
+| `dto/request` | 8 | Contratos de solicitudes, incluidos login, registro y `ChatMensajeRequestDTO`. |
+| `dto/response` | 11 | Respuestas JSON, errores, disponibilidad y los DTO del chatbot. |
+| `entity` | 21 | Modelos Java. Hay 11 clases `@Entity` y un tipo `@Embeddable` con contenido; otros archivos son marcadores vacíos. |
+| `service` | 9 | Interfaces, política de consulta MX e `IChatbotService`. |
+| `service/impl` | 21 | Reglas de autenticación, correo, contraseña, límites y el módulo de chatbot; algunos archivos de otros dominios están vacíos. |
+| `service/gemini` | 3 | Cliente HTTP de Gemini, DTO de turno y excepción de servicio no disponible. |
+| `validation` | 3 | Validación de teléfono por país. |
 | `util` | 2 | Generador de códigos y constantes SUNAT. |
 
 Las cantidades se obtuvieron contando los archivos `.java` presentes, incluidos los archivos vacíos. No representan funcionalidades terminadas.
@@ -63,6 +76,9 @@ Las cantidades se obtuvieron contando los archivos `.java` presentes, incluidos 
 - `CatalogoController`: sirve `/catalogo` y `/catalogo/{codTipo}` sin sesión y expone `/api/catalogo/**` como JSON público.
 - `AuthPageController`: sirve los formularios Thymeleaf de login y registro.
 - `AuthController`: API de autenticación bajo `/api/auth`.
+- `ChatbotController`: API del asistente bajo `/api/chatbot`.
+- `AsistentePageController`: sirve la página pública `/asistente`.
+- `ChatbotDemoDataInitializer`: siembra tipos, tarifas y suites con los perfiles `demo`/`dev`.
 - `SecurityConfig`: configura una cadena para `/api/**` y otra para las páginas web.
 - `src/main/resources/static/index.html`: portada estática servida por Spring Boot.
 
@@ -98,8 +114,14 @@ Las cantidades se obtuvieron contando los archivos `.java` presentes, incluidos 
 | `GET` | `/api/auth/me` | Requiere sesión de empleado. |
 | `GET` | `/api/auth/client/me` | Requiere sesión de cliente. |
 | `POST` | `/api/auth/logout` y `/logout` | Filtros de logout de Spring Security; CSRF requerido. |
+| `GET` | `/asistente` | Público; página con catálogo de suites a la izquierda y chat a la derecha. |
+| `GET` | `/api/chatbot/catalogo` | Público; suites, tarifas y disponibilidad desde la base. |
+| `GET` | `/api/chatbot/estado` | Público; estado de cola, modo, uso y bandera de derivación. |
+| `GET` | `/api/chatbot/historico` | Público; mensajes de la conversación actual. |
+| `POST` | `/api/chatbot/mensaje` | Público o cliente; CSRF requerido; limitado por IP y por conversación. |
+| `POST` | `/api/chatbot/reiniciar` | Público o cliente; CSRF requerido; limpia el estado de cola. |
 
-En `/api/**`, los errores de autenticación/autorización tienen respuestas JSON. Los patrones web `/cliente/**`, `/admin/**`, `/reportes/**`, `/recepcion/**` y `/roomservice/**` tienen reglas de rol en Spring Security; que exista una regla no implica que haya una ruta o módulo implementado detrás.
+En `/api/**`, los errores de autenticación/autorización tienen respuestas JSON. El chatbot no exige sesión: el anónimo se identifica con la cookie `ECLIPSE_CHAT_SID` y el cliente con su sesión HTTP. Los límites y la clasificación de intenciones están en `ChatbotServiceImpl`, `ChatbotRateLimiter` e `IntencionChatbotDetector`. Los patrones web `/cliente/**`, `/admin/**`, `/reportes/**`, `/recepcion/**` y `/roomservice/**` tienen reglas de rol en Spring Security; que exista una regla no implica que haya una ruta o módulo implementado detrás.
 
 `SecurityConfig` usa BCrypt con costo 10 y `HttpSessionSecurityContextRepository`. Las sesiones tienen 30 minutos de inactividad; la cookie es `HttpOnly` y `SameSite=Lax`. `Secure` es falso en desarrollo y se activa con el perfil `prod`. El ID de sesión cambia tras login/registro.
 
@@ -147,6 +169,14 @@ Las consultas de disponibilidad usan GET, con el valor en la URL. El limitador e
 - Cinco fallos para la misma IP e identidad activan un bloqueo de 3 minutos. El mapa de intentos y el rate limit viven en memoria y se limpian al expirar/reiniciar; no sustituyen un control distribuido.
 - El registro de fallos escribe una referencia hash parcial y la cantidad, no el usuario, IP ni contraseña en texto plano.
 
+### Asistente: modos, límites y derivación
+
+- **Modo público**: visitante sin sesión. 10 mensajes por minuto por IP y 12 por conversación; solo responde intenciones del catálogo (saludo, tarifa, disponibilidad, servicios, política) y ofrece derivar a recepción. Una consulta abierta devuelve una respuesta predefinida que invita a crear una cuenta.
+- **Modo cliente**: sesión `ROLE_CLIENTE`. 30 mensajes por minuto y sin tope por conversación; puede hacer preguntas libres contra Gemini.
+- **Cliente con respaldo**: si Gemini falla o no hay `GEMINI_API_KEY`, el cliente recibe la respuesta predefinida correspondiente a su intención y la conversación continúa.
+- **Derivación a recepción**: `ColaDerivacionStore` marca la conversación, estima 2 minutos de espera y expira a los 30. Solo cambia `conversacion_chatbot.derivo_a_reserva` y el estado de cola; **no** existe dashboard de recepción conectado, así que no se debe anunciar como flujo de atención terminado.
+- Los contadores de límite y la cola viven en memoria de cada instancia; no son controles distribuidos.
+
 ## Persistencia y modelo de datos
 
 La configuración normal usa PostgreSQL (`siweb_eclipse`) y `spring.jpa.hibernate.ddl-auto=update`. El perfil `demo` usa H2 en memoria y `create-drop`; las pruebas también usan H2 y no necesitan acceso a la base PostgreSQL del desarrollador.
@@ -164,10 +194,10 @@ Clases JPA con `@Entity` y sus tablas actuales:
 | `TarifaHabitacion` | `tarifa_habitacion` | Precio por tipo y modalidad; usa `TarifaHabitacionPK`. |
 | `ComprobantePago` | `comprobante_pago` | Comprobante y datos de cobro asociados por identificador. |
 | `TransaccionPago` | `transaccion_pago` | Transacciones vinculadas al comprobante. |
-| `ReservaEstadia` | `reserva_estadia` | Suite/turno, fechas, cantidad de personas, tarifa, método de pago y estado de la reserva. |
-| `ExtensionEstadia` | `extension_estadia` | Hold de cinco minutos y pago de una ampliación de estadía en demo. |
-| `ConversacionChatbot` | `conversacion_chatbot` | Conversación de chatbot y sesión web. |
-| `MensajeChatbot` | `mensaje_chatbot` | Mensajes de conversación. |
+| `ConversacionChatbot` | `conversacion_chatbot` | Conversación de chatbot, cliente opcional y marca de derivación. |
+| `MensajeChatbot` | `mensaje_chatbot` | Mensajes de la conversación, con rol e intención. |
+
+`ConversacionChatbot` y `MensajeChatbot` son las únicas entidades del chatbot con lectura/escritura activas: las usa `ChatbotServiceImpl` junto con `Habitacion`, `TipoHabitacion` y `TarifaHabitacion` para componer el catálogo.
 
 Relaciones JPA explícitas verificadas en el código: `Empleado` → `RolEmpleado`, `Habitacion` → `TipoHabitacion`, `TarifaHabitacion` → `TipoHabitacion` y `ModalidadTurno`, y `TransaccionPago` → `ComprobantePago`. Los datos de cliente imponen unicidad en correo, número de documento y teléfono.
 
@@ -177,16 +207,12 @@ En la carpeta `entity` hay otros nombres relacionados con pedidos, limpieza y av
 
 ## Interfaz y movimiento visual
 
-- `templates/inicio.html`: catálogo de tipos de suite y precios mínimos vigentes, cargados desde la base de datos.
-- `templates/cliente/reserva-paso1.html`: selección de habitaciones físicas, disponibilidad, fecha/hora, duración y vista previa lateral de la suite.
-- `templates/cliente/reserva-pago.html`: selección de método de pago y cuenta regresiva real de cinco minutos; no captura información bancaria.
-- `templates/cliente/confirmacion-reserva.html`: estado de la reserva, QR para check-in y solicitud de ampliación tras validar el ingreso.
-- `templates/recepcion/reservas-pendientes.html`: validación manual de pagos en modo normal y escaneo del QR de check-in, con entrada manual de respaldo.
-- Las imágenes del catálogo y la vista previa se toman de `TipoHabitacion.galeriaFotos`; se muestra un recurso local de reemplazo si falta la imagen. El total final usa la tarifa vigente de la suite, modalidad y fecha elegidas.
-- Los precios “Desde” del prototipo se muestran como referencia si no hay una tarifa vigente; no se usan como total de la reserva ni reemplazan la configuración de tarifas del hotel.
-- El perfil Spring `demo` carga siete tipos de suite, tres modalidades (4, 6 y 12 horas), 16 habitaciones y tarifas de muestra en H2. La interfaz avisa que son datos simulados; este catálogo no se carga en producción.
+- `templates/inicio.html`: portada y enlaces de acceso.
+- `templates/asistente.html`: página del asistente con catálogo de suites y chat en paralelo.
 - `templates/auth/login.html` y `registro.html`: formularios Thymeleaf.
 - `static/css/home.css`: tema oscuro, paneles, responsive layout, fondo `/img/hotel-eclipse-background.png`, estados de validación y transiciones.
+- `static/css/asistente.css` y `static/js/asistente.js`: layout partido, tarjetas del catálogo y flujo de chat de `/asistente`.
+- `static/css/chatbot-widget.css` y `static/js/chatbot-widget.js`: cajón flotante inyectado en la portada y en `/inicio`.
 - `static/js/auth-login.js`: CSRF, login/registro, validación del wizard, disponibilidad, estados de carga y controles de mostrar contraseña.
 - El panel y la marca aparecen con movimientos cortos; los pasos del wizard entran suavemente, y campos, botones y barra de progreso tienen transiciones.
 - `prefers-reduced-motion: reduce` reduce a prácticamente cero las animaciones/transiciones y desactiva el desplazamiento suave.
@@ -203,8 +229,10 @@ En la carpeta `entity` hay otros nombres relacionados con pedidos, limpieza y av
 | `APP_AUTH_EMAIL_DOMINIOS_PERMITIDOS` | Dominios separados por coma; predeterminados: Gmail, Hotmail, Outlook y Yahoo. |
 | `APP_AUTH_EMAIL_DOMINIOS_DESECHABLES` | Dominios desechables conocidos, separados por coma. |
 | `APP_SEED_ADMIN_PASSWORD`, `APP_SEED_RECEPCION_PASSWORD`, `APP_SEED_ROOMSERVICE_PASSWORD` | Contraseñas semilla; el inicializador solo actúa con perfiles `demo`/`dev`. |
+| `GEMINI_API_KEY` | Clave de la API de Gemini. Vive en `.env` (raíz, ignorado por git) o en una variable de entorno; sin ella el asistente responde con respuestas predefinidas. |
+| `app.chat.*` en `application.properties` | `base-url`, `api-key`, `modelo`, `timeout-ms`, `max-historial`, `max-entrada`, `limite-publico-min`, `limite-cliente-min`, `max-mensajes-anonimos`. |
 
-No añadir secretos a archivos versionados. El perfil `prod` debe utilizar HTTPS para que la cookie `Secure` pueda viajar.
+No añadir secretos a archivos versionados. `application.properties` importa el `.env` de la raíz con `spring.config.import=optional:file:./.env[.properties]`, y `.env` está en `.gitignore`; una variable de entorno con el mismo nombre pisa al archivo. El secreto no entra al jar porque la importación usa `file:` y no `classpath:`. El perfil `prod` debe utilizar HTTPS para que la cookie `Secure` pueda viajar.
 
 ## Módulos aún no conectados
 
@@ -217,7 +245,7 @@ Las interfaces/repositories relacionados que sí tienen contenido no reemplazan 
 
 ## Validación técnica del estado documentado
 
-- Suite Maven ejecutada para este flujo: 108 pruebas, 0 fallos, 0 errores.
+- Suite Maven más reciente presente en los reportes del workspace: 126 pruebas, 0 fallos, 0 errores.
 - Las pruebas de integración usan H2 en memoria.
 - El objetivo configurado en `pom.xml` es Java 21; no se ha cambiado aquí a Java 25.
 - Comando de pruebas en Windows: `.\mvnw.cmd test`.
