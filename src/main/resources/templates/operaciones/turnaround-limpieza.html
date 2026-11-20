@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Limpieza móvil | Hotel Eclipse</title>
+    <link rel="stylesheet" href="/css/empleado-eclipse.css">
+    <link rel="stylesheet" th:href="@{/css/empleado-portal-demo.css}">
+<link rel="stylesheet" href="/css/cuenta-eclipse.css"></head>
+
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-icon">✦</div>
+                <div><b>HOTEL ECLIPSE</b><small>Portal de empleados</small></div>
+            </div>
+            <div class="role">Área operativa</div>
+            <nav><a href="/empleado/recepcion" class="">Rack y recepción</a><a href="/empleado/checkout"
+                    class="">Check-out</a><a href="/empleado/limpieza" class="active">Limpieza móvil</a><a
+                    href="/empleado/averias" class="">Reportar averías</a><a href="/empleado/reportes"
+                    class="">Reportes</a><a href="/empleado/roomservice" class="">Room Service</a><a
+                    href="/empleado/extension" class="">Extensión de tiempo</a></nav>
+            <div class="sidebar-bottom"><a href="/empleado/perfil">Mi cuenta</a>
+                <form action="/logout" method="post"><input type="hidden" th:name="${_csrf.parameterName}"
+                        th:value="${_csrf.token}"><button type="submit" class="logout">Cerrar sesión</button></form>
+            </div>
+        </aside>
+        <main class="main">
+            <header class="top">
+                <div>
+                    <p class="eyebrow">HOTEL ECLIPSE · OPERACIONES</p>
+                    <h1>Limpieza móvil</h1>
+                    <p class="subtitle">Gestión interna · Vista de demostración</p>
+                </div>
+                <div class="user"><span class="user-icon">E</span>
+                    <div><b>Empleado</b><small>Sesión de trabajo</small></div>
+                </div>
+            </header>
+            <div class="content">
+                <div class="metrics">
+                    <article><small>Por limpiar</small><strong>5</strong><span>Asignaciones del turno</span></article>
+                    <article><small>En proceso</small><strong>2</strong><span>Personal trabajando</span></article>
+                    <article><small>Terminadas</small><strong>8</strong><span>Listas para recepción</span></article>
+                </div>
+                <div class="panel">
+                    <div class="panel-head">
+                        <h2>Mis habitaciones</h2><span class="muted">Vista adaptable a celular</span>
+                    </div>
+                    <div class="task-list">
+                        <article>
+                            <div>
+                                <h3>Habitación 302</h3>
+                                <p>Suite Panorámica · Limpieza completa</p>
+                            </div><span class="status warn">Pendiente</span><button
+                                data-action="Iniciar limpieza 302">Iniciar</button>
+                        </article>
+                        <article>
+                            <div>
+                                <h3>Habitación 503</h3>
+                                <p>Suite Jacuzzi · Preparar para recepción</p>
+                            </div><span class="status busy">En curso</span><button
+                                data-action="Finalizar limpieza 503">Finalizar</button>
+                        </article>
+                        <article>
+                            <div>
+                                <h3>Habitación 207</h3>
+                                <p>Suite Junior · Revisión final</p>
+                            </div><span class="status ok">Terminada</span><button
+                                data-action="Enviar habitación 207 a recepción">Notificar</button>
+                        </article>
+                    </div>
+                </div>
+            </div>
+            <footer>Hotel Eclipse Sta. Clara · Interfaz demostrativa, sin operaciones reales</footer>
+        </main>
+        <aside class="notifications">
+            <h2>Notificaciones</h2>
+            <p>Actividad reciente del hotel</p>
+            <div class="notice"><b>🔔 Nueva reserva web</b><span>Habitación 401 · Reserva recibida</span><small>Hace un
+                    instante</small></div>
+            <div class="notice"><b>🍔 Nueva comanda</b><span>Habitación 301 · Pedido de Room Service</span><small>Hace
+                    30 minutos</small></div>
+            <div class="notice"><b>🧹 Check-out realizado</b><span>Habitación 503 · Pendiente de
+                    limpieza</span><small>Hace 2 horas</small></div>
+            <div class="notice"><b>⚠️ Avería técnica</b><span>Habitación 302 · Revisión
+                    pendiente</span><small>Hoy</small></div>
+        </aside>
+    </div>
+    <dialog id="demo-dialog">
+        <h2>Vista de demostración</h2>
+        <p id="demo-message"></p>
+        <p>Esta acción se conectará al backend en la siguiente etapa. No se han guardado cambios.</p><button
+            id="close-dialog">Entendido</button>
+    </dialog>
+    <script th:src="@{/js/empleado-portal-demo.js}" defer></script>
+<script src="/js/cuenta-eclipse.js" defer></script></body>
+
+</html>
