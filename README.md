@@ -204,6 +204,19 @@ Login de empleado, `POST /api/auth/login`:
 }
 ```
 
+Crear pedido de room service, `POST /api/roomservice/pedidos`:
+
+```json
+{
+  "token": "demo-suite-101",
+  "items": [
+    { "idProducto": 4, "cantidad": 2 }
+  ]
+}
+```
+
+La respuesta (`201`) incluye `codigo` (formato `A1488`), `estado`, `estadoEtiqueta`, `montoTotal`, `numHabitacion` e `items` con `nombre`, `cantidad` y `subtotal`. El mismo cuerpo de `items` sirve para consultar el seguimiento en `GET /api/roomservice/pedidos/{codigo}?token=...`.
+
 Los logins y el registro devuelven datos básicos del usuario y guardan la autenticación en la sesión HTTP. En JavaScript las solicitudes usan `credentials: same-origin`, por lo que el navegador conserva la cookie de sesión. No se devuelve el hash de contraseña.
 
 La lista de países del formulario envía un código ISO de tres letras (`PER`, `CHL`, `USA`, etc.). El prefijo telefónico se combina con el número antes de enviarlo, por ejemplo `+51 999123456`, y se guarda en el campo `telefono` existente.
