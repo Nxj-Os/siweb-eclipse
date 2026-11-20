@@ -11,6 +11,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import pe.com.eclipsesuites.dto.response.ApiErrorDTO;
+import pe.com.eclipsesuites.service.impl.AccesoRoomServiceNoPermitidoException;
 import pe.com.eclipsesuites.service.impl.ChatbotLimiteExcedidoException;
 import pe.com.eclipsesuites.service.impl.DatosRegistroNoDisponiblesException;
 import pe.com.eclipsesuites.service.impl.LoginTemporalmenteBloqueadoException;

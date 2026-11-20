@@ -50,7 +50,14 @@ public class SecurityConfig {
                     "/api/auth/client/login",
                     "/api/auth/client/register",
                     "/api/auth/client/disponibilidad",
-                    "/api/auth/csrf"
+                    "/api/auth/csrf",
+                    "/api/catalogo",
+                    "/api/catalogo/**",
+                    "/api/chatbot/catalogo",
+                    "/api/chatbot/mensaje",
+                    "/api/chatbot/historico",
+                    "/api/chatbot/estado",
+                    "/api/chatbot/reiniciar"
                 ).permitAll()
                 .requestMatchers("/api/empleado/**").hasAnyRole("ADMIN", "RECEPCION", "LIMPIEZA", "ROOMSERVICE")
                 .anyRequest().authenticated()
@@ -76,28 +83,6 @@ public class SecurityConfig {
             )
             .userDetailsService(empleadoAuthService);
 
-                .securityMatcher("/api/**")
-                .csrf(csrf -> csrf
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                        .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler()))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/login", "/api/auth/client/login",
-                                "/api/auth/client/register",
-                                "/api/auth/client/disponibilidad",
-                                "/api/auth/csrf",
-                                "/api/chatbot/catalogo", "/api/chatbot/mensaje",
-                                "/api/chatbot/historico", "/api/chatbot/estado",
-                                "/api/chatbot/reiniciar").permitAll()
-                        .anyRequest().authenticated())
-                .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint(apiAuthenticationEntryPoint())
-                        .accessDeniedHandler(apiAccessDeniedHandler()))
-                .logout(logout -> logout
-                        .logoutUrl("/api/auth/logout")
-                        .logoutSuccessHandler((request, response, authentication) ->
-                                escribirJson(response, HttpServletResponse.SC_OK,
-                                        "{\"mensaje\":\"Sesión cerrada\"}")))
-                .userDetailsService(empleadoAuthService);
         return http.build();
     }
 
@@ -117,13 +102,16 @@ public class SecurityConfig {
                     "/index.html",
                     "/login",
                     "/registro",
+                    "/asistente",
                     "/error",
                     "/css/**",
                     "/js/**",
                     "/images/**",
                     "/img/**",
                     "/webjars/**",
-                    "/favicon.ico"
+                    "/favicon.ico",
+                    "/catalogo",
+                    "/catalogo/**"
                 ).permitAll()
 
                 .requestMatchers("/cliente/**")
@@ -158,7 +146,7 @@ public class SecurityConfig {
                     "/empleado/extension"
                 ).hasAnyRole("ROOMSERVICE", "ADMIN")
 
-                .requestMatchers("/empleado/agenda", "/empleado/perfil", "/api/empleado/**")
+                .requestMatchers("/empleado/agenda", "/empleado/perfil")
                 .hasAnyRole("ADMIN", "RECEPCION", "LIMPIEZA", "ROOMSERVICE")
 
                 .requestMatchers("/empleado")
@@ -208,20 +196,6 @@ public class SecurityConfig {
 
             .userDetailsService(empleadoAuthService);
 
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/index.html", "/login", "/registro", "/asistente",
-                                "/error", "/css/**", "/js/**",
-                                "/images/**", "/img/**", "/webjars/**", "/favicon.ico").permitAll()
-                        .requestMatchers("/cliente/**").hasRole("CLIENTE")
-                        .requestMatchers("/admin/**", "/reportes/**").hasRole("ADMIN")
-                        .requestMatchers("/recepcion/**").hasAnyRole("RECEPCION", "ADMIN")
-                        .requestMatchers("/roomservice/**").hasAnyRole("ROOMSERVICE", "ADMIN")
-                        .anyRequest().authenticated())
-                .formLogin(form -> form.loginPage("/login").permitAll())
-                .logout(logout -> logout
-                        .logoutUrl("/logout")
-                        .logoutSuccessUrl("/login?logout"))
-                .userDetailsService(empleadoAuthService);
         return http.build();
     }
 
