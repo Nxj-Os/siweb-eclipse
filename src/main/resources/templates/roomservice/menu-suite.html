@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Room service · Eclipse Suites</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" th:href="@{/css/room-service.css}">
+</head>
+<body>
+
+<div id="aviso-global" class="aviso-global" role="alert" hidden></div>
+
+<!-- Servicio bloqueado: sin check-in validado no hay carta -->
+<section id="vista-bloqueada" class="bloqueada" hidden>
+    <div class="bloqueada__tarjeta">
+        <i class="bi bi-shield-lock bloqueada__icono" aria-hidden="true"></i>
+        <h1 class="bloqueada__titulo">Servicio bloqueado</h1>
+        <p class="bloqueada__mensaje" id="bloqueada-mensaje">
+            Necesitas validar el check-in de tu reserva para acceder
+        </p>
+        <p class="bloqueada__pista">
+            Solicita el QR de tu suite en recepción o vuelve a escanearlo desde tu reserva.
+        </p>
+        <a class="btn btn--crema" href="/">Volver al inicio</a>
+    </div>
+</section>
+
+<!-- Carta del huésped -->
+<main id="vista-carta" class="carta" hidden>
+    <header class="carta__cabecera">
+        <div class="carta__titulos">
+            <p class="carta__marca">Eclipse Suites</p>
+            <h1 class="carta__titulo">Room service</h1>
+            <p class="carta__subtitulo">Necesitas validar el check-in de tu reserva para acceder</p>
+        </div>
+        <span class="badge-suite" id="badge-suite" hidden></span>
+    </header>
+
+    <div class="carta__cuerpo">
+        <!-- Columna izquierda: catálogo -->
+        <section class="menu" aria-label="Carta de productos">
+            <div class="buscador">
+                <i class="bi bi-search buscador__icono" aria-hidden="true"></i>
+                <input type="search" id="busqueda" class="buscador__input"
+                       placeholder="Busca en la carta…" autocomplete="off"
+                       aria-label="Buscar productos">
+            </div>
+
+            <p class="aviso-disponibilidad">
+                <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+                Los productos están sujetos a disponibilidad
+            </p>
+
+            <div class="categorias" id="categorias" role="tablist" aria-label="Categorías"></div>
+
+            <div class="productos" id="productos"></div>
+            <p class="productos-vacios" id="productos-vacios" hidden>
+                No encontramos productos con esa búsqueda.
+            </p>
+        </section>
+
+        <!-- Columna derecha: carrito o estado del pedido -->
+        <aside class="panel" aria-label="Tu pedido">
+            <!-- Modo carrito -->
+            <div id="modo-carrito">
+                <h2 class="panel__titulo"><i class="bi bi-bag-check" aria-hidden="true"></i> Tu pedido</h2>
+                <div class="carrito" id="carrito-lista">
+                    <p class="carrito__vacio">
+                        Tu pedido está vacío.<br>Agrega productos de la carta.
+                    </p>
+                </div>
+                <div id="carrito-totales" hidden>
+                    <div class="fila-monto">
+                        <span>Monto</span>
+                        <strong id="carrito-monto">S/ 0.00</strong>
+                    </div>
+                    <p class="nota">
+                        <i class="bi bi-info-circle" aria-hidden="true"></i>
+                        Consume antes del check-out.
+                    </p>
+                    <button type="button" class="btn btn--oro btn--bloque" id="btn-solicitar" disabled>
+                        Solicitar pedido
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modo estado del pedido -->
+            <div id="modo-estado" hidden>
+                <h2 class="panel__titulo">
+                    <i class="bi bi-clock-history" aria-hidden="true"></i> Estado de pedido
+                </h2>
+                <ul class="checklist" id="checklist">
+                    <li class="checklist__paso" data-estado="RECIBIDO">
+                        <span class="checklist__punto" aria-hidden="true"></span>Recibido
+                    </li>
+                    <li class="checklist__paso" data-estado="EN_PREPARACION">
+                        <span class="checklist__punto" aria-hidden="true"></span>En preparación
+                    </li>
+                    <li class="checklist__paso" data-estado="CONTROLADO">
+                        <span class="checklist__punto" aria-hidden="true"></span>Controlado
+                    </li>
+                    <li class="checklist__paso" data-estado="ENTREGADO">
+                        <span class="checklist__punto" aria-hidden="true"></span>Entregado
+                    </li>
+                </ul>
+
+                <div class="estado-detalles">
+                    <div class="estado-detalles__bloque">
+                        <span class="estado-detalles__etiqueta">Contenido</span>
+                        <ul class="estado-detalles__items" id="estado-items"></ul>
+                    </div>
+                    <div class="fila-monto">
+                        <span>Consume antes del check-out</span>
+                        <strong id="estado-monto">S/ 0.00</strong>
+                    </div>
+                    <p class="estado-codigo">
+                        Código de pedido: <strong id="estado-codigo">—</strong>
+                    </p>
+                    <p class="nota" id="estado-aviso">
+                        <i class="bi bi-arrow-repeat" aria-hidden="true"></i>
+                        Actualizamos el estado automáticamente.
+                    </p>
+                    <button type="button" class="btn btn--crema btn--bloque" id="btn-otro">
+                        Solicitar otro pedido
+                    </button>
+                </div>
+            </div>
+        </aside>
+    </div>
+</main>
+
+<script th:src="@{/js/room-service.js}" defer></script>
+</body>
+</html>
