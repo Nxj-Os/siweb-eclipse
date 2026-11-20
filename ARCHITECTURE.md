@@ -72,7 +72,8 @@ Las cantidades se obtuvieron contando los archivos `.java` presentes, incluidos 
 ### Puntos de entrada actuales
 
 - `SiwebEclipseApplication.main`: inicializa Spring Boot.
-- `HomeController`: sirve `/inicio`; exige una sesión autenticada y, de lo contrario, redirige a `/login`.
+- `HomeController`: sirve `/inicio` con los tipos de suite y tarifas actuales; exige una sesión autenticada y, de lo contrario, redirige a `/login`.
+- `CatalogoController`: sirve `/catalogo` y `/catalogo/{codTipo}` sin sesión y expone `/api/catalogo/**` como JSON público.
 - `AuthPageController`: sirve los formularios Thymeleaf de login y registro.
 - `AuthController`: API de autenticación bajo `/api/auth`.
 - `ChatbotController`: API del asistente bajo `/api/chatbot`.
@@ -89,6 +90,22 @@ Las cantidades se obtuvieron contando los archivos `.java` presentes, incluidos 
 | `GET` | `/login?tipo=empleado` o `?tipo=cliente` | Formulario público; el parámetro selecciona la identidad a pedir. |
 | `GET` | `/registro` | Formulario público; Thymeleaf incluye los dominios permitidos configurados. |
 | `GET` | `/inicio` | Requiere autenticación; no diferencia la vista por rol. |
+| `GET` | `/catalogo` | Público; lista suites con disponibilidad, precio desde y filtros `q`, `fecha`, `hora`, `modalidadId`, `soloDisponibles` y `orden`. |
+| `GET` | `/catalogo/{codTipo}` | Público; ficha de la suite con amenidades, tarifas y habitaciones. |
+| `GET` | `/api/catalogo` | Público; la misma lista del catálogo en JSON. |
+| `GET` | `/api/catalogo/{codTipo}` | Público; detalle JSON de una suite. |
+| `GET` | `/api/catalogo/disponibilidad` | Público; disponibilidad real por fecha, hora y modalidad, con límite de consultas por IP. |
+| `GET` | `/cliente/reservas/nueva?tipoId={id}` | Requiere rol `CLIENTE`; permite elegir habitación física, fecha, hora y duración. |
+| `GET` | `/cliente/reservas/disponibilidad` | Requiere rol `CLIENTE`; devuelve habitaciones libres para el intervalo solicitado. |
+| `POST` | `/cliente/reservas` | Requiere rol `CLIENTE`; retiene la habitación por cinco minutos y crea una reserva pendiente de pago. |
+| `GET/POST` | `/cliente/reservas/{id}/pago` y `/pagar` | Requiere rol `CLIENTE`; muestra la cuenta regresiva y simula pago solo en demo. |
+| `GET` | `/cliente/reservas/{id}/qr` | Requiere rol `CLIENTE`; entrega el QR de una reserva propia pagada. |
+| `GET` | `/cliente/reservas` y `/cliente/reservas/{id}` | Requiere rol `CLIENTE`; lista y muestra únicamente las reservas del cliente autenticado. |
+| `GET/POST` | `/cliente/reservas/{id}/extensiones/**` | Requiere rol `CLIENTE`; en demo permite solicitar y pagar una ampliación tras check-in. |
+| `POST` | `/cliente/reservas/{id}/cancelar` | Requiere rol `CLIENTE`; permite cancelar una reserva pendiente propia. |
+| `GET` | `/recepcion/reservas` | Requiere rol `RECEPCION` o `ADMIN`; lista pagos pendientes y reservas que esperan check-in. |
+| `POST` | `/recepcion/reservas/check-in` | Requiere rol `RECEPCION` o `ADMIN`; valida el token QR y registra el ingreso. |
+| `POST` | `/recepcion/reservas/{id}/confirmar` y `/cancelar` | Requiere rol `RECEPCION` o `ADMIN`; valida manualmente los pagos del perfil normal o cancela la solicitud. |
 | `GET` | `/api/auth/csrf` | Público; emite el token CSRF sin caché. |
 | `GET` | `/api/auth/client/disponibilidad` | Público; verifica correo/documento/teléfono y limita consultas por IP. |
 | `POST` | `/api/auth/login` | Login de empleado; CSRF requerido. |
@@ -107,6 +124,22 @@ Las cantidades se obtuvieron contando los archivos `.java` presentes, incluidos 
 En `/api/**`, los errores de autenticación/autorización tienen respuestas JSON. El chatbot no exige sesión: el anónimo se identifica con la cookie `ECLIPSE_CHAT_SID` y el cliente con su sesión HTTP. Los límites y la clasificación de intenciones están en `ChatbotServiceImpl`, `ChatbotRateLimiter` e `IntencionChatbotDetector`. Los patrones web `/cliente/**`, `/admin/**`, `/reportes/**`, `/recepcion/**` y `/roomservice/**` tienen reglas de rol en Spring Security; que exista una regla no implica que haya una ruta o módulo implementado detrás.
 
 `SecurityConfig` usa BCrypt con costo 10 y `HttpSessionSecurityContextRepository`. Las sesiones tienen 30 minutos de inactividad; la cookie es `HttpOnly` y `SameSite=Lax`. `Secure` es falso en desarrollo y se activa con el perfil `prod`. El ID de sesión cambia tras login/registro.
+
+### Catálogo público
+
+`CatalogoController` sirve dos vistas Thymeleaf (`catalogo/index` y `catalogo/detalle`) y tres rutas JSON. Las rutas están permitidas en ambas cadenas de `SecurityConfig`; reservar sigue exigiendo `ROLE_CLIENTE`, por lo que el botón de reserva redirige al login cuando no hay sesión.
+
+`CatalogoServiceImpl` reutiliza `IReservaService` para no duplicar las reglas de reserva:
+
+- `listarTiposHabitacion()`, `listarTarifas()` y `listarModalidades()` alimentan las tarjetas.
+- Sin fecha/hora, la disponibilidad de la tarjeta cuenta habitaciones con `estado_rack` `LIBRE` o `DISPONIBLE`.
+- Con fecha/hora y modalidad, delega en `listarHabitacionesDisponibles(...)`, que descarta cruces con reservas y extensiones activas.
+- El precio "desde" es el menor de las tarifas vigentes; si no hay vigentes, usa todas las tarifas configuradas.
+- Las amenidades se guardan en `tipo_habitacion.amenidades` como texto separado por `|`. La columna es nullable para que `ddl-auto=update` no falle sobre bases existentes.
+
+`GET /api/catalogo/disponibilidad` es la versión pública de la consulta de disponibilidad y usa `DisponibilidadRateLimiter` (30 solicitudes por minuto e IP) para evitar abuso. La API no requiere CSRF porque solo expone lecturas GET.
+
+En el perfil `demo`, `DemoCatalogInitializer` carga siete suites con las tarifas oficiales, amenidades y 16 habitaciones. Los datos se actualizan de forma idempotente al arrancar.
 
 ### Registro de cliente
 
@@ -168,7 +201,9 @@ Clases JPA con `@Entity` y sus tablas actuales:
 
 Relaciones JPA explícitas verificadas en el código: `Empleado` → `RolEmpleado`, `Habitacion` → `TipoHabitacion`, `TarifaHabitacion` → `TipoHabitacion` y `ModalidadTurno`, y `TransaccionPago` → `ComprobantePago`. Los datos de cliente imponen unicidad en correo, número de documento y teléfono.
 
-En la carpeta `entity` hay otros nombres relacionados con reservas, pedidos, limpieza y averías, pero sus archivos están vacíos y no son entidades persistidas en el código actual. No usar sus nombres como evidencia de tablas activas.
+`ReservaEstadia` conserva suite, habitación física, modalidad, intervalo, método de pago, estado, vencimiento de la retención, token QR y fechas de pago/check-in. Los estados incluyen `PENDIENTE_PAGO`, `CONFIRMADA`, `CHECKED_IN`, `CANCELADA` y `EXPIRADA`. La disponibilidad usa intervalos semiabiertos y excluye las reservas activas que se crucen con la habitación elegida; los holds pendientes solo bloquean mientras su vencimiento siga vigente. Un proceso periódico libera holds expirados. En demo los pagos se simulan; en el perfil normal se registra la preferencia para que recepción valide el pago por fuera del sitio. No se almacenan datos de tarjetas ni credenciales de pago.
+
+En la carpeta `entity` hay otros nombres relacionados con pedidos, limpieza y averías, pero algunos archivos siguen vacíos y no son entidades persistidas en el código actual. No usar sus nombres como evidencia de tablas activas.
 
 ## Interfaz y movimiento visual
 
@@ -201,10 +236,10 @@ No añadir secretos a archivos versionados. `application.properties` importa el 
 
 ## Módulos aún no conectados
 
-Las carpetas `templates/cliente`, `templates/recepcion`, `templates/roomservice`, `templates/operaciones` y `templates/reportes` contienen diseños de páginas, pero no se encontraron rutas MVC activas para esos procesos. Al inspeccionar el workspace, los siguientes archivos estaban vacíos (0 bytes):
+Las carpetas `templates/roomservice`, `templates/operaciones` y `templates/reportes` contienen diseños de páginas, pero no se encontraron rutas MVC activas para esos procesos. Al inspeccionar el workspace, los siguientes archivos estaban vacíos (0 bytes):
 
-- Controladores: `CheckoutController`, `ClienteReservaController`, `OperacionesController`, `RackController`, `ReporteExcelController` y `RoomServiceController`.
-- Implementaciones de servicio: `FacturacionServiceImpl`, `LimpiezaServiceImpl`, `ReservaServiceImpl` y `RoomServiceServiceImpl`.
+- Controladores: `CheckoutController`, `OperacionesController`, `RackController`, `ReporteExcelController` y `RoomServiceController`.
+- Implementaciones de servicio: `FacturacionServiceImpl`, `LimpiezaServiceImpl` y `RoomServiceServiceImpl`.
 
 Las interfaces/repositories relacionados que sí tienen contenido no reemplazan esos flujos faltantes. Antes de anunciar reservas, pagos, recepción, limpieza o pedidos como disponibles, se requiere implementar y conectar sus rutas, lógica y persistencia.
 

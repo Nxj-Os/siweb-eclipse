@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#071514">
+    <title>Completa tu pago | Hotel Eclipse</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/reservas.css}">
+    <script th:src="@{/js/hold-countdown.js}" defer></script>
+</head>
+<body class="reserva-page">
+    <header class="reserva-header">
+        <a class="reserva-brand" th:href="@{/inicio}">Eclipse <span>Suites</span></a>
+        <a class="reserva-header__link" th:href="@{/cliente/reservas}">Mis reservas</a>
+    </header>
+    <main class="reserva-shell reserva-shell--narrow">
+        <section class="reserva-intro">
+            <p class="reserva-eyebrow">Último paso</p>
+            <h1>Confirma tu reserva</h1>
+            <p>La habitación está retenida temporalmente mientras completas el pago.</p>
+        </section>
+        <p class="reserva-demo-notice" th:if="${demoMode}" role="status">
+            Pago de demostración: no se realizará ningún cobro ni se solicitarán datos bancarios.
+        </p>
+        <div class="reserva-alert reserva-alert--error" role="alert"
+             th:if="${errorReserva}" th:text="${errorReserva}"></div>
+        <section class="reservation-card hold-card"
+                 th:attr="data-expira=${reserva.reservaTemporalHasta}">
+            <div class="reservation-card__top">
+                <div>
+                    <p class="reserva-eyebrow">Tiempo para pagar</p>
+                    <h2 class="hold-countdown" id="hold-countdown" aria-live="polite">05:00</h2>
+                </div>
+                <span class="status-pill">Habitación retenida</span>
+            </div>
+            <p class="hold-message" id="hold-message">
+                Si el tiempo termina antes de completar el pago, la habitación volverá a estar disponible.
+            </p>
+            <dl class="reservation-summary">
+                <div><dt>Suite</dt><dd th:text="${reserva.tipoHabitacion.nombreTematico}">Suite</dd></div>
+                <div><dt>Habitación</dt><dd th:text="${reserva.habitacion.numHabitacion}">509</dd></div>
+                <div><dt>Ingreso</dt><dd th:text="${#temporals.format(reserva.fechaInicio, 'dd/MM/yyyy HH:mm')}">Fecha</dd></div>
+                <div><dt>Salida</dt><dd th:text="${#temporals.format(reserva.fechaFin, 'dd/MM/yyyy HH:mm')}">Fecha</dd></div>
+                <div><dt>Duración</dt><dd th:text="${reserva.modalidadTurno.nombreTurno}">4 horas</dd></div>
+                <div><dt>Total</dt><dd th:text="${'S/ ' + #numbers.formatDecimal(reserva.montoTotal, 1, 2)}">S/ 0.00</dd></div>
+            </dl>
+            <form class="hold-payment-form" th:action="@{/cliente/reservas/{id}/pagar(id=${reserva.id})}"
+                  th:object="${pago}" method="post">
+                <fieldset class="duration-selection">
+                    <legend>Elige un método de pago</legend>
+                    <div class="payment-options">
+                        <label class="payment-option" th:each="metodo : ${metodosPago}">
+                            <input type="radio" th:field="*{metodoPago}" th:value="${metodo}" required>
+                            <span class="payment-option__mark" aria-hidden="true"></span>
+                            <span><strong th:text="${metodo.etiqueta}">Yape</strong></span>
+                        </label>
+                    </div>
+                </fieldset>
+                <p class="payment-disclaimer" th:unless="${demoMode}">
+                    Completa el pago por el método elegido. Recepción validará la operación antes de confirmar la reserva.
+                </p>
+                <div class="reservation-card__actions">
+                    <a class="button button--secondary" th:href="@{/cliente/reservas}">Cancelar</a>
+                    <button class="button button--primary" id="submit-payment" type="submit"
+                            th:text="${demoMode ? 'Simular pago y confirmar' : 'Enviar pago a validar'}">
+                        Simular pago y confirmar
+                    </button>
+                </div>
+            </form>
+        </section>
+    </main>
+</body>
+</html>
