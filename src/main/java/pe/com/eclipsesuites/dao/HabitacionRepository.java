@@ -10,6 +10,8 @@ public interface HabitacionRepository extends JpaRepository<Habitacion, Integer>
 
     Optional<Habitacion> findByNumHabitacion(String numHabitacion);
 
+    Optional<Habitacion> findByTokenQrDinamico(String tokenQrDinamico);
+
     List<Habitacion> findByEstadoRack(String estadoRack);
 
     List<Habitacion> findByTipoHabitacionId(Integer idTipoHabitacion);

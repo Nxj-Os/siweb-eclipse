@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -42,6 +43,16 @@ public class SecurityConfig {
                                 "/api/auth/client/register",
                                 "/api/auth/client/disponibilidad",
                                 "/api/auth/csrf").permitAll()
+                        // Carta de room service: acceso por token de check-in, sin sesión.
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/roomservice/menu",
+                                "/api/roomservice/pedidos/*").permitAll()
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/roomservice/pedidos").permitAll()
+                        // Forzar estado de comanda: solo el sistema de empleado.
+                        .requestMatchers(HttpMethod.PATCH,
+                                "/api/roomservice/pedidos/*/estado")
+                        .hasAnyRole("ROOMSERVICE", "ADMIN")
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(apiAuthenticationEntryPoint())
@@ -66,7 +77,8 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/index.html", "/login", "/registro", "/error", "/css/**", "/js/**",
-                                "/images/**", "/img/**", "/webjars/**", "/favicon.ico").permitAll()
+                                "/images/**", "/img/**", "/webjars/**", "/favicon.ico",
+                                "/menu-suite").permitAll()
                         .requestMatchers("/cliente/**").hasRole("CLIENTE")
                         .requestMatchers("/admin/**", "/reportes/**").hasRole("ADMIN")
                         .requestMatchers("/recepcion/**").hasAnyRole("RECEPCION", "ADMIN")
