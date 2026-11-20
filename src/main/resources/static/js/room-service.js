@@ -23,7 +23,13 @@
         "Snacks": "🍟"
     };
 
-    const token = new URLSearchParams(window.location.search).get("token");
+    // Token de check-in de la URL (?token=...). Sin parámetro se usa el
+    // token demo de la seed (solo existe en perfiles demo/dev) para que
+    // la carta sea visible sin reserva; con un token inválido en la URL
+    // el backend sigue bloqueando el acceso (RNF-08).
+    const token =
+        new URLSearchParams(window.location.search).get("token") ||
+        "demo-suite-101";
 
     const estado = {
         categorias: [],
