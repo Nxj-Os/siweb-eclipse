@@ -41,7 +41,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/login", "/api/auth/client/login",
                                 "/api/auth/client/register",
                                 "/api/auth/client/disponibilidad",
-                                "/api/auth/csrf").permitAll()
+                                "/api/auth/csrf",
+                                "/api/chatbot/catalogo", "/api/chatbot/mensaje",
+                                "/api/chatbot/historico", "/api/chatbot/estado",
+                                "/api/chatbot/reiniciar").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(apiAuthenticationEntryPoint())
@@ -65,7 +68,8 @@ public class SecurityConfig {
             throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/index.html", "/login", "/registro", "/error", "/css/**", "/js/**",
+                        .requestMatchers("/", "/index.html", "/login", "/registro", "/asistente",
+                                "/error", "/css/**", "/js/**",
                                 "/images/**", "/img/**", "/webjars/**", "/favicon.ico").permitAll()
                         .requestMatchers("/cliente/**").hasRole("CLIENTE")
                         .requestMatchers("/admin/**", "/reportes/**").hasRole("ADMIN")

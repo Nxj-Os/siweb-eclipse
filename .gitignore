@@ -37,3 +37,6 @@ logs/
 
 ### Documento formal (no versionar) ###
 formal.html
+
+### Secretos locales (nunca subir) ###
+.env
