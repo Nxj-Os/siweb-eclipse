@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#071514">
+    <title th:text="${suite.nombre + ' | Hotel Eclipse'}">Suite | Hotel Eclipse</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <link rel="stylesheet" th:href="@{/css/inicio-catalogo.css}">
+    <link rel="stylesheet" th:href="@{/css/catalogo.css}">
+</head>
+<body class="inicio-page catalogo-page">
+    <header class="inicio-header">
+        <div class="inicio-header__titles">
+            <a class="catalogo-back" th:href="@{/catalogo}">
+                <i class="bi bi-arrow-left"></i> Volver al catálogo
+            </a>
+            <h1 class="inicio-header__title" th:text="${suite.nombre}">Suite</h1>
+            <p class="inicio-header__subtitle" th:text="${suite.descripcion}">Descripción de la suite.</p>
+        </div>
+        <div class="catalogo-header__actions">
+            <a class="inicio-header__reservation-link" sec:authorize="isAuthenticated()"
+               th:href="@{/cliente/reservas}">Mis reservas</a>
+            <a class="inicio-header__reservation-link" sec:authorize="!isAuthenticated()"
+               th:href="@{/login}">Iniciar sesión</a>
+        </div>
+    </header>
+
+    <main class="inicio-main">
+        <p class="demo-notice" th:if="${demoMode}" role="status">
+            Modo demo: las tarifas y la disponibilidad son datos de muestra.
+        </p>
+
+        <section class="catalogo-detalle">
+            <div class="catalogo-detalle__media">
+                <img th:src="${suite.imagen}" th:alt="${'Vista de ' + suite.nombre}"
+                     data-fallback="/img/suite-placeholder.svg">
+                <span class="suite-card__badge"
+                      th:classappend="${suite.disponible} ? '' : ' suite-card__badge--unavailable'">
+                    <span class="suite-card__badge-dot"></span>
+                    <span th:if="${suite.disponible}"
+                          th:text="${suite.habitacionesDisponibles + ' de ' + suite.habitacionesTotales + ' disponibles'}">2 disponibles</span>
+                    <span th:unless="${suite.disponible}">Sin disponibilidad</span>
+                </span>
+            </div>
+
+            <div class="catalogo-detalle__content">
+                <p class="catalogo-suite-card__code" th:text="${suite.codTipo}">COD</p>
+                <p class="catalogo-detalle__capacity">
+                    <i class="bi bi-people"></i>
+                    Hasta <span th:text="${suite.capacidadMaxima}">2</span> personas
+                </p>
+                <div class="suite-card__price catalogo-detalle__price">
+                    <span>Desde</span>
+                    <strong th:if="${suite.precioDesde != null}"
+                            th:text="${suite.precioDesdeTexto}">S/ 0.00</strong>
+                    <strong th:unless="${suite.precioDesde != null}">Consultar tarifa</strong>
+                    <small th:if="${suite.modalidadDesde != null}"
+                           th:text="${'por ' + suite.modalidadDesde}">por 4 horas</small>
+                </div>
+
+                <form class="catalogo-disponibilidad-form" method="get"
+                      th:action="@{/catalogo/{cod}(cod=${suite.codTipo})}">
+                    <p class="catalogo-field__label">Verificar disponibilidad</p>
+                    <div class="catalogo-filtros__grid">
+                        <label class="catalogo-field">
+                            <span class="catalogo-field__label">Fecha</span>
+                            <input class="filter-field__input" type="date" name="fecha" th:value="${fecha}">
+                        </label>
+                        <label class="catalogo-field">
+                            <span class="catalogo-field__label">Hora</span>
+                            <input class="filter-field__input" type="time" name="hora" th:value="${hora}">
+                        </label>
+                        <label class="catalogo-field">
+                            <span class="catalogo-field__label">Duración</span>
+                            <select class="filter-field__input" name="modalidadId">
+                                <option value="">Cualquier duración</option>
+                                <option th:each="modalidad : ${modalidades}"
+                                        th:value="${modalidad.id}"
+                                        th:text="${modalidad.nombre}"
+                                        th:selected="${modalidadId != null && modalidadId == modalidad.id}">
+                                    4 horas
+                                </option>
+                            </select>
+                        </label>
+                        <button class="suite-card__cta catalogo-submit" type="submit">
+                            <i class="bi bi-calendar-check"></i> Verificar
+                        </button>
+                    </div>
+                    <p class="catalogo-hint" th:if="${filtrandoHorario}">
+                        Disponibilidad calculada para la fecha y hora seleccionadas.
+                    </p>
+                </form>
+
+                <div class="catalogo-detalle__actions">
+                    <a class="suite-card__cta"
+                       th:href="@{/cliente/reservas/nueva(tipoId=${suite.id})}">Reservar esta suite</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="catalogo-bloque" th:if="${!suite.amenidades.isEmpty()}">
+            <h2 class="catalogo-bloque__title">Qué incluye</h2>
+            <ul class="catalogo-amenidades">
+                <li th:each="amenidad : ${suite.amenidades}" th:text="${amenidad}">Amenidad</li>
+            </ul>
+        </section>
+
+        <section class="catalogo-bloque" th:if="${!suite.tarifas.isEmpty()}">
+            <h2 class="catalogo-bloque__title">Tarifas por duración</h2>
+            <div class="catalogo-tabla-wrapper">
+                <table class="catalogo-tabla">
+                    <thead>
+                    <tr>
+                        <th scope="col">Duración</th>
+                        <th scope="col">Precio base</th>
+                        <th scope="col">Hora adicional</th>
+                        <th scope="col">Estado</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="tarifa : ${suite.tarifas}">
+                        <td th:text="${tarifa.modalidad}">4 horas</td>
+                        <td th:text="${tarifa.precioTexto != null ? tarifa.precioTexto : 'Consultar'}">
+                            S/ 0.00
+                        </td>
+                        <td th:text="${tarifa.costoHoraAdicionalTexto != null ? tarifa.costoHoraAdicionalTexto : '-'}">
+                            S/ 0.00
+                        </td>
+                        <td>
+                            <span class="catalogo-pill catalogo-pill--ok" th:if="${tarifa.vigente}">Vigente</span>
+                            <span class="catalogo-pill" th:unless="${tarifa.vigente}">No vigente</span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="catalogo-bloque" th:if="${!suite.habitaciones.isEmpty()}">
+            <h2 class="catalogo-bloque__title">Habitaciones de esta suite</h2>
+            <p class="catalogo-hint" th:unless="${filtrandoHorario}">
+                Selecciona fecha y hora para verificar cuáles están disponibles en ese horario.
+            </p>
+            <ul class="catalogo-habitaciones">
+                <li class="catalogo-habitacion"
+                    th:each="habitacion : ${suite.habitaciones}"
+                    th:classappend="${habitacion.disponible} ? ' catalogo-habitacion--libre' : ' catalogo-habitacion--ocupada'">
+                    <i class="bi bi-door-closed"></i>
+                    <span class="catalogo-habitacion__numero" th:text="${'N.º ' + habitacion.numero}">N.º 101</span>
+                    <span class="catalogo-habitacion__estado"
+                          th:text="${habitacion.disponible ? 'Disponible' : habitacion.estadoRack}">Disponible</span>
+                </li>
+            </ul>
+        </section>
+
+        <footer class="inicio-footer">
+            <p>© 2026 Hotel Eclipse Suites. Todos los derechos reservados.</p>
+        </footer>
+    </main>
+
+    <script th:src="@{/js/catalogo.js}" defer></script>
+</body>
+</html>

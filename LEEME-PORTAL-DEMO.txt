@@ -1,0 +1,17 @@
+HOTEL ECLIPSE - PORTAL EMPLEADOS INTERACTIVO (DATOS DE PRUEBA)
+
+Inicio: abrir una consola en la carpeta siweb-eclipse (donde está pom.xml) y ejecutar mvn spring-boot:run con JDK 21.
+
+Las siete pantallas se conectan entre sí usando localStorage del navegador. NO se modifica PostgreSQL.
+Las operaciones y el historial persisten tras recargar, pero solo en el mismo navegador/perfil.
+Para volver al estado inicial, pulsar «Reiniciar datos» en la franja amarilla.
+
+Flujos: Rack asigna huésped a habitación disponible; Check-out libera huésped y envía a Limpieza; Limpieza inicia y finaliza; Averías registra, atiende y resuelve; Room Service registra, prepara y entrega; Extensiones calculan importes simulados; Reportes muestra indicadores y exporta actividad CSV.
+
+NO IMPLEMENTADO: cobros reales, reservas reales, conciliación, notificaciones en servidor, permisos de operaciones a nivel API, persistencia compartida multiusuario, auditoría real.
+
+ADVERTENCIA: localStorage no es apropiado para datos reales de clientes. Utiliza solamente datos ficticios.
+
+El endpoint de lectura de PostgreSQL de la Fase 1 se conserva, pero el portal de demostración no lo consume para evitar mezclar datos reales y simulados.
+
+El login y la configuración de seguridad existentes no se alteraron.
