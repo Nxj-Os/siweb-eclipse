@@ -25,7 +25,7 @@ public class ConversacionChatbot {
     private Long id;
 
     @Column(name = "id_cliente", nullable = true)
-    private Long idCliente;
+    private Integer idCliente;
 
     @Column(name = "id_sesion_web", nullable = false, unique = true, length = 100)
     private String idSesionWeb;
