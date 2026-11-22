@@ -36,6 +36,7 @@ import pe.com.eclipsesuites.service.IClienteAuthService;
 import pe.com.eclipsesuites.service.IEmpleadoAuthService;
 import pe.com.eclipsesuites.service.impl.DisponibilidadRateLimiter;
 import pe.com.eclipsesuites.service.impl.IntentosLoginService;
+import pe.com.eclipsesuites.validation.TelefonoValidation;
 
 import java.util.List;
 import java.util.Map;
@@ -76,6 +77,7 @@ public class AuthController {
             @RequestParam String campo,
             @RequestParam String valor,
             @RequestParam(required = false) String tipoDocumento,
+            @RequestParam(required = false) String paisTelefono,
             HttpServletRequest request) {
         if (!disponibilidadRateLimiter.permitir(request.getRemoteAddr())) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
@@ -85,6 +87,12 @@ public class AuthController {
         }
 
         try {
+            if ("telefono".equals(campo) && !TelefonoValidation.esValidoParaPais(valor, paisTelefono)) {
+                return ResponseEntity.badRequest()
+                        .cacheControl(CacheControl.noStore())
+                        .body(new DisponibilidadResponseDTO(false,
+                                "Ingresa un teléfono válido para el país seleccionado."));
+            }
             boolean disponible = clienteAuthService.estaDisponible(campo, valor, tipoDocumento);
             return ResponseEntity.ok()
                     .cacheControl(CacheControl.noStore())

@@ -53,4 +53,22 @@ class AuthPageControllerTest {
                 .andExpect(content().string(containsString("aceptaPoliticaPrivacidad")))
                 .andExpect(content().string(containsString("registration-progress")));
     }
+
+    @Test
+    void registro_renderizaConsentimientoDobleYModalDeTerminos() throws Exception {
+        mockMvc.perform(get("/registro"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("aceptaTerminos")))
+                .andExpect(content().string(containsString("He leído y acepto los Términos y Condiciones")))
+                .andExpect(content().string(containsString(
+                        "Política de Tratamiento de Datos Personales conforme a la")))
+                .andExpect(content().string(containsString("Ley N° 29733")))
+                .andExpect(content().string(containsString("D.S. N° 003-2013-JUS")))
+                .andExpect(content().string(containsString("Leer documento completo")))
+                .andExpect(content().string(containsString("terms-modal")))
+                .andExpect(content().string(containsString("role=\"dialog\"")))
+                .andExpect(content().string(containsString("aria-modal=\"true\"")))
+                .andExpect(content().string(containsString("Derechos ARCO")))
+                .andExpect(content().string(containsString("Entendido")));
+    }
 }

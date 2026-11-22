@@ -73,7 +73,7 @@ class SiwebEclipseApplicationTests {
 		String cuerpoRegistro = """
 				{"tipoDocumento":"DNI","numDocumento":"87654327","paisEmisionDoc":"PER",
 				"correoElectronico":"recorrido@example.com","nombre":"Cliente",
-				"apellido":"Recorrido","telefono":"+51999111228","edad":30,
+				"apellido":"Recorrido","telefono":"+51999111228","paisTelefono":"PE","edad":30,
 				"password":"P4ss-Montana-Feliz","aceptaPoliticaPrivacidad":true}
 				""";
 
@@ -101,6 +101,7 @@ class SiwebEclipseApplicationTests {
 		request.setNombre("Cliente");
 		request.setApellido("Simulado");
 		request.setTelefono(telefono);
+		request.setPaisTelefono("PE");
 		request.setEdad(30);
 		request.setPassword("CuentaSegura123");
 		request.setAceptaPoliticaPrivacidad(true);

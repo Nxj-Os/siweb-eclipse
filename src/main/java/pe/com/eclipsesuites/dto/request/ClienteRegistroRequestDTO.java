@@ -9,8 +9,10 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import pe.com.eclipsesuites.validation.TelefonoPaisValido;
 
 @Data
+@TelefonoPaisValido
 public class ClienteRegistroRequestDTO {
 
     @NotBlank(message = "El tipo de documento es obligatorio")
@@ -46,6 +48,10 @@ public class ClienteRegistroRequestDTO {
     @Pattern(regexp = "^\\+[1-9][0-9]{7,14}$", message = "Usa el formato internacional E.164, por ejemplo +51999123456")
     private String telefono;
 
+    @NotBlank(message = "El país del teléfono es obligatorio")
+    @Pattern(regexp = "^[A-Z]{2}$", message = "Selecciona un país válido para el teléfono")
+    private String paisTelefono;
+
     @NotNull(message = "La edad es obligatoria")
     @Min(value = 18, message = "Debes ser mayor de 18 años")
     @Max(value = 120, message = "La edad debe ser válida")
@@ -55,6 +61,6 @@ public class ClienteRegistroRequestDTO {
     @Size(min = 8, max = 20, message = "La contraseña debe tener entre 8 y 20 caracteres")
     private String password;
 
-    @AssertTrue(message = "Debes aceptar el tratamiento de datos personales")
+    @AssertTrue(message = "Debes aceptar los Términos y la Política de Datos Personales")
     private boolean aceptaPoliticaPrivacidad;
 }

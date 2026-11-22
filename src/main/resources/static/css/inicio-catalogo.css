@@ -22,6 +22,10 @@
     box-sizing: border-box;
 }
 
+[hidden] {
+    display: none !important;
+}
+
 body.inicio-page {
     margin: 0;
     font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -29,6 +33,17 @@ body.inicio-page {
     color: var(--text-primary);
     line-height: 1.6;
     padding-bottom: 96px;
+}
+
+.demo-notice {
+    max-width: 1180px;
+    margin: 0 auto 1rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 0.8rem;
+    background: rgb(229 207 131 / 8%);
+    color: var(--gold);
+    font-size: 0.9rem;
 }
 
 .inicio-header {
@@ -74,6 +89,22 @@ body.inicio-page {
     font-size: 0.98rem;
     color: var(--text-primary);
     cursor: default;
+}
+
+.inicio-header__reservation-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.8rem;
+    padding: 0.55rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--gold);
+    font-size: 0.92rem;
+    text-decoration: none;
+}
+
+.inicio-header__reservation-link:hover {
+    background: rgb(229 207 131 / 8%);
 }
 
 .inicio-header__user-icon {
@@ -262,6 +293,27 @@ body.inicio-page {
     padding-left: 0.4rem;
 }
 
+.suite-card__capacity {
+    margin: -0.5rem 0 0;
+    color: var(--text-secondary);
+    font-size: 0.86rem;
+}
+
+.suite-card__price {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.1rem;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+}
+
+.suite-card__price strong {
+    color: var(--gold);
+    font-size: 1.15rem;
+    font-weight: 600;
+}
+
 .suite-card__cta {
     margin-top: auto;
     align-self: flex-start;
@@ -287,19 +339,25 @@ body.inicio-page {
 .suite-card__media {
     position: relative;
     min-height: 240px;
-    background: radial-gradient(circle at top, rgba(255, 255, 255, 0.4), transparent 60%), url('../img/suite-placeholder.svg') center/cover no-repeat;
+    overflow: hidden;
+    background: var(--surface-raised);
 }
 
-.suite-card__media--vip {
-    background-image: linear-gradient(180deg, rgba(15, 15, 20, 0.02) 0%, rgba(15, 15, 20, 0.08) 100%), url('../img/suite-vip-deluxe.webp');
+.suite-card__media img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: saturate(0.82);
 }
 
-.suite-card__media--romana {
-    background-image: linear-gradient(180deg, rgba(15, 15, 20, 0.02) 0%, rgba(15, 15, 20, 0.08) 100%), url('../img/suite-romana.webp');
-}
-
-.suite-card__media--galaxia {
-    background-image: linear-gradient(180deg, rgba(15, 15, 20, 0.02) 0%, rgba(15, 15, 20, 0.08) 100%), url('../img/suite-galaxia.webp');
+.suites-empty {
+    margin: 0;
+    padding: 1.2rem;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    color: var(--text-secondary);
 }
 
 .suite-card__badge {
@@ -312,8 +370,9 @@ body.inicio-page {
     border-radius: 999px;
     padding: 0.5rem 0.9rem;
     font-size: 0.95rem;
-    background: var(--badge-green);
-    color: #071514;
+    background: var(--badge-gray);
+    color: var(--cream);
+    z-index: 1;
     box-shadow: 0 12px 30px rgb(154 217 215 / 22%);
 }
 
