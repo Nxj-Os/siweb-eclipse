@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#071514">
+    <title>Asistente Eclipse | Hotel Eclipse</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <link rel="stylesheet" th:href="@{/css/asistente.css}">
+</head>
+<body class="asistente-page">
+<div class="asistente-layout">
+
+    <section class="catalogo-panel" id="suites-panel" aria-label="Catálogo de suites">
+        <header class="catalogo-header">
+            <div class="catalogo-header__titles">
+                <h1 class="catalogo-header__title">Asistente Eclipse</h1>
+                <p class="catalogo-header__subtitle">Habla con nuestro asistente de IA para consultas</p>
+            </div>
+            <div class="catalogo-header__user">
+                <span class="catalogo-header__user-icon" aria-hidden="true">
+                    <i class="bi bi-person"></i>
+                </span>
+                <span th:text="${nombreUsuario}">Usuario</span>
+            </div>
+        </header>
+
+        <div class="filtros-panel">
+            <div class="search-field">
+                <span class="search-field__icon" aria-hidden="true"><i class="bi bi-search"></i></span>
+                <input id="buscar-suite" class="search-field__input" type="search"
+                       placeholder="Buscar suite" autocomplete="off" aria-label="Buscar suite">
+            </div>
+
+            <div class="filters-row">
+                <div class="filter-group">
+                    <div class="filter-field">
+                        <span class="filter-field__icon" aria-hidden="true"><i class="bi bi-calendar3"></i></span>
+                        <input id="filtro-fecha" class="filter-field__input" type="date"
+                               aria-label="Fecha de estadía">
+                    </div>
+                    <div class="filter-field">
+                        <span class="filter-field__icon" aria-hidden="true"><i class="bi bi-clock"></i></span>
+                        <input id="filtro-hora" class="filter-field__input" type="time"
+                               aria-label="Hora de llegada">
+                    </div>
+                </div>
+                <button id="boton-ayuda" class="help-button" type="button"
+                        aria-label="Necesito ayuda">
+                    <i class="bi bi-question-lg"></i>
+                </button>
+            </div>
+            <p class="filtros-nota">La fecha y la hora se envían al asistente para consultar disponibilidad.</p>
+        </div>
+
+        <div class="suites-grid" id="suites-grid" aria-live="polite">
+            <p class="suites-grid__estado" id="suites-estado">Cargando suites…</p>
+        </div>
+
+        <p class="catalogo-resumen" id="catalogo-resumen" hidden></p>
+    </section>
+
+    <section class="chat-panel" aria-label="Asistente de IA">
+        <nav class="chat-nav" aria-label="Acciones del asistente">
+            <a class="chat-nav__item" th:href="@{/inicio}">
+                <i class="bi bi-house-door"></i><span>Inicio</span>
+            </a>
+            <button class="chat-nav__item" type="button" data-pregunta="Quiero reservar una suite">
+                <i class="bi bi-calendar-check"></i><span>Reserva</span>
+            </button>
+            <button class="chat-nav__item" type="button" data-pregunta="¿Qué servicios incluyen?">
+                <i class="bi bi-bell"></i><span>Servicio</span>
+            </button>
+            <button class="chat-nav__item chat-nav__item--active" type="button" id="chat-nav-ayuda">
+                <i class="bi bi-star"></i><span>Ayuda</span>
+            </button>
+        </nav>
+
+        <header class="chat-header">
+            <div class="chat-header__titles">
+                <h2 class="chat-header__title">Asistente IA</h2>
+                <p class="chat-header__estado" id="chat-modo" hidden></p>
+            </div>
+            <div class="chat-header__acciones">
+                <button id="chat-ver-suites" class="chat-header__toggle" type="button"
+                        aria-label="Ver suites" aria-controls="suites-panel" aria-expanded="false">
+                    <i class="bi bi-grid-3x3-gap"></i>
+                </button>
+                <button id="chat-reiniciar" class="chat-header__reset" type="button"
+                        title="Volver al asistente" aria-label="Volver al asistente" hidden>
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </button>
+            </div>
+        </header>
+
+        <div class="chat-mensajes" id="chat-mensajes" role="log"
+             aria-live="polite" aria-relevant="additions"></div>
+
+        <div class="chat-cola" id="chat-cola" hidden>
+            <span class="chat-cola__punto" aria-hidden="true"></span>
+            <span id="chat-cola-texto">Estado: en cola · tiempo estimado 2 min</span>
+            <button id="chat-volver" class="chat-cola__accion" type="button">
+                Volver al asistente
+            </button>
+        </div>
+
+        <div class="chat-sugerencias" id="chat-sugerencias" aria-label="Preguntas sugeridas"></div>
+
+        <form class="chat-form" id="chat-form" autocomplete="off">
+            <input id="chat-entrada" class="chat-form__input" type="text"
+                   placeholder="Escribe tu consulta" maxlength="600"
+                   aria-label="Escribe tu consulta">
+            <button id="chat-enviar" class="chat-form__enviar" type="submit"
+                    aria-label="Enviar mensaje">
+                <i class="bi bi-send"></i>
+            </button>
+        </form>
+
+        <p class="chat-pie">Para más ayuda, contacta con recepción</p>
+    </section>
+</div>
+
+<div class="chat-toasts" id="chat-toasts" aria-live="assertive"></div>
+
+<script th:src="@{/js/asistente.js}" defer></script>
+</body>
+</html>

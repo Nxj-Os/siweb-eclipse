@@ -52,6 +52,6 @@ public class ReportePanelController {
 
         model.addAttribute("hoy", hoy);
         model.addAttribute("dash", dashboardService.obtenerDashboard(inicio, fin));
-        return "reportes/panel-reportes";
+        return "reportes/dashboard";
     }
 }

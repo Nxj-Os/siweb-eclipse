@@ -1,0 +1,9 @@
+CAMBIOS DE NAVEGACIÓN Y DETALLES — HOTEL ECLIPSE
+
+1. «Mi cuenta» abre /empleado/perfil (ya no redirige a login). Menú desplegable fijo en vistas de empleado: perfil, calendario personal, horarios, notificaciones y Rack.
+2. Perfil: muestra datos autenticados y actividades asignadas desde la API de agenda.
+3. Rack SIMULADO: clic en número de suite abre ficha con huésped, estado, limpieza, incidencias, pedidos, extensiones e historial local; enlace al calendario filtrado de la suite.
+4. Limpieza, averías y pedidos SIMULADOS: clic en elementos abre ficha de detalle. Notificaciones locales clicables.
+5. Agenda: clic en reserva/actividad abre ficha existente. Clic en notificación abre ficha propia y enlace a evento relacionado. Enlaces directos por ?evento=ID y ?suite=NUMERO.
+
+IMPORTANTE: el proyecto ZIP de origen tiene numerosos archivos Java VACÍOS (0 bytes), incluyendo ReservaEstadia.java y ReservaEstadiaRepository.java. Por ese motivo NO ES POSIBLE compilar el proyecto completo a partir de ese ZIP. Los datos del Rack son localStorage de demostración, NO PostgreSQL. No se ha implementado sincronización real entre Rack y agenda. Para restaurar una aplicación ejecutable se necesitan los archivos Java originales completos.

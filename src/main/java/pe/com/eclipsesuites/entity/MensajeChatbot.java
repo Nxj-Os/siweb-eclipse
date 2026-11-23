@@ -11,7 +11,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "mensaje_chatbot")
@@ -39,5 +39,5 @@ public class MensajeChatbot {
     private String intencionDetectada;
 
     @Column(name = "f_h_mensaje", nullable = false)
-    private LocalDateTime fhMensaje;
+    private OffsetDateTime fhMensaje;
 }

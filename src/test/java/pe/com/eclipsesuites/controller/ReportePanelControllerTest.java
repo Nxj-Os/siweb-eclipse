@@ -44,7 +44,7 @@ class ReportePanelControllerTest {
     void sinParametros_usaLosUltimosSieteDiasHastaHoy() {
         String vista = controlador.panel(null, null, modelo);
 
-        assertEquals("reportes/panel-reportes", vista);
+        assertEquals("reportes/dashboard", vista);
         assertEquals(hoy, modelo.getAttribute("hoy"));
         assertNotNull(modelo.getAttribute("dash"));
         assertRango(hoy.minusDays(6), hoy);

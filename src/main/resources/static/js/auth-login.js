@@ -71,23 +71,14 @@ async function sendJson(url, payload) {
 }
 
 function redirigirTrasLogin(rol) {
-    if (rol === "CLIENTE") {
-        window.location.href = "/inicio";
-        return;
-    }
-    if (rol === "ADMIN") {
-        window.location.href = "/inicio";
-        return;
-    }
-    if (rol === "RECEPCION") {
-        window.location.href = "/inicio";
-        return;
-    }
-    if (rol === "ROOMSERVICE") {
-        window.location.href = "/inicio";
-        return;
-    }
-    window.location.href = "/inicio";
+    const destinos = {
+        CLIENTE: "/inicio",
+        ADMIN: "/empleado",
+        RECEPCION: "/empleado/recepcion",
+        LIMPIEZA: "/empleado/limpieza",
+        ROOMSERVICE: "/empleado/roomservice"
+    };
+    window.location.assign(destinos[rol] || "/login?tipo=empleado");
 }
 
 if (loginForm) {

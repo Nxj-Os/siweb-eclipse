@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#071514">
+    <title>Catálogo de suites | Hotel Eclipse</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <link rel="stylesheet" th:href="@{/css/inicio-catalogo.css}">
+    <link rel="stylesheet" th:href="@{/css/catalogo.css}">
+</head>
+<body class="inicio-page catalogo-page">
+    <header class="inicio-header">
+        <div class="inicio-header__titles">
+            <p class="catalogo-eyebrow">Hotel Eclipse Suites</p>
+            <h1 class="inicio-header__title">Catálogo de suites</h1>
+            <p class="inicio-header__subtitle">Explora, compara y reserva la suite perfecta para tu estadía.</p>
+        </div>
+        <div class="catalogo-header__actions">
+            <a class="inicio-header__reservation-link" th:href="@{/inicio}">Ir al inicio</a>
+            <a class="inicio-header__reservation-link" sec:authorize="isAuthenticated()"
+               th:href="@{/cliente/reservas}">Mis reservas</a>
+            <a class="inicio-header__reservation-link" sec:authorize="!isAuthenticated()"
+               th:href="@{/login}">Iniciar sesión</a>
+        </div>
+    </header>
+
+    <main class="inicio-main">
+        <p class="demo-notice" th:if="${demoMode}" role="status">
+            Modo demo: las tarifas y la disponibilidad son datos de muestra.
+        </p>
+
+        <form class="filters-panel catalogo-filtros" method="get" th:action="@{/catalogo}" role="search">
+            <div class="search-field">
+                <span class="search-field__icon" aria-hidden="true">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input id="catalogo-buscar" class="search-field__input" type="search" name="q"
+                       th:value="${q}" placeholder="Buscar por suite o amenidad" autocomplete="off">
+            </div>
+
+            <div class="catalogo-filtros__grid">
+                <label class="catalogo-field">
+                    <span class="catalogo-field__label">Fecha de ingreso</span>
+                    <input class="filter-field__input" type="date" name="fecha"
+                           th:value="${fecha}">
+                </label>
+                <label class="catalogo-field">
+                    <span class="catalogo-field__label">Hora de ingreso</span>
+                    <input class="filter-field__input" type="time" name="hora"
+                           th:value="${hora}">
+                </label>
+                <label class="catalogo-field">
+                    <span class="catalogo-field__label">Duración</span>
+                    <select class="filter-field__input" name="modalidadId">
+                        <option value="">Cualquier duración</option>
+                        <option th:each="modalidad : ${modalidades}"
+                                th:value="${modalidad.id}"
+                                th:text="${modalidad.nombre}"
+                                th:selected="${modalidadId != null && modalidadId == modalidad.id}">
+                            4 horas
+                        </option>
+                    </select>
+                </label>
+                <label class="catalogo-field">
+                    <span class="catalogo-field__label">Ordenar por</span>
+                    <select class="filter-field__input" name="orden">
+                        <option value="recomendado" th:selected="${orden == 'recomendado'}">Recomendado</option>
+                        <option value="precio-asc" th:selected="${orden == 'precio-asc'}">Menor precio</option>
+                        <option value="precio-desc" th:selected="${orden == 'precio-desc'}">Mayor precio</option>
+                        <option value="disponibilidad" th:selected="${orden == 'disponibilidad'}">Más disponibilidad</option>
+                        <option value="nombre" th:selected="${orden == 'nombre'}">Nombre (A-Z)</option>
+                    </select>
+                </label>
+            </div>
+
+            <div class="catalogo-filtros__actions">
+                <label class="catalogo-checkbox">
+                    <input type="checkbox" name="soloDisponibles" value="true"
+                           th:checked="${soloDisponibles}">
+                    <span>Solo suites con disponibilidad</span>
+                </label>
+                <div class="catalogo-filtros__buttons">
+                    <a class="catalogo-reset" th:href="@{/catalogo}">Limpiar</a>
+                    <button class="suite-card__cta catalogo-submit" type="submit">
+                        <i class="bi bi-funnel"></i> Aplicar filtros
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <section class="catalogo-resultados" aria-live="polite">
+            <p>
+                <strong id="catalogo-contador" th:text="${#lists.size(suites)}">0</strong>
+                <span id="catalogo-contador-label"
+                      th:text="${#lists.size(suites) == 1 ? 'suite encontrada' : 'suites encontradas'}">suites encontradas</span>
+                <span th:if="${filtrandoHorario}" class="catalogo-resultados__detalle"
+                      th:text="${' · ' + #temporals.format(fecha, 'dd/MM/yyyy') + ' a las ' + #temporals.format(hora, 'HH:mm')}">
+                </span>
+            </p>
+            <p class="catalogo-hint" th:if="${filtrandoHorario}">
+                La disponibilidad se calculó para la fecha y hora seleccionadas.
+            </p>
+            <p class="catalogo-hint" th:unless="${filtrandoHorario}">
+                Muestra la disponibilidad operativa actual. Elige fecha y hora para verificar cruces de reservas.
+            </p>
+        </section>
+
+        <section class="suites-list" id="catalogo-lista" aria-label="Lista de suites">
+            <article class="suite-card catalogo-suite-card" th:each="suite : ${suites}"
+                     th:attr="data-title=${suite.nombre},
+                              data-description=${suite.descripcion},
+                              data-amenities=${suite.amenidades},
+                              data-price=${suite.precioDesde},
+                              data-disponibles=${suite.habitacionesDisponibles},
+                              data-original=${suite.nombre}">
+                <div class="suite-card__content">
+                    <header class="suite-card__header">
+                        <p class="catalogo-suite-card__code" th:text="${suite.codTipo}">COD</p>
+                        <h2 class="suite-card__title">
+                            <a th:href="@{/catalogo/{cod}(cod=${suite.codTipo})}"
+                               th:text="${suite.nombre}">Suite</a>
+                        </h2>
+                        <p class="suite-card__description" th:text="${suite.descripcion}">Descripción.</p>
+                    </header>
+
+                    <ul class="catalogo-amenidades catalogo-amenidades--compact" th:if="${!suite.amenidades.isEmpty()}">
+                        <li th:each="amenidad, iter : ${suite.amenidades}" th:if="${iter.index lt 4}"
+                            th:text="${amenidad}">Amenidad</li>
+                    </ul>
+
+                    <p class="suite-card__capacity">
+                        Capacidad máxima: <span th:text="${suite.capacidadMaxima}">2</span> personas
+                    </p>
+
+                    <div class="suite-card__price">
+                        <span>Desde</span>
+                        <strong th:if="${suite.precioDesde != null}"
+                                th:text="${suite.precioDesdeTexto}">S/ 0.00</strong>
+                        <strong th:unless="${suite.precioDesde != null}">Consultar tarifa</strong>
+                        <small th:if="${suite.modalidadDesde != null}"
+                               th:text="${'por ' + suite.modalidadDesde}">por 4 horas</small>
+                    </div>
+
+                    <div class="catalogo-card__actions">
+                        <a class="suite-card__cta"
+                           th:href="@{/cliente/reservas/nueva(tipoId=${suite.id})}">Reservar</a>
+                        <a class="catalogo-card__link"
+                           th:href="@{/catalogo/{cod}(cod=${suite.codTipo})}">Ver detalle
+                            <i class="bi bi-arrow-right"></i></a>
+                    </div>
+                </div>
+
+                <div class="suite-card__media">
+                    <img th:src="${suite.imagen}" th:alt="${'Vista de ' + suite.nombre}"
+                         data-fallback="/img/suite-placeholder.svg">
+                    <span class="suite-card__badge"
+                          th:classappend="${suite.disponible} ? '' : ' suite-card__badge--unavailable'">
+                        <span class="suite-card__badge-dot"></span>
+                        <span th:if="${suite.disponible}"
+                              th:text="${suite.habitacionesDisponibles + ' de ' + suite.habitacionesTotales + ' disponibles'}">2 disponibles</span>
+                        <span th:unless="${suite.disponible}">Sin disponibilidad</span>
+                    </span>
+                </div>
+            </article>
+
+            <p class="suites-empty" id="catalogo-vacio" th:if="${#lists.isEmpty(suites)}" role="status">
+                No encontramos suites con esos filtros. Prueba con otra búsqueda u otra fecha.
+            </p>
+            <p class="suites-empty" id="catalogo-vacio-js" role="status" hidden>
+                No encontramos suites con esos filtros. Prueba con otra búsqueda.
+            </p>
+        </section>
+
+        <footer class="inicio-footer">
+            <p>© 2026 Hotel Eclipse Suites. Todos los derechos reservados.</p>
+        </footer>
+    </main>
+
+    <script th:src="@{/js/catalogo.js}" defer></script>
+</body>
+</html>
