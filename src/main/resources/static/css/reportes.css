@@ -1,0 +1,156 @@
+:root {
+    --fondo: #0f1117;
+    --superficie: #181b24;
+    --borde: #2a2f3d;
+    --texto: #e8eaf0;
+    --texto-suave: #a3a9b8;
+    --acento: #c9a24b;
+    --acento-texto: #15120a;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--fondo);
+    color: var(--texto);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.5;
+}
+
+.reportes {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 2rem 1rem 3rem;
+}
+
+.reportes__cabecera {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+}
+
+.reportes__marca {
+    margin: 0;
+    color: var(--acento);
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+h1 {
+    margin: 0.25rem 0 0;
+    font-size: 1.75rem;
+}
+
+.reportes__nav {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.reportes__nav a {
+    color: var(--texto-suave);
+    text-decoration: none;
+}
+
+.reportes__nav a:hover,
+.reportes__nav a:focus-visible {
+    color: var(--texto);
+    text-decoration: underline;
+}
+
+.reportes__nav form {
+    margin: 0;
+}
+
+.reportes__tarjetas {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.25rem;
+}
+
+.tarjeta {
+    display: flex;
+    flex-direction: column;
+    background: var(--superficie);
+    border: 1px solid var(--borde);
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+.tarjeta h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1.2rem;
+}
+
+.tarjeta p {
+    margin: 0 0 1.25rem;
+    color: var(--texto-suave);
+}
+
+.tarjeta__formulario {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-top: auto;
+}
+
+label {
+    font-size: 0.85rem;
+    color: var(--texto-suave);
+}
+
+input[type="date"] {
+    padding: 0.6rem 0.75rem;
+    background: var(--fondo);
+    color: var(--texto);
+    border: 1px solid var(--borde);
+    border-radius: 8px;
+    font: inherit;
+    color-scheme: dark;
+}
+
+.boton {
+    display: inline-block;
+    padding: 0.65rem 1rem;
+    background: var(--acento);
+    color: var(--acento-texto);
+    border: 1px solid var(--acento);
+    border-radius: 8px;
+    font: inherit;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.boton:hover,
+.boton:focus-visible {
+    filter: brightness(1.1);
+}
+
+.boton--secundario {
+    background: transparent;
+    color: var(--texto);
+    border-color: var(--borde);
+}
+
+input:focus-visible,
+.boton:focus-visible,
+.reportes__nav a:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .boton {
+        transition: filter 0.15s ease;
+    }
+}

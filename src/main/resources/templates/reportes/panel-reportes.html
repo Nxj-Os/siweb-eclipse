@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Reportes | Eclipse Suites Hotel</title>
+    <link rel="stylesheet" th:href="@{/css/reportes.css}">
+</head>
+<body>
+<main class="reportes">
+    <header class="reportes__cabecera">
+        <div>
+            <p class="reportes__marca">Eclipse Suites Hotel</p>
+            <h1>Reportes de gestión</h1>
+        </div>
+        <nav class="reportes__nav">
+            <a th:href="@{/inicio}">Volver al inicio</a>
+            <form th:action="@{/logout}" method="post">
+                <button type="submit" class="boton boton--secundario">Cerrar sesión</button>
+            </form>
+        </nav>
+    </header>
+
+    <section class="reportes__tarjetas">
+        <article class="tarjeta">
+            <h2>Cierre de caja diario</h2>
+            <p>Resumen por método de pago y detalle de todas las transacciones del día,
+                con el total cobrado. Se exporta en formato Excel (.xlsx).</p>
+            <form th:action="@{/reportes/cierre-caja}" method="get" class="tarjeta__formulario">
+                <label for="fecha">Fecha del cierre</label>
+                <input type="date" id="fecha" name="fecha" th:value="${hoy}" th:max="${hoy}" required>
+                <button type="submit" class="boton">Descargar Excel</button>
+            </form>
+        </article>
+
+        <article class="tarjeta">
+            <h2>Ocupación de suites</h2>
+            <p>Estado actual del rack: habitaciones por estado, tasa de ocupación,
+                matriz por tipo de habitación y detalle por habitación.</p>
+            <div class="tarjeta__formulario">
+                <a class="boton" th:href="@{/reportes/ocupacion}">Descargar Excel</a>
+            </div>
+        </article>
+    </section>
+</main>
+</body>
+</html>
