@@ -9,12 +9,10 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.ui.ConcurrentModel;
 import pe.com.eclipsesuites.service.IReporteExcelService;
 
 import java.time.LocalDate;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -34,23 +32,11 @@ class ReporteExcelControllerTest {
     @Mock
     private IReporteExcelService servicio;
 
-    private ReporteExcelController controlador;
     private MockMvc mvc;
 
     @BeforeEach
     void preparar() {
-        controlador = new ReporteExcelController(servicio);
-        mvc = MockMvcBuilders.standaloneSetup(controlador).build();
-    }
-
-    @Test
-    void panel_devuelveLaVistaConLaFechaDeHoy() {
-        ConcurrentModel modelo = new ConcurrentModel();
-
-        String vista = controlador.panel(modelo);
-
-        assertEquals("reportes/panel-reportes", vista);
-        assertEquals(LocalDate.now(IReporteExcelService.ZONA_HOTEL), modelo.getAttribute("hoy"));
+        mvc = MockMvcBuilders.standaloneSetup(new ReporteExcelController(servicio)).build();
     }
 
     @Test

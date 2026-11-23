@@ -8,7 +8,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -18,8 +17,9 @@ import pe.com.eclipsesuites.service.IReporteExcelService;
 import java.time.LocalDate;
 
 /**
- * Reportes de gestión. Todas las rutas {@code /reportes/**} exigen rol ADMIN
- * (regla definida en {@code SecurityConfig}).
+ * Descargas de reportes en Excel. Todas las rutas {@code /reportes/**} exigen rol ADMIN
+ * (regla definida en {@code SecurityConfig}). La página del dashboard está en
+ * {@link ReportePanelController}.
  */
 @Controller
 @RequestMapping("/reportes")
@@ -30,12 +30,6 @@ public class ReporteExcelController {
             MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 
     private final IReporteExcelService reporteExcelService;
-
-    @GetMapping
-    public String panel(Model model) {
-        model.addAttribute("hoy", LocalDate.now(IReporteExcelService.ZONA_HOTEL));
-        return "reportes/panel-reportes";
-    }
 
     @GetMapping("/cierre-caja")
     public ResponseEntity<byte[]> cierreCaja(
