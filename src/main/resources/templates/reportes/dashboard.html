@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Reportes | Eclipse Suites Hotel</title>
+    <link rel="stylesheet" th:href="@{/css/reportes.css}">
+</head>
+<body>
+<main class="reportes">
+    <header class="reportes__cabecera">
+        <div>
+            <p class="reportes__marca">Eclipse Suites Hotel</p>
+            <h1>Dashboard gerencial</h1>
+        </div>
+        <nav class="reportes__nav">
+            <a th:href="@{/inicio}">Volver al inicio</a>
+            <form th:action="@{/logout}" method="post">
+                <button type="submit" class="boton boton--secundario">Cerrar sesión</button>
+            </form>
+        </nav>
+    </header>
+
+    <!-- Filtro de fechas -->
+    <section class="filtro" aria-label="Filtro de fechas">
+        <form th:action="@{/reportes}" method="get" class="filtro__formulario">
+            <div class="campo">
+                <label for="desde">Desde</label>
+                <input type="date" id="desde" name="desde" th:value="${dash.desde()}" th:max="${hoy}" required>
+            </div>
+            <div class="campo">
+                <label for="hasta">Hasta</label>
+                <input type="date" id="hasta" name="hasta" th:value="${dash.hasta()}" th:max="${hoy}" required>
+            </div>
+            <button type="submit" class="boton">Actualizar</button>
+        </form>
+        <p class="filtro__nota">Los ingresos incluyen solo transacciones cobradas (no anuladas, rechazadas ni pendientes).</p>
+    </section>
+
+    <!-- Indicadores -->
+    <section class="indicadores" aria-label="Indicadores principales">
+        <article class="indicador">
+            <p class="indicador__titulo">Total cobrado</p>
+            <p class="indicador__valor">S/ <span th:text="${#numbers.formatDecimal(dash.totalCobrado(), 1, 'COMMA', 2, 'POINT')}">0.00</span></p>
+        </article>
+        <article class="indicador">
+            <p class="indicador__titulo">Transacciones cobradas</p>
+            <p class="indicador__valor" th:text="${dash.transaccionesCobradas()}">0</p>
+        </article>
+        <article class="indicador">
+            <p class="indicador__titulo">Ticket promedio</p>
+            <p class="indicador__valor">S/ <span th:text="${#numbers.formatDecimal(dash.ticketPromedio(), 1, 'COMMA', 2, 'POINT')}">0.00</span></p>
+        </article>
+        <article class="indicador">
+            <p class="indicador__titulo">Ocupación actual</p>
+            <p class="indicador__valor"><span th:text="${#numbers.formatDecimal(dash.tasaOcupacion() * 100, 1, 'COMMA', 1, 'POINT')}">0.0</span>%</p>
+            <p class="indicador__detalle"><span th:text="${dash.habitacionesOcupadas()}">0</span> de <span th:text="${dash.totalHabitaciones()}">0</span> habitaciones</p>
+        </article>
+    </section>
+
+    <p class="aviso" th:if="${dash.transaccionesCobradas() == 0}">
+        No hay transacciones cobradas en el rango seleccionado.
+    </p>
+
+    <div class="paneles">
+        <!-- Ingresos por franja horaria -->
+        <section class="panel" aria-labelledby="titulo-franjas">
+            <h2 id="titulo-franjas">Ingresos por franja horaria</h2>
+            <ul class="barras">
+                <li class="barras__fila" th:each="f : ${dash.ingresosPorFranja()}">
+                    <div class="barras__etiqueta">
+                        <strong th:text="${f.nombre()}">Noche</strong>
+                        <small th:text="${f.rango()}">18:00 - 23:59</small>
+                    </div>
+                    <div class="barras__pista">
+                        <span class="barras__relleno" th:style="'width:' + ${f.porcentajeBarra()} + '%'"></span>
+                    </div>
+                    <div class="barras__valor">
+                        S/ <span th:text="${#numbers.formatDecimal(f.monto(), 1, 'COMMA', 2, 'POINT')}">0.00</span>
+                        <small><span th:text="${f.transacciones()}">0</span> trans.</small>
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <!-- Horas pico y valle -->
+        <section class="panel" aria-labelledby="titulo-picos">
+            <h2 id="titulo-picos">Horas pico y valle</h2>
+            <dl class="picos">
+                <div>
+                    <dt>Hora pico</dt>
+                    <dd th:text="${dash.rangoHoraPico()}">Sin datos</dd>
+                </div>
+                <div>
+                    <dt>Hora valle</dt>
+                    <dd th:text="${dash.rangoHoraValle()}">Sin datos</dd>
+                </div>
+            </dl>
+            <p class="panel__nota">La hora valle se calcula solo entre las horas con movimiento.</p>
+        </section>
+    </div>
+
+    <!-- Ingresos por hora -->
+    <section class="panel" aria-labelledby="titulo-horas">
+        <h2 id="titulo-horas">Ingresos por hora del día</h2>
+        <div class="horas" role="group" aria-label="Ingresos por hora del día">
+            <div class="hora" th:each="h : ${dash.ingresosPorHora()}" th:title="${h.descripcion()}">
+                <div class="hora__barra">
+                    <span th:style="'height:' + ${h.porcentajeBarra()} + '%'"></span>
+                </div>
+                <small th:text="${h.etiqueta()}">00</small>
+            </div>
+        </div>
+    </section>
+
+    <div class="paneles">
+        <!-- Método de pago -->
+        <section class="panel" aria-labelledby="titulo-metodos">
+            <h2 id="titulo-metodos">Ingresos por método de pago</h2>
+            <table class="tabla">
+                <thead>
+                <tr><th>Método</th><th class="num">Transacciones</th><th class="num">Monto</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="m : ${dash.ingresosPorMetodo()}">
+                    <td th:text="${m.metodo()}">EFECTIVO</td>
+                    <td class="num" th:text="${m.transacciones()}">0</td>
+                    <td class="num">S/ <span th:text="${#numbers.formatDecimal(m.monto(), 1, 'COMMA', 2, 'POINT')}">0.00</span></td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(dash.ingresosPorMetodo())}">
+                    <td colspan="3" class="vacio">Sin datos en el rango.</td>
+                </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Habitaciones por estado -->
+        <section class="panel" aria-labelledby="titulo-estados">
+            <h2 id="titulo-estados">Habitaciones por estado (ahora)</h2>
+            <table class="tabla">
+                <thead>
+                <tr><th>Estado</th><th class="num">Habitaciones</th><th class="num">%</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="e : ${dash.habitacionesPorEstado()}">
+                    <td th:text="${e.estado()}">OCUPADA</td>
+                    <td class="num" th:text="${e.cantidad()}">0</td>
+                    <td class="num"><span th:text="${e.porcentaje()}">0</span>%</td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(dash.habitacionesPorEstado())}">
+                    <td colspan="3" class="vacio">Sin habitaciones registradas.</td>
+                </tr>
+                </tbody>
+            </table>
+        </section>
+    </div>
+
+    <!-- Exportación a Excel -->
+    <section class="panel" aria-labelledby="titulo-excel">
+        <h2 id="titulo-excel">Exportar a Excel</h2>
+        <div class="exportar">
+            <form th:action="@{/reportes/cierre-caja}" method="get" class="exportar__formulario">
+                <div class="campo">
+                    <label for="fecha">Cierre de caja del día</label>
+                    <input type="date" id="fecha" name="fecha" th:value="${dash.hasta()}" th:max="${hoy}" required>
+                </div>
+                <button type="submit" class="boton">Descargar cierre de caja</button>
+            </form>
+            <a class="boton" th:href="@{/reportes/ocupacion}">Descargar ocupación de suites</a>
+        </div>
+    </section>
+</main>
+</body>
+</html>
