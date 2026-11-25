@@ -1,6 +1,8 @@
 package pe.com.eclipsesuites.dto;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
 
@@ -9,8 +11,8 @@ import java.util.Locale;
  * Los ingresos consideran solo transacciones cobradas.
  */
 public record DashboardReporte(
-        java.time.LocalDate desde,
-        java.time.LocalDate hasta,
+        LocalDate desde,
+        LocalDate hasta,
         BigDecimal totalCobrado,
         long transaccionesCobradas,
         BigDecimal ticketPromedio,
@@ -23,6 +25,13 @@ public record DashboardReporte(
         long habitacionesOcupadas,
         double tasaOcupacion,
         List<HabitacionesPorEstado> habitacionesPorEstado) {
+
+    private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+    /** Rango en texto, por ejemplo "17/11/2026 - 23/11/2026". */
+    public String rangoTexto() {
+        return desde.format(FORMATO_FECHA) + " - " + hasta.format(FORMATO_FECHA);
+    }
 
     /** Rango de la hora con más ingresos, por ejemplo "20:00 - 20:59". */
     public String rangoHoraPico() {

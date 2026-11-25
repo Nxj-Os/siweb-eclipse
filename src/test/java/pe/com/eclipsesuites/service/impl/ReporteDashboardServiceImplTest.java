@@ -114,6 +114,7 @@ class ReporteDashboardServiceImplTest {
 
         assertEquals(DIA, d.desde());
         assertEquals(hasta, d.hasta());
+        assertEquals("16/11/2026 - 18/11/2026", d.rangoTexto());
     }
 
     @Test

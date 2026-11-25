@@ -18,7 +18,7 @@ public class EmpleadoFrontendController {
     public String averias() { return "operaciones/reporte-averias"; }
 
     @GetMapping("/empleado/reportes")
-    public String reportes() { return "reportes/panel-reportes"; }
+    public String reportes() { return "redirect:/reportes"; }
 
     @GetMapping("/empleado/roomservice")
     public String roomservice() { return "roomservice/menu-suite"; }
