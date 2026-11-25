@@ -13,7 +13,7 @@
 </head>
 <body class="reserva-page">
     <header class="reserva-header">
-        <a class="reserva-brand" th:href="@{/inicio}">Eclipse <span>Suites</span></a>
+        <a class="reserva-brand" th:href="@{/}">Eclipse <span>Suites</span></a>
         <a class="reserva-header__link" th:href="@{/cliente/reservas}">Mis reservas</a>
     </header>
     <main class="reserva-shell reserva-shell--narrow">
@@ -74,7 +74,7 @@
                    th:if="${demoMode and reserva.estadoReserva.name() == 'CHECKED_IN'}"
                    th:href="@{/cliente/reservas/{id}/extensiones/nueva(id=${reserva.id})}">Solicitar tiempo extra</a>
                 <a class="button button--secondary" th:href="@{/cliente/reservas}">Ver mis reservas</a>
-                <a class="button button--secondary" th:href="@{/inicio}">Volver a suites</a>
+                <a class="button button--secondary" th:href="@{/catalogo}">Volver a suites</a>
             </div>
         </section>
     </main>

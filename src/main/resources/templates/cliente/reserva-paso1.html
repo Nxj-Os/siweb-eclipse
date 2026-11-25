@@ -15,7 +15,7 @@
 </head>
 <body class="reserva-page">
     <header class="reserva-header">
-        <a class="reserva-brand" th:href="@{/inicio}">Eclipse <span>Suites</span></a>
+        <a class="reserva-brand" th:href="@{/}">Eclipse <span>Suites</span></a>
         <a class="reserva-header__link" th:href="@{/cliente/reservas}">Mis reservas</a>
     </header>
 
@@ -137,7 +137,7 @@
                             Selecciona habitación, fecha y duración para consultar el precio.
                         </p>
                         <div class="reservation-card__actions">
-                            <a class="button button--secondary" th:href="@{/inicio}">Volver a suites</a>
+                            <a class="button button--secondary" th:href="@{/catalogo}">Volver a suites</a>
                             <button class="button button--primary" type="submit"
                                     th:disabled="${#lists.isEmpty(habitaciones)}">
                                 Reservar esta habitación

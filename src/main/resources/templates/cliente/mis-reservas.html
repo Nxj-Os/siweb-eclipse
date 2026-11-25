@@ -12,8 +12,8 @@
 </head>
 <body class="reserva-page">
     <header class="reserva-header">
-        <a class="reserva-brand" th:href="@{/inicio}">Eclipse <span>Suites</span></a>
-        <a class="reserva-header__link" th:href="@{/inicio}">Nueva reserva</a>
+        <a class="reserva-brand" th:href="@{/}">Eclipse <span>Suites</span></a>
+        <a class="reserva-header__link" th:href="@{/catalogo}">Nueva reserva</a>
     </header>
     <main class="reserva-shell">
         <section class="reserva-intro">
@@ -26,7 +26,7 @@
         <div class="empty-state" th:if="${#lists.isEmpty(reservas)}">
             <h2>Aun no tienes reservas</h2>
             <p>Cuando solicites una suite, su estado aparecera aqui.</p>
-            <a class="button button--primary" th:href="@{/inicio}">Explorar suites</a>
+            <a class="button button--primary" th:href="@{/catalogo}">Explorar suites</a>
         </div>
         <section class="reservation-list" th:if="${not #lists.isEmpty(reservas)}" aria-label="Reservas">
             <article class="reservation-card" th:each="reserva : ${reservas}">

@@ -60,6 +60,12 @@ public class SecurityConfig {
                     "/api/chatbot/reiniciar"
                 ).permitAll()
                 .requestMatchers("/api/empleado/**").hasAnyRole("ADMIN", "RECEPCION", "LIMPIEZA", "ROOMSERVICE")
+                .requestMatchers(
+                    "/api/auth/client/perfil",
+                    "/api/auth/client/reservas",
+                    "/api/auth/client/reservas/**",
+                    "/api/auth/client/cuenta"
+                ).hasRole("CLIENTE")
                 .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex
@@ -180,8 +186,9 @@ public class SecurityConfig {
                                 request.getContextPath() + "/empleado"
                             );
                         } else {
+                            // El inicio real es la portada, no el catálogo de suites.
                             response.sendRedirect(
-                                request.getContextPath() + "/inicio"
+                                request.getContextPath() + "/"
                             );
                         }
                     }

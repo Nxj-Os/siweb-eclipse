@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="css/home.css">
 </head>
 <body class="welcome-page">
@@ -28,7 +29,7 @@
                 <nav class="landing-nav" aria-label="Navegación principal">
                     <a href="#experiencia">La experiencia</a>
                     <a href="/catalogo">Suites</a>
-                    <a class="landing-nav__login" href="/login?tipo=cliente">Iniciar sesión <span aria-hidden="true">↗</span></a>
+                    <a class="landing-nav__login" id="landing-login" href="/login?tipo=cliente">Iniciar sesión <span aria-hidden="true">↗</span></a>
                 </nav>
             </header>
 
@@ -37,7 +38,7 @@
                 <h1 id="welcome-title">Bienvenido<br>a nuestro <em>mundo</em></h1>
                 <p class="landing-hero__intro">Un refugio pensado para desconectar, sorprenderte y disfrutar cada momento a tu manera.</p>
                 <div class="landing-hero__actions">
-                    <a class="landing-button" href="/login?tipo=cliente">Ingresar como cliente <span aria-hidden="true">→</span></a>
+                    <a class="landing-button" href="/catalogo">Ver suites y reservar <span aria-hidden="true">↗'</span></a>
                     <a class="landing-text-link" href="#experiencia">Conoce la experiencia</a>
                 </div>
             </div>
@@ -105,49 +106,17 @@
                 <div>
                     <p class="landing-eyebrow landing-eyebrow--dark"><span></span> Encuentra tu lugar</p>
                     <h2 id="suites-title">Cada suite, un <em>universo.</em></h2>
+                    <p class="suites-showcase__status" id="suites-status" role="status">
+                        Cargando las suites disponibles…
+                    </p>
                 </div>
-                <a class="experience-link" href="/catalogo">Ver disponibilidad <span aria-hidden="true">→</span></a>
+                <a class="experience-link" href="/catalogo">Ver disponibilidad <span aria-hidden="true">↗'</span></a>
             </header>
-            <div class="suite-gallery">
-                <article class="suite-tile">
-                    <a class="suite-tile__image suite-tile__image--vip" href="/catalogo" aria-label="Explorar la Suite VIP Deluxe">
-                        <span class="suite-tile__index">01 / ECLIPSE</span>
-                        <span class="suite-tile__arrow" aria-hidden="true">↗</span>
-                    </a>
-                    <div class="suite-tile__details">
-                        <div>
-                            <h3>Suite VIP Deluxe</h3>
-                            <p>Elegancia moderna, detalles exclusivos.</p>
-                        </div>
-                        <span class="suite-tile__type">01</span>
-                    </div>
-                </article>
-                <article class="suite-tile">
-                    <a class="suite-tile__image suite-tile__image--romana" href="/catalogo" aria-label="Explorar la Suite Romana">
-                        <span class="suite-tile__index">02 / CLÁSICA</span>
-                        <span class="suite-tile__arrow" aria-hidden="true">↗</span>
-                    </a>
-                    <div class="suite-tile__details">
-                        <div>
-                            <h3>Suite Romana</h3>
-                            <p>Un ambiente clásico con carácter.</p>
-                        </div>
-                        <span class="suite-tile__type">02</span>
-                    </div>
-                </article>
-                <article class="suite-tile">
-                    <a class="suite-tile__image suite-tile__image--galaxia" href="/catalogo" aria-label="Explorar la Suite Galaxia">
-                        <span class="suite-tile__index">03 / INMERSIVA</span>
-                        <span class="suite-tile__arrow" aria-hidden="true">↗</span>
-                    </a>
-                    <div class="suite-tile__details">
-                        <div>
-                            <h3>Suite Galaxia</h3>
-                            <p>Una experiencia futurista y envolvente.</p>
-                        </div>
-                        <span class="suite-tile__type">03</span>
-                    </div>
-                </article>
+            <div class="suite-gallery" id="suite-gallery"></div>
+            <div class="suites-showcase__more">
+                <a class="experience-link" id="suites-cta" href="/catalogo">
+                    Reservar una suite <span aria-hidden="true">↗'</span>
+                </a>
             </div>
         </section>
 
@@ -171,12 +140,14 @@
             <a href="#inicio">Inicio</a>
             <a href="#experiencia">Nuestra experiencia</a>
             <a href="#suites">Explorar suites</a>
-            <a href="/login?tipo=cliente">Iniciar sesión como cliente <span aria-hidden="true">↗</span></a>
-            <a href="/catalogo">Reservar una suite <span aria-hidden="true">↗</span></a>
-            <a href="/login?tipo=empleado">Acceso de empleados <span aria-hidden="true">↗</span></a>
+            <a id="landing-login-menu" href="/login?tipo=cliente">Iniciar sesi��n como cliente <span aria-hidden="true">��-</span></a>
+            <a href="/catalogo">Reservar una suite <span aria-hidden="true">��-</span></a>
+            <a href="/login?tipo=empleado">Acceso de empleados <span aria-hidden="true">��-</span></a>
         </nav>
     </div>
     <script src="js/landing-page.js" defer></script>
+<script src="js/landing-suites.js" defer></script>
 <script src="js/chatbot-widget.js" defer></script>
+<script src="js/landing-sesion.js" defer></script>
 </body>
 </html>

@@ -71,8 +71,9 @@ async function sendJson(url, payload) {
 }
 
 function redirigirTrasLogin(rol) {
+    // El inicio real es la portada `/`; el catálogo de suites vive en `/catalogo`.
     const destinos = {
-        CLIENTE: "/inicio",
+        CLIENTE: "/",
         ADMIN: "/empleado",
         RECEPCION: "/empleado/recepcion",
         LIMPIEZA: "/empleado/limpieza",
