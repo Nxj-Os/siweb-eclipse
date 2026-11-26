@@ -5,17 +5,15 @@ import pe.com.eclipsesuites.dto.response.CartaResponseDTO;
 import pe.com.eclipsesuites.dto.response.PedidoResponseDTO;
 
 /**
- * Carta de room service para la suite: acceso por token de check-in,
- * creación de comandas con precio congelado y seguimiento de estado.
+ * Carta de room service para la suite: la carta y la comanda no exigen
+ * check-in (el huésped elige la suite de entrega; el QR se integrará
+ * después), con precio congelado y seguimiento de estado.
  */
 public interface IRoomServiceService {
 
     /**
-     * Carta disponible (categorías y productos con precio/stock) para
-     * la habitación identificada por el token de check-in.
-     *
-     * @throws pe.com.eclipsesuites.service.impl.AccesoRoomServiceNoPermitidoException
-     *         si el token no existe o expiró.
+     * Carta disponible (categorías, productos con precio/stock y
+     * suites ocupadas para el selector de entrega).
      */
     CartaResponseDTO obtenerCarta(String token, String busqueda, Integer idCategoria);
 
@@ -23,8 +21,6 @@ public interface IRoomServiceService {
      * Registra la comanda: congela precios, descuenta stock y genera
      * el código de pedido que verá el huésped.
      *
-     * @throws pe.com.eclipsesuites.service.impl.AccesoRoomServiceNoPermitidoException
-     *         si el token de check-in no es válido.
      * @throws pe.com.eclipsesuites.service.impl.StockInsuficienteException
      *         si algún producto no alcanza.
      */
@@ -32,7 +28,8 @@ public interface IRoomServiceService {
 
     /**
      * Estado actual de una comanda del huésped (con avance automático
-     * por tiempo). Solo la habitación dueña del token puede leerla.
+     * por tiempo). Con token de check-in solo la suite dueña puede
+     * leerla; sin token se consulta por código.
      */
     PedidoResponseDTO obtenerPedido(String token, String codigoPedido);
 

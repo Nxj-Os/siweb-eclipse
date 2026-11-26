@@ -63,48 +63,50 @@ button {
     color: #d7ffe9;
 }
 
-/* ------------------------------------------------------ bloqueada */
+/* -------------------------------------------------- selector suite */
 
-.bloqueada {
-    display: grid;
-    min-height: 100svh;
-    place-items: center;
-    padding: 24px;
-}
-
-.bloqueada__tarjeta {
-    width: min(100%, 460px);
-    padding: 40px 32px;
+.selector-suite {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 18px;
+    padding: 14px 16px;
     border: 1px solid var(--borde);
-    border-radius: 20px;
-    background: var(--panel);
-    text-align: center;
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.02);
 }
 
-.bloqueada__icono {
-    font-size: 52px;
-    color: var(--oro);
-}
-
-.bloqueada__titulo {
-    margin: 14px 0 8px;
-    font-family: "Cormorant Garamond", serif;
-    font-size: 2rem;
-    font-weight: 600;
-}
-
-.bloqueada__mensaje {
-    margin: 0 0 6px;
+.selector-suite__etiqueta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     color: var(--crema-suave);
-    line-height: 1.5;
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
 }
 
-.bloqueada__pista {
-    margin: 0 0 24px;
-    color: var(--crema-tenue);
-    font-size: 0.86rem;
-    line-height: 1.5;
+.selector-suite__input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    background: var(--fondo, #0d1a16);
+    color: var(--crema, #f3e9d2);
+    font-family: "DM Sans", sans-serif;
+    font-size: 0.95rem;
+    cursor: pointer;
+}
+
+.selector-suite__input:focus {
+    outline: none;
+    border-color: var(--oro, #d8b25f);
+}
+
+.selector-suite__input:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
 }
 
 /* ----------------------------------------------------------- carta */
@@ -678,4 +680,53 @@ button {
     .productos {
         grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     }
+}
+
+/* ---------------------------------------------- navegación inferior */
+
+/* Deja espacio para la barra fija: evita tapar el carrito y el final de la carta. */
+body {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+}
+
+.bottom-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    padding: 0.4rem 0 calc(0.4rem + env(safe-area-inset-bottom, 0));
+    border-top: 1px solid var(--borde);
+    background: rgb(7 21 20 / 96%);
+    backdrop-filter: blur(12px);
+}
+
+.bottom-nav__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    padding: 0.4rem 0;
+    color: var(--crema-tenue);
+    font-size: 0.88rem;
+    text-decoration: none;
+}
+
+.bottom-nav__item:hover {
+    color: var(--crema-suave);
+}
+
+.bottom-nav__item--active {
+    color: var(--oro);
+}
+
+.bottom-nav__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.8rem;
+    height: 1.8rem;
 }

@@ -15,28 +15,13 @@
 
 <div id="aviso-global" class="aviso-global" role="alert" hidden></div>
 
-<!-- Servicio bloqueado: sin check-in validado no hay carta -->
-<section id="vista-bloqueada" class="bloqueada" hidden>
-    <div class="bloqueada__tarjeta">
-        <i class="bi bi-shield-lock bloqueada__icono" aria-hidden="true"></i>
-        <h1 class="bloqueada__titulo">Servicio bloqueado</h1>
-        <p class="bloqueada__mensaje" id="bloqueada-mensaje">
-            Necesitas validar el check-in de tu reserva para acceder
-        </p>
-        <p class="bloqueada__pista">
-            Solicita el QR de tu suite en recepción o vuelve a escanearlo desde tu reserva.
-        </p>
-        <a class="btn btn--crema" href="/">Volver al inicio</a>
-    </div>
-</section>
-
 <!-- Carta del huésped -->
-<main id="vista-carta" class="carta" hidden>
+<main id="vista-carta" class="carta">
     <header class="carta__cabecera">
         <div class="carta__titulos">
             <p class="carta__marca">Eclipse Suites</p>
             <h1 class="carta__titulo">Room service</h1>
-            <p class="carta__subtitulo">Necesitas validar el check-in de tu reserva para acceder</p>
+            <p class="carta__subtitulo">Elige tu suite y disfruta de la carta</p>
         </div>
         <span class="badge-suite" id="badge-suite" hidden></span>
     </header>
@@ -66,6 +51,17 @@
 
         <!-- Columna derecha: carrito o estado del pedido -->
         <aside class="panel" aria-label="Tu pedido">
+            <!-- Selector de suite de entrega (visible sin check-in) -->
+            <div class="selector-suite">
+                <label class="selector-suite__etiqueta" for="suite-entrega">
+                    <i class="bi bi-door-open" aria-hidden="true"></i> Suite de entrega
+                </label>
+                <select class="selector-suite__input" id="suite-entrega"
+                        aria-label="Elige la suite a la que entregaremos tu pedido">
+                    <option value="" selected>Cargando suites…</option>
+                </select>
+            </div>
+
             <!-- Modo carrito -->
             <div id="modo-carrito">
                 <h2 class="panel__titulo"><i class="bi bi-bag-check" aria-hidden="true"></i> Tu pedido</h2>
@@ -133,6 +129,35 @@
         </aside>
     </div>
 </main>
+
+<!-- Navegación inferior (Servicio activo: esta es la carta de room service) -->
+<nav class="bottom-nav" aria-label="Navegación inferior">
+    <a class="bottom-nav__item" th:href="${logueado} ? @{/inicio} : @{/}">
+        <span class="bottom-nav__icon">
+            <i class="bi bi-house-door" aria-hidden="true"></i>
+        </span>
+        <span>Inicio</span>
+    </a>
+    <a class="bottom-nav__item" href="#">
+        <span class="bottom-nav__icon">
+            <i class="bi bi-calendar-check" aria-hidden="true"></i>
+        </span>
+        <span>Reserva</span>
+    </a>
+    <a class="bottom-nav__item bottom-nav__item--active" th:href="@{/menu-suite}"
+       aria-current="page">
+        <span class="bottom-nav__icon">
+            <i class="bi bi-bell" aria-hidden="true"></i>
+        </span>
+        <span>Servicio</span>
+    </a>
+    <a class="bottom-nav__item" href="#">
+        <span class="bottom-nav__icon">
+            <i class="bi bi-question-circle" aria-hidden="true"></i>
+        </span>
+        <span>Ayuda</span>
+    </a>
+</nav>
 
 <script th:src="@{/js/room-service.js}" defer></script>
 </body>
