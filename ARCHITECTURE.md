@@ -6,7 +6,7 @@ Este documento describe el código que existe hoy en el workspace. Es una fotogr
 
 Siweb Eclipse es una aplicación web monolítica construida con Spring Boot. El backend Java sirve páginas Thymeleaf y recursos estáticos; el navegador usa `auth-login.js` para autenticar y registrar clientes mediante una API JSON. Spring Security administra autenticación basada en sesión y Hibernate/JPA persiste el modelo disponible en PostgreSQL.
 
-El flujo de acceso, registro de clientes, la página `/inicio` y el asistente conversacional de `/asistente` están implementados. Las áreas de reservas, recepción, room service, operaciones y reportes tienen artefactos parciales (plantillas, repositorios o archivos Java vacíos), pero no se deben considerar módulos funcionales de punta a punta.
+El flujo de acceso, registro de clientes, la página `/inicio`, el perfil de usuario del cliente (`/cliente/perfil`) y el asistente conversacional de `/asistente` están implementados. Las áreas de recepción, operaciones y reportes tienen artefactos parciales (plantillas, repositorios o archivos Java vacíos), pero no se deben considerar módulos funcionales de punta a punta.
 
 ## Vista de contexto y componentes
 
@@ -36,7 +36,7 @@ flowchart LR
 4. La cadena de seguridad API verifica CSRF y la autorización antes de que la petición alcance `AuthController`.
 5. `AuthController` delega las reglas en `IClienteAuthService` o `IEmpleadoAuthService`; el servicio valida y utiliza repositorios Spring Data JPA.
 6. Al autenticar o crear un cliente, el controlador crea/rota el identificador de sesión, guarda el `SecurityContext` y devuelve un DTO JSON.
-7. El navegador conserva la sesión y redirige a `/inicio`.
+7. El navegador conserva la sesión y `auth-login.js` redirige a la portada `/` cuando el rol es `CLIENTE` y a `/empleado` con los demás roles. El `successHandler` de la cadena web aplica el mismo criterio para el envío clásico del formulario.
 
 ### Petición típica del asistente
 
@@ -55,14 +55,14 @@ Raíz Java: `src/main/java/pe/com/eclipsesuites`.
 | Paquete | Archivos Java encontrados | Responsabilidad/estado |
 | --- | ---: | --- |
 | raíz | 1 | Punto de entrada `SiwebEclipseApplication`. |
-| `config` | 5 | Cadenas de seguridad, codificador BCrypt, configuración del chatbot, carga de suites de demo y datos de desarrollo. |
-| `controller` | 12 | Rutas API/MVC y manejo de errores. `AuthController`, `AuthPageController`, `ChatbotController`, `AsistentePageController`, `HomeController` y `GlobalExceptionHandler` tienen contenido; el resto son marcadores vacíos. |
-| `dao` | 19 | Interfaces Spring Data JPA para los datos del hotel, incluidos `ConversacionChatbotRepository` y `MensajeChatbotRepository`. |
-| `dto/request` | 8 | Contratos de solicitudes, incluidos login, registro y `ChatMensajeRequestDTO`. |
-| `dto/response` | 11 | Respuestas JSON, errores, disponibilidad y los DTO del chatbot. |
-| `entity` | 21 | Modelos Java. Hay 11 clases `@Entity` y un tipo `@Embeddable` con contenido; otros archivos son marcadores vacíos. |
-| `service` | 9 | Interfaces, política de consulta MX e `IChatbotService`. |
-| `service/impl` | 21 | Reglas de autenticación, correo, contraseña, límites y el módulo de chatbot; algunos archivos de otros dominios están vacíos. |
+| `config` | 8 | Cadenas de seguridad, codificador BCrypt, configuración del chatbot, carga de suites de demo, carta de room service y datos de desarrollo. |
+| `controller` | 22 | Rutas API/MVC y manejo de errores. Con contenido: `AuthController`, `AuthPageController`, `CatalogoController`, `ChatbotController`, `AsistentePageController`, `HomeController`, `ClienteReservaController`, `ClientePerfilController`, `ClientePerfilPageController`, `RecepcionReservaController`, `RoomServiceController`, `AgendaEmpleadoController`, `EmpleadoFrontendController`, `EmpleadoHabitacionesApiController`, `EmpleadoPortalController`, `MenuSuitePageController`, `ReporteExcelController`, `ReportePanelController` y `GlobalExceptionHandler`. Vacíos: `CheckoutController`, `OperacionesController` y `RackController`. |
+| `dao` | 22 | Interfaces Spring Data JPA para los datos del hotel, incluidos `ClienteRepository`, `ReservaEstadiaRepository`, `ConversacionChatbotRepository` y `MensajeChatbotRepository`. |
+| `dto/request` | 13 | Contratos de solicitudes, incluidos login, registro, `PerfilClienteUpdateDTO` y `ChatMensajeRequestDTO`. |
+| `dto/response` | 25 | Respuestas JSON, errores, disponibilidad, los DTO del chatbot y los del perfil (`PerfilClienteResponseDTO`, `ReservaResumenDTO`, `BoletaReservaDTO`). |
+| `entity` | 28 | Modelos Java. Hay 11 clases `@Entity` y un tipo `@Embeddable` con contenido; otros archivos son marcadores vacíos. |
+| `service` | 13 | Interfaces, política de consulta MX, `IChatbotService`, `IClientePerfilService` e `IClienteAuthService`. |
+| `service/impl` | 28 | Reglas de autenticación, correo, contraseña, límites, chatbot y perfil (`ClientePerfilServiceImpl`); algunos archivos de otros dominios están vacíos. |
 | `service/gemini` | 3 | Cliente HTTP de Gemini, DTO de turno y excepción de servicio no disponible. |
 | `validation` | 3 | Validación de teléfono por país. |
 | `util` | 2 | Generador de códigos y constantes SUNAT. |
@@ -72,7 +72,9 @@ Las cantidades se obtuvieron contando los archivos `.java` presentes, incluidos 
 ### Puntos de entrada actuales
 
 - `SiwebEclipseApplication.main`: inicializa Spring Boot.
-- `HomeController`: sirve `/inicio` con los tipos de suite y tarifas actuales; exige una sesión autenticada y, de lo contrario, redirige a `/login`.
+- `HomeController`: sirve `/inicio`, la página de suites temáticas con filtros y galería; exige una sesión autenticada y, de lo contrario, redirige a `/login`. Añade `perfilCliente` y `esCliente` para que la cabecera enlace al perfil correcto según el rol. La portada real `/` es `static/index.html` y no requiere sesión.
+- `ClientePerfilPageController`: sirve `/cliente/perfil` con los datos del cliente y su historial de reservas.
+- `ClientePerfilController`: API de perfil bajo `/api/auth/client` (perfil, reservas, boleta y baja de cuenta).
 - `CatalogoController`: sirve `/catalogo` y `/catalogo/{codTipo}` sin sesión y expone `/api/catalogo/**` como JSON público.
 - `AuthPageController`: sirve los formularios Thymeleaf de login y registro.
 - `AuthController`: API de autenticación bajo `/api/auth`.
@@ -86,10 +88,10 @@ Las cantidades se obtuvieron contando los archivos `.java` presentes, incluidos 
 
 | Método | Ruta | Acceso/resultado |
 | --- | --- | --- |
-| `GET` | `/` y `/index.html` | Portada estática pública. |
+| `GET` | `/` y `/index.html` | Portada estática pública con la galería de suites en vivo (`GET /api/catalogo`) y CTA hacia `/catalogo`. |
 | `GET` | `/login?tipo=empleado` o `?tipo=cliente` | Formulario público; el parámetro selecciona la identidad a pedir. |
 | `GET` | `/registro` | Formulario público; Thymeleaf incluye los dominios permitidos configurados. |
-| `GET` | `/inicio` | Requiere autenticación; no diferencia la vista por rol. |
+| `GET` | `/inicio` | Requiere autenticación; página de suites temáticas. La cabecera enlaza a `/cliente/perfil` con `ROLE_CLIENTE` y a `/empleado/perfil` con los demás roles, más «Inicio» (`/`) y «Catálogo público» (`/catalogo`). |
 | `GET` | `/catalogo` | Público; lista suites con disponibilidad, precio desde y filtros `q`, `fecha`, `hora`, `modalidadId`, `soloDisponibles` y `orden`. |
 | `GET` | `/catalogo/{codTipo}` | Público; ficha de la suite con amenidades, tarifas y habitaciones. |
 | `GET` | `/api/catalogo` | Público; la misma lista del catálogo en JSON. |
@@ -113,6 +115,12 @@ Las cantidades se obtuvieron contando los archivos `.java` presentes, incluidos 
 | `POST` | `/api/auth/client/login` | Login de cliente; CSRF requerido. |
 | `GET` | `/api/auth/me` | Requiere sesión de empleado. |
 | `GET` | `/api/auth/client/me` | Requiere sesión de cliente. |
+| `GET` | `/cliente/perfil` | Requiere rol `CLIENTE`; página con información, historial, edición y borrado de cuenta. |
+| `GET` | `/api/auth/client/perfil` | Requiere rol `CLIENTE`; datos del cliente, reserva activa y total de reservas. |
+| `PUT` | `/api/auth/client/perfil` | Requiere rol `CLIENTE` y CSRF; actualiza nombre, apellido, teléfono E.164 y edad. |
+| `GET` | `/api/auth/client/reservas` | Requiere rol `CLIENTE`; historial de reservas en JSON. |
+| `GET` | `/api/auth/client/reservas/{id}/boleta` | Requiere rol `CLIENTE`; boleta de una reserva propia con subtotal, IGV 18 % y total. |
+| `DELETE` | `/api/auth/client/cuenta` | Requiere rol `CLIENTE` y CSRF; desactiva la cuenta y invalida la sesión. |
 | `POST` | `/api/auth/logout` y `/logout` | Filtros de logout de Spring Security; CSRF requerido. |
 | `GET` | `/asistente` | Público; página con catálogo de suites a la izquierda y chat a la derecha. |
 | `GET` | `/api/chatbot/catalogo` | Público; suites, tarifas y disponibilidad desde la base. |
@@ -121,7 +129,7 @@ Las cantidades se obtuvieron contando los archivos `.java` presentes, incluidos 
 | `POST` | `/api/chatbot/mensaje` | Público o cliente; CSRF requerido; limitado por IP y por conversación. |
 | `POST` | `/api/chatbot/reiniciar` | Público o cliente; CSRF requerido; limpia el estado de cola. |
 
-En `/api/**`, los errores de autenticación/autorización tienen respuestas JSON. El chatbot no exige sesión: el anónimo se identifica con la cookie `ECLIPSE_CHAT_SID` y el cliente con su sesión HTTP. Los límites y la clasificación de intenciones están en `ChatbotServiceImpl`, `ChatbotRateLimiter` e `IntencionChatbotDetector`. Los patrones web `/cliente/**`, `/admin/**`, `/reportes/**`, `/recepcion/**` y `/roomservice/**` tienen reglas de rol en Spring Security; que exista una regla no implica que haya una ruta o módulo implementado detrás.
+En `/api/**`, los errores de autenticación/autorización tienen respuestas JSON. El chatbot no exige sesión: el anónimo se identifica con la cookie `ECLIPSE_CHAT_SID` y el cliente con su sesión HTTP. Los límites y la clasificación de intenciones están en `ChatbotServiceImpl`, `ChatbotRateLimiter` e `IntencionChatbotDetector`. `SecurityConfig` exige `ROLE_CLIENTE` además de la sesión para `/api/auth/client/perfil`, `/api/auth/client/reservas/**` y `/api/auth/client/cuenta`, de modo que un empleado autenticado recibe `403` y no puede leer el perfil de un cliente. Los patrones web `/cliente/**`, `/admin/**`, `/reportes/**`, `/recepcion/**` y `/roomservice/**` tienen reglas de rol en Spring Security; que exista una regla no implica que haya una ruta o módulo implementado detrás.
 
 `SecurityConfig` usa BCrypt con costo 10 y `HttpSessionSecurityContextRepository`. Las sesiones tienen 30 minutos de inactividad; la cookie es `HttpOnly` y `SameSite=Lax`. `Secure` es falso en desarrollo y se activa con el perfil `prod`. El ID de sesión cambia tras login/registro.
 
@@ -207,12 +215,18 @@ En la carpeta `entity` hay otros nombres relacionados con pedidos, limpieza y av
 
 ## Interfaz y movimiento visual
 
-- `templates/inicio.html`: portada y enlaces de acceso.
+- `static/index.html`: portada pública `/`; hero, secciones de experiencia y la galería `#suite-gallery` que `landing-suites.js` rellena con suites reales. Los enlaces rotulados "Inicio" apuntan a `/` y los de suites a `/catalogo`.
+- `templates/inicio.html`: página de suites temáticas (`/inicio`, con sesión); la cabecera muestra el nombre real del cliente con icono y enlaza a `/cliente/perfil`, y añade enlaces a `/` y a `/catalogo`.
+- `templates/cliente/perfil.html`: perfil del cliente en dos columnas (panel principal + menú lateral con las cuatro secciones) con modal de boleta.
 - `templates/asistente.html`: página del asistente con catálogo de suites y chat en paralelo.
 - `templates/auth/login.html` y `registro.html`: formularios Thymeleaf.
 - `static/css/home.css`: tema oscuro, paneles, responsive layout, fondo `/img/hotel-eclipse-background.png`, estados de validación y transiciones.
+- `static/css/perfil-cliente.css`: variables del tema del hotel, layout de dos columnas, tarjetas de reserva, formulario y modal de boleta.
 - `static/css/asistente.css` y `static/js/asistente.js`: layout partido, tarjetas del catálogo y flujo de chat de `/asistente`.
 - `static/css/chatbot-widget.css` y `static/js/chatbot-widget.js`: cajón flotante inyectado en la portada y en `/inicio`.
+- `static/js/perfil-cliente.js`: navegación entre secciones, `PUT` de perfil con CSRF, borrado de cuenta y carga de la boleta.
+- `static/js/landing-sesion.js`: en la portada, pide `GET /api/auth/client/perfil` y sustituye «Iniciar sesión» por el nombre del cliente con enlace al perfil en la cabecera y en el menú flotante.
+- `static/js/landing-suites.js`: en la portada, pide `GET /api/catalogo` y pinta hasta seis tarjetas de suite con imagen, badge de disponibilidad, precio desde y enlace a `/catalogo/{codTipo}`; si la llamada falla muestra un enlace de respaldo al catálogo.
 - `static/js/auth-login.js`: CSRF, login/registro, validación del wizard, disponibilidad, estados de carga y controles de mostrar contraseña.
 - El panel y la marca aparecen con movimientos cortos; los pasos del wizard entran suavemente, y campos, botones y barra de progreso tienen transiciones.
 - `prefers-reduced-motion: reduce` reduce a prácticamente cero las animaciones/transiciones y desactiva el desplazamiento suave.
@@ -236,16 +250,16 @@ No añadir secretos a archivos versionados. `application.properties` importa el 
 
 ## Módulos aún no conectados
 
-Las carpetas `templates/roomservice`, `templates/operaciones` y `templates/reportes` contienen diseños de páginas, pero no se encontraron rutas MVC activas para esos procesos. Al inspeccionar el workspace, los siguientes archivos estaban vacíos (0 bytes):
+Las carpetas `templates/operaciones` y `templates/reportes` contienen diseños de páginas, pero no se encontraron rutas MVC activas para esos procesos. Al inspeccionar el workspace, los siguientes archivos estaban vacíos (0 bytes):
 
-- Controladores: `CheckoutController`, `OperacionesController`, `RackController`, `ReporteExcelController` y `RoomServiceController`.
-- Implementaciones de servicio: `FacturacionServiceImpl`, `LimpiezaServiceImpl` y `RoomServiceServiceImpl`.
+- Controladores: `CheckoutController`, `OperacionesController` y `RackController`.
+- Implementaciones de servicio: `FacturacionServiceImpl` y `LimpiezaServiceImpl`.
 
-Las interfaces/repositories relacionados que sí tienen contenido no reemplazan esos flujos faltantes. Antes de anunciar reservas, pagos, recepción, limpieza o pedidos como disponibles, se requiere implementar y conectar sus rutas, lógica y persistencia.
+`RoomServiceController`, `RoomServiceServiceImpl`, `ReporteExcelController` y `ReporteExcelServiceImpl` ya tienen contenido y rutas activas, pero sus pruebas `RoomServiceControllerTest`, `DemoCatalogInitializerTest` y `ChatbotApiIntegrationTest` siguen en rojo con expectativas antiguas. Las interfaces/repositories relacionados que sí tienen contenido no reemplazan los flujos faltantes. Antes de anunciar reservas, pagos, limpieza o reportes como disponibles, se requiere implementar y conectar sus rutas, lógica y persistencia.
 
 ## Validación técnica del estado documentado
 
-- Suite Maven más reciente presente en los reportes del workspace: 126 pruebas, 0 fallos, 0 errores.
+- Suite Maven más reciente presente en los reportes del workspace: 245 pruebas, 10 fallos preexistentes en `developer` (`RoomServiceControllerTest`, `DemoCatalogInitializerTest` y `ChatbotApiIntegrationTest`), 0 errores. Las pruebas del perfil (29) están en verde.
 - Las pruebas de integración usan H2 en memoria.
 - El objetivo configurado en `pom.xml` es Java 21; no se ha cambiado aquí a Java 25.
 - Comando de pruebas en Windows: `.\mvnw.cmd test`.

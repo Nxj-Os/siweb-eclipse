@@ -31,4 +31,12 @@ public interface HabitacionRepository extends JpaRepository<Habitacion, Integer>
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select h from Habitacion h where h.id = :habitacionId")
     Optional<Habitacion> findByIdForUpdate(@Param("habitacionId") Integer habitacionId);
+
+    /** Todas las habitaciones con su tipo cargado en una sola consulta, ordenadas por piso y número. */
+    @Query("""
+            select h from Habitacion h
+            join fetch h.tipoHabitacion
+            order by h.piso asc, h.numHabitacion asc
+            """)
+    List<Habitacion> findAllConTipo();
 }

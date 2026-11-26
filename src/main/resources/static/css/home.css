@@ -2044,6 +2044,103 @@ html {
     outline-offset: 4px;
 }
 
+/* --- Galería viva de suites en la portada --- */
+
+.suites-showcase__status {
+    margin: 16px 0 0;
+    max-width: 46ch;
+    color: rgb(246 240 223 / 74%);
+    font-size: 13px;
+    letter-spacing: 0.04em;
+}
+
+.suites-showcase__more {
+    display: flex;
+    justify-content: center;
+    margin-top: 48px;
+}
+
+.suites-showcase__empty {
+    grid-column: 1 / -1;
+    margin: 0;
+    padding: 46px 24px;
+    border: 1px dashed rgb(229 207 131 / 35%);
+    text-align: center;
+    color: rgb(246 240 223 / 74%);
+    font-size: 14px;
+}
+
+.suites-showcase__empty a {
+    color: var(--gold);
+}
+
+.suite-tile__image--live {
+    background-color: #10201e;
+    background-position: center;
+    background-size: cover;
+}
+
+.suite-tile__badge {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 4px 10px;
+    border: 1px solid rgb(154 217 215 / 45%);
+    background: rgb(154 217 215 / 10%);
+    color: var(--aqua);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.suite-tile__badge--agotada {
+    border-color: rgb(246 240 223 / 30%);
+    background: rgb(246 240 223 / 8%);
+    color: rgb(246 240 223 / 72%);
+}
+
+.suite-tile__price {
+    flex-shrink: 0;
+    padding-top: 5px;
+    color: var(--gold);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-align: right;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.suite-tile__price strong {
+    display: block;
+    margin-top: 4px;
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 26px;
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--cream);
+}
+
+.suite-tile__cta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid rgb(229 207 131 / 24%);
+    color: var(--gold);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: color 160ms ease, gap 160ms ease;
+}
+
+.suite-tile__cta:hover,
+.suite-tile__cta:focus-visible {
+    gap: 14px;
+    color: var(--cream-hover);
+}
+
 .landing-cta {
     position: relative;
     display: flex;

@@ -29,12 +29,19 @@ Aplicación web para la gestión de un hotel. El proyecto usa Spring Boot y est�
 - Preguntas libres de clientes logueados contra la API de Gemini (`GEMINI_API_KEY`), con respaldo automático a respuestas predefinidas si el servicio falla.
 - Límites de uso: 10 mensajes/minuto por IP y 12 por conversación anónima; 30/minuto para clientes.
 - Derivación a recepción registrada en la conversación con cola de espera estimada de 2 minutos.
+- Perfil de usuario del cliente en `/cliente/perfil` con cuatro secciones: consultar información, historial de reservas, configurar datos y eliminar cuenta.
+- Cabecera de `/inicio` y de la portada con el nombre real del cliente y enlace a su perfil; los empleados ven el enlace a `/empleado/perfil`.
+- Tras iniciar sesión, el cliente aterriza en la portada `/` (no en la página de suites); el empleado cae en `/empleado`. Todos los enlaces rotulados "Inicio" o "Volver al inicio" apuntan a `/`, y los rotulados "suites", "Nueva reserva" o "Explorar suites" apuntan a `/catalogo`.
+- Galería de suites en vivo en la portada: `js/landing-suites.js` pide `GET /api/catalogo` y pinta hasta seis tarjetas con imagen real, disponibilidad y precio desde, más un CTA hacia `/catalogo/{codTipo}`.
+- Edición de nombre, apellido, teléfono en formato internacional E.164 y edad desde el perfil, con validación en servidor.
+- Eliminación de cuenta: desactiva la cuenta (no borra las reservas), cierra la sesión y libera correo, documento y teléfono para volver a registrarse con el mismo correo.
+- Boleta en pantalla con número `001-00000NN`, subtotal, IGV 18 % y total; la emisión de PDF y el envío por correo siguen fuera de la demo.
 
 ### Pendiente o limitado
 
 - Recuperación de contraseña y controles independientes contra abuso distribuido (los límites actuales viven en memoria).
-- Paneles distintos por rol y controles visibles para cerrar sesión. El login redirige a `/inicio`, pero esa página no diferencia todavía las capacidades por rol.
-- Activar checkout, rack, room service, operaciones y reportes. Esos módulos todavía no tienen implementación activa ni rutas MVC registradas.
+- Paneles distintos por rol. `/inicio` ya enlaza al perfil correcto según el rol, pero todavía no hay un panel o dashboard propio por rol.
+- Activar checkout, rack, operaciones y los módulos de reportes que faltan. `RoomServiceController` y `ReporteExcelController` ya tienen rutas, pero sus pruebas siguen en rojo con expectativas antiguas.
 - Cargar en PostgreSQL el catálogo, inventario e importes reales del hotel. El perfil `demo` solo usa precios de muestra.
 - Validar la actualización del esquema sobre una copia de la base PostgreSQL usada por el equipo. Las pruebas automáticas usan H2 y no modifican esa base.
 - Cambiar o eliminar las credenciales de empleados de prueba antes de desplegar.
@@ -90,11 +97,11 @@ La cadena API mantiene CSRF activo también para los endpoints públicos de logi
 
 | Método | Ruta | Uso |
 | --- | --- | --- |
-| `GET` | `/` | Portada pública. |
+| `GET` | `/` | Portada pública; incluye la galería de suites en vivo y el CTA de reserva. |
 | `GET` | `/login?tipo=empleado` | Formulario de login de empleado. |
 | `GET` | `/login?tipo=cliente` | Formulario de login de cliente. |
 | `GET` | `/registro` | Formulario de registro de cliente. |
-| `GET` | `/inicio` | Página de entrada con sesión; redirige al login si no hay sesión autenticada. |
+| `GET` | `/inicio` | Página de suites temáticas con sesión; redirige al login si no hay sesión autenticada. |
 | `GET` | `/catalogo` | Catálogo público con filtros `q`, `fecha`, `hora`, `modalidadId`, `soloDisponibles` y `orden`. |
 | `GET` | `/catalogo/{codTipo}` | Ficha pública de una suite con amenidades, tarifas y habitaciones. |
 | `GET` | `/api/catalogo` | API JSON pública con los mismos filtros del catálogo. |
@@ -121,6 +128,12 @@ La cadena API mantiene CSRF activo también para los endpoints públicos de logi
 | `POST` | `/api/auth/client/register` | Crea la cuenta de cliente e inicia su sesión. |
 | `POST` | `/api/auth/client/login` | Login de cliente; recibe `correoElectronico` y `password`. |
 | `GET` | `/api/auth/client/me` | Datos del cliente autenticado. |
+| `GET` | `/cliente/perfil` | Requiere rol `CLIENTE`; página de perfil con información, historial, edición y borrado de cuenta. |
+| `GET` | `/api/auth/client/perfil` | Requiere rol `CLIENTE`; datos del cliente, su reserva activa y el total de reservas. |
+| `PUT` | `/api/auth/client/perfil` | Requiere rol `CLIENTE` y `X-XSRF-TOKEN`; actualiza nombre, apellido, teléfono y edad. |
+| `GET` | `/api/auth/client/reservas` | Requiere rol `CLIENTE`; historial de reservas en JSON. |
+| `GET` | `/api/auth/client/reservas/{id}/boleta` | Requiere rol `CLIENTE`; boleta con subtotal, IGV y total de una reserva propia. |
+| `DELETE` | `/api/auth/client/cuenta` | Requiere rol `CLIENTE` y `X-XSRF-TOKEN`; desactiva la cuenta y cierra la sesión. |
 | `POST` | `/api/auth/logout` | Cierra la sesión API actual (filtro de logout de Spring Security). |
 | `POST` | `/logout` | Cierra sesión mediante la cadena web de Spring Security. |
 | `GET` | `/menu-suite?token=...` | Carta pública de room service para el huésped; el token de check-in (opcional) llega en la URL del QR cuando existe. |
@@ -211,6 +224,48 @@ Login de empleado, `POST /api/auth/login`:
 ```
 
 Crear pedido de room service, `POST /api/roomservice/pedidos` (sin check-in se envía la suite del selector; con QR futuro se agrega `token`):
+Actualizar perfil, `PUT /api/auth/client/perfil` (cabecera `X-XSRF-TOKEN`):
+
+```json
+{
+  "nombre": "Ana María",
+  "apellido": "Rojas Quispe",
+  "telefono": "+51999123456",
+  "edad": 31
+}
+```
+
+La respuesta es el mismo objeto que `GET /api/auth/client/perfil`: `id`, `nombre`, `apellido`, `nombreCompleto`, `correoElectronico`, `tipoDocumento`, `numDocumento`, `paisEmisionDoc`, `telefono`, `edad`, `rol`, `fechaRegistro`, `activo`, `reservaActiva` y `totalReservas`. `reservaActiva` es `null` cuando no hay ninguna reserva vigente.
+
+Boleta, `GET /api/auth/client/reservas/{id}/boleta`:
+
+```json
+{
+  "idReserva": 17,
+  "numeroBoleta": "001-0000017",
+  "hotel": "ECLIPSE SUITES HOTEL",
+  "cliente": "Ana Rojas",
+  "tipoDocumento": "DNI",
+  "numDocumento": "12345678",
+  "correoElectronico": "cliente@example.com",
+  "suite": "Suite Galaxia",
+  "habitacion": "509",
+  "modalidad": "4 horas",
+  "fechaInicio": "15/06/2099 18:00",
+  "fechaFin": "15/06/2099 22:00",
+  "estado": "Confirmada",
+  "metodoPago": "Yape",
+  "cantidadPersonas": 2,
+  "subtotal": 100.00,
+  "igv": 18.00,
+  "total": 118.00,
+  "fechaEmision": "10/06/2099 09:30"
+}
+```
+
+`DELETE /api/auth/client/cuenta` responde `{"mensaje": "Tu cuenta fue eliminada correctamente"}`. Después de la baja, el login devuelve `400` con «Tu cuenta fue eliminada. Puedes crear una nueva con el mismo correo», `GET /api/auth/client/disponibilidad?campo=correo` vuelve a marcar el correo como disponible y el registro reactiva la misma cuenta conservando sus reservas.
+
+Crear pedido de room service, `POST /api/roomservice/pedidos`:
 
 ```json
 {
@@ -438,7 +493,9 @@ En Linux/macOS:
 ./mvnw test
 ```
 
-Las pruebas de contexto e integración configuran H2 en memoria. No requieren `DB_PASSWORD` ni escriben en PostgreSQL. La última ejecución completa pasó 126 pruebas.
+Las pruebas de contexto e integración configuran H2 en memoria. No requieren `DB_PASSWORD` ni escriben en PostgreSQL. La última ejecución completa corre 245 pruebas; 10 siguen fallando por expectativas antiguas de `RoomServiceControllerTest`, `DemoCatalogInitializerTest` y `ChatbotApiIntegrationTest` que ya fallaban en `developer` antes de este cambio.
+
+Las pruebas del perfil cubren el controlador (`ClientePerfilControllerTest`, 12 casos: página, API, CSRF, validación, boleta y borrado), el servicio (`ClientePerfilServiceImplTest`, 6 casos: reserva activa, IGV y boleta) y la cuenta (`ClienteAuthServiceImplTest`, 11 casos: registro reactivo, edición, baja y disponibilidad).
 
 Las pruebas del asistente cubren la clasificación de intenciones, el límite de mensajes, la cola de derivación, el servicio y el contrato JSON del controlador; `ChatbotApiIntegrationTest` arranca el contexto completo con el perfil `demo` y verifica catálogo, límite 429 y accesos públicos.
 
