@@ -41,8 +41,8 @@ Aplicación web para la gestión de un hotel. El proyecto usa Spring Boot y est�
 
 - Recuperación de contraseña y controles independientes contra abuso distribuido (los límites actuales viven en memoria).
 - Paneles distintos por rol. `/inicio` ya enlaza al perfil correcto según el rol, pero todavía no hay un panel o dashboard propio por rol.
-- Activar checkout, rack, operaciones y los módulos de reportes que faltan. `RoomServiceController` y `ReporteExcelController` ya tienen rutas, pero sus pruebas siguen en rojo con expectativas antiguas.
-- Cargar en PostgreSQL el catálogo, inventario e importes reales del hotel. El perfil `demo` solo usa precios de muestra.
+- Activar checkout, rack, operaciones y los módulos de reportes que faltan. `ReporteExcelController` ya tiene ruta; `RoomServiceController` está completo y sus pruebas están en verde.
+- Cargar en PostgreSQL el catálogo, inventario e importes reales del hotel. Los perfiles `demo` y el por defecto siembran un catálogo de demostración (7 suites + la suite 101 de room service) con precios de muestra; sobrescríbelo con los datos reales del hotel.
 - Validar la actualización del esquema sobre una copia de la base PostgreSQL usada por el equipo. Las pruebas automáticas usan H2 y no modifican esa base.
 - Cambiar o eliminar las credenciales de empleados de prueba antes de desplegar.
 - Conectar la cola de derivación del asistente a una pantalla de recepción. Hoy solo se registra `derivo_a_reserva` y el estado de cola en memoria.
@@ -136,11 +136,14 @@ La cadena API mantiene CSRF activo también para los endpoints públicos de logi
 | `DELETE` | `/api/auth/client/cuenta` | Requiere rol `CLIENTE` y `X-XSRF-TOKEN`; desactiva la cuenta y cierra la sesión. |
 | `POST` | `/api/auth/logout` | Cierra la sesión API actual (filtro de logout de Spring Security). |
 | `POST` | `/logout` | Cierra sesión mediante la cadena web de Spring Security. |
-| `GET` | `/menu-suite?token=...` | Carta pública de room service para el huésped; el token de check-in (opcional) llega en la URL del QR cuando existe. |
-| `GET` | `/api/roomservice/menu?token=...` | Carta JSON con categorías, productos (precio y stock) y `suitesDisponibles` para el selector de entrega. El token es opcional; acepta `q` (búsqueda) e `idCategoria`. |
+| `GET` | `/menu-suite?token=...` | Carta pública de room service para el huésped; el token de check-in (opcional) llega en la URL del QR cuando existe. Barra superior estilo C-09: Inicio, Reserva, Servicio y Ayuda. |
+| `GET` | `/empleado/roomservice` | Panel del empleado (rol `ROOMSERVICE` o `ADMIN`) con las comandas reales: métricas, tabla, filtro y avance de estado. |
+| `GET` | `/api/roomservice/menu?token=...` | Carta JSON con categorías, productos (precio y stock) y `suitesDisponibles` para el selector de entrega. El token es opcional; acepta `q` (búsqueda) e `idCategoria`. Si el cliente tiene sesión y una reserva en `CHECKED_IN`, su suite se devuelve en `numHabitacion` para precargar el selector. |
 | `POST` | `/api/roomservice/pedidos` | Crea la comanda desde la suite: acepta `token` (opcional) o `numHabitacion` del selector, congela precios, descuenta stock y devuelve el código. |
+| `GET` | `/api/roomservice/pedidos` | Listado de comandas para el panel del empleado; requiere rol `ROOMSERVICE` o `ADMIN`. |
 | `GET` | `/api/roomservice/pedidos/{codigo}?token=...` | Estado de la comanda del huésped con avance automático; sin token se consulta solo por código. |
 | `PATCH` | `/api/roomservice/pedidos/{codigo}/estado` | Fuerza el estado desde el sistema de empleado (rol ROOMSERVICE o ADMIN); solo permite avances. |
+| `POST` | `/cliente/reservas/{id}/check-in` | Check-in hecho por el huésped desde su cuenta: valida propiedad y vigencia, deja la reserva en `CHECKED_IN` y marca la suite `OCUPADA` en el rack. |
 | `GET` | `/asistente` | Página pública del asistente con catálogo de suites y chat. |
 | `GET` | `/api/chatbot/catalogo` | Suites, tarifas y disponibilidad tomadas de la base de datos. |
 | `GET` | `/api/chatbot/estado` | Estado de cola, modo, uso de mensajes y bandera de derivación. |
@@ -152,7 +155,9 @@ El registro de cliente recibe `tipoDocumento`, `numDocumento`, `paisEmisionDoc`,
 
 Las rutas API usan sesión HTTP y responden JSON. CSRF también está activo para la API; la interfaz obtiene el token con `GET /api/auth/csrf` y lo envía como `X-XSRF-TOKEN`. Las contraseñas se almacenan con BCrypt. Los clientes tienen autoridad `ROLE_CLIENTE`; los empleados reciben sus roles y permisos desde la base.
 
-La carta de room service no exige sesión ni check-in: el token de check-in (`token_qr_dinamico`) es opcional y, cuando llega en la URL del QR, solo identifica la suite del huésped (un token inválido o expirado se ignora en vez de bloquear). Sin token, el huésped elige la suite de entrega en el selector de la carta, que muestra las suites con estado `OCUPADA`; si el pedido no incluye ninguna suite, responde `400`. Con token, `GET /api/roomservice/pedidos/{codigo}` solo devuelve los pedidos de la suite dueña (`404` en caso contrario). La comanda guarda el precio congelado al momento del pedido y descuenta el stock de forma atómica (si otra comanda se adelantó, revierte con `409 Stock insuficiente`). El estado `RECIBIDO → EN_PREPARACION → CONTROLADO → ENTREGADO` avanza solo con el tiempo según `app.roomservice.estados.minutos-*` en `application.properties`; el `PATCH` autenticado solo permite avanzar, nunca retroceder. En el perfil `demo` la suite 101 se siembra con el token `demo-suite-101`, por lo que puedes abrir `http://localhost:8080/menu-suite` (o con `?token=demo-suite-101`) para recorrer el flujo completo. La carta usa fotos de stock de Pexels guardadas como URL directa en `producto.imagen`, sin archivos locales.
+La carta de room service no exige sesión ni check-in: el token de check-in (`token_qr_dinamico`) es opcional y, cuando llega en la URL del QR, solo identifica la suite del huésped (un token inválido o expirado se ignora en vez de bloquear). Si el cliente tiene sesión y una reserva `CHECKED_IN`, esa suite se precarga en el selector. Sin token, el huésped elige la suite de entrega en el selector de la carta, que muestra las suites con estado `OCUPADA`; si el pedido no incluye ninguna suite, responde `400`. Con token, `GET /api/roomservice/pedidos/{codigo}` solo devuelve los pedidos de la suite dueña (`404` en caso contrario). La comanda guarda el precio congelado al momento del pedido y descuenta el stock de forma atómica (si otra comanda se adelantó, revierte con `409 Stock insuficiente`). El estado `RECIBIDO → EN_PREPARACION → CONTROLADO → ENTREGADO` avanza solo con el tiempo según `app.roomservice.estados.minutos-*` en `application.properties`; el `PATCH` autenticado solo permite avanzar, nunca retroceder. El panel del empleado (`/empleado/roomservice`, template propio `roomservice/comandas.html`) consulta `GET /api/roomservice/pedidos` y avanza estados con el mismo `PATCH`.
+
+La reserva y el room service están unidos: `POST /cliente/reservas/{id}/check-in` (o el check-in de recepción con el QR) deja la suite en `OCUPADA` en el rack y liga `token_qr_dinamico` de la habitación al token de la reserva, por lo que la carta la reconoce y la reserva de esa suite queda bloqueada mientras esté ocupada. Cancelar una reserva pendiente devuelve la suite a `LIBRE`. En el perfil `demo` la suite 101 se siembra con el token `demo-suite-101`, por lo que puedes abrir `http://localhost:8080/menu-suite` (o con `?token=demo-suite-101`) para recorrer el flujo completo. La carta usa fotos de stock de Pexels guardadas como URL directa en `producto.imagen`, sin archivos locales.
 ### Asistente Eclipse
 
 Abre `/asistente` sin iniciar sesión. A la izquierda aparecen las suites con su imagen, capacidad, estado y tarifa mínima; a la derecha está el chat. El mismo chat también está disponible como cajón flotante en la portada y en `/inicio`.
@@ -493,7 +498,7 @@ En Linux/macOS:
 ./mvnw test
 ```
 
-Las pruebas de contexto e integración configuran H2 en memoria. No requieren `DB_PASSWORD` ni escriben en PostgreSQL. La última ejecución completa corre 245 pruebas; 10 siguen fallando por expectativas antiguas de `RoomServiceControllerTest`, `DemoCatalogInitializerTest` y `ChatbotApiIntegrationTest` que ya fallaban en `developer` antes de este cambio.
+Las pruebas de contexto e integración configuran H2 en memoria. No requieren `DB_PASSWORD` ni escriben en PostgreSQL (`DemoCatalogInitializerTest` y `ChatbotApiIntegrationTest` declaran su propio H2 en línea). La última ejecución completa corre 255 pruebas, 0 fallos y 0 errores.
 
 Las pruebas del perfil cubren el controlador (`ClientePerfilControllerTest`, 12 casos: página, API, CSRF, validación, boleta y borrado), el servicio (`ClientePerfilServiceImplTest`, 6 casos: reserva activa, IGV y boleta) y la cuenta (`ClienteAuthServiceImplTest`, 11 casos: registro reactivo, edición, baja y disponibilidad).
 

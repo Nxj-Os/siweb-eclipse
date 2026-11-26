@@ -90,6 +90,7 @@ public class ChatbotDemoDataInitializer {
                 .descripcionTematica(descripcion)
                 .galeriaFotos(galeria)
                 .capacidadMaxima(capacidad)
+                .amenidades("Wi-Fi|Smart TV|Agua caliente|Frigobar")
                 .build());
     }
 

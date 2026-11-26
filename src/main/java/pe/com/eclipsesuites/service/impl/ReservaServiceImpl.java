@@ -28,6 +28,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -176,6 +177,7 @@ public class ReservaServiceImpl implements IReservaService {
         ReservaEstadia reserva = buscarReservaPropia(id, correoCliente);
         validarReservaPendienteDePago(reserva);
         reserva.setEstadoReserva(EstadoReserva.CANCELADA);
+        liberarSuite(reserva);
         return reservaEstadiaRepository.save(reserva);
     }
 
@@ -211,6 +213,7 @@ public class ReservaServiceImpl implements IReservaService {
         validarReservaPendienteDePago(reserva);
         if (nuevoEstado == EstadoReserva.CANCELADA) {
             reserva.setEstadoReserva(EstadoReserva.CANCELADA);
+            liberarSuite(reserva);
             return reservaEstadiaRepository.save(reserva);
         }
         if (reserva.getFechaInicio().isBefore(LocalDateTime.now())) {
@@ -233,7 +236,18 @@ public class ReservaServiceImpl implements IReservaService {
         }
         reserva.setEstadoReserva(EstadoReserva.CHECKED_IN);
         reserva.setFechaCheckIn(ahora);
+        marcarSuiteOcupada(reserva);
         return reservaEstadiaRepository.save(reserva);
+    }
+
+    @Override
+    @Transactional
+    public ReservaEstadia registrarCheckInCliente(Long reservaId, String correoCliente) {
+        ReservaEstadia reserva = buscarReservaPropia(reservaId, correoCliente);
+        if (reserva.getEstadoReserva() != EstadoReserva.CONFIRMADA) {
+            throw new IllegalStateException("Esta reserva aún no puede hacer check-in.");
+        }
+        return registrarCheckIn(reserva.getTokenQr());
     }
 
     @Override
@@ -335,6 +349,41 @@ public class ReservaServiceImpl implements IReservaService {
         reserva.setReservaTemporalHasta(null);
         reserva.setTokenQr(UUID.randomUUID().toString());
         return reservaEstadiaRepository.save(reserva);
+    }
+
+    /**
+     * El check-in deja la suite {@code OCUPADA} en el rack y liga el QR
+     * de la reserva a la habitación: así la carta de room service sabe a
+     * qué suite entregar y el selector deja de mostrar suites libres.
+     */
+    private void marcarSuiteOcupada(ReservaEstadia reserva) {
+        Habitacion habitacion = reserva.getHabitacion();
+        if (habitacion == null) {
+            return;
+        }
+        habitacion.setEstadoRack("OCUPADA");
+        habitacion.setTokenQrDinamico(reserva.getTokenQr());
+        habitacion.setFechaExpiracionToken(reserva.getFechaFin() == null ? null
+                : reserva.getFechaFin().atZone(ZoneId.systemDefault()).toOffsetDateTime());
+    }
+
+    /**
+     * Devuelve la suite al rack al cancelar la reserva, siempre que el
+     * QR que tiene la habitación siga siendo el de esta reserva.
+     */
+    private void liberarSuite(ReservaEstadia reserva) {
+        Habitacion habitacion = reserva.getHabitacion();
+        if (habitacion == null) {
+            return;
+        }
+        if ("OCUPADA".equalsIgnoreCase(habitacion.getEstadoRack())) {
+            habitacion.setEstadoRack("LIBRE");
+        }
+        if (habitacion.getTokenQrDinamico() != null
+                && habitacion.getTokenQrDinamico().equals(reserva.getTokenQr())) {
+            habitacion.setTokenQrDinamico(null);
+            habitacion.setFechaExpiracionToken(null);
+        }
     }
 
     private ReservaEstadia buscarReservaPropia(Long reservaId, String correoCliente) {

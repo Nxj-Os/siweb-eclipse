@@ -64,12 +64,19 @@
             </section>
             <div class="reserva-alert reserva-alert--success"
                  th:if="${reserva.estadoReserva.name() == 'CHECKED_IN'}" role="status">
-                <i class="bi bi-check-circle" aria-hidden="true"></i> Check-in validado por recepción.
+                <i class="bi bi-check-circle" aria-hidden="true"></i> Check-in completado: tu suite ya está lista.
             </div>
             <div class="confirmation-actions">
                 <a class="button button--primary"
                    th:if="${reserva.estadoReserva.name() == 'PENDIENTE_PAGO'}"
                    th:href="@{/cliente/reservas/{id}/pago(id=${reserva.id})}">Completar pago</a>
+                <form th:if="${reserva.estadoReserva.name() == 'CONFIRMADA'}"
+                      th:action="@{/cliente/reservas/{id}/check-in(id=${reserva.id})}" method="post">
+                    <button class="button button--primary" type="submit">Realizar check-in</button>
+                </form>
+                <a class="button button--primary"
+                   th:if="${reserva.estadoReserva.name() == 'CHECKED_IN'}"
+                   th:href="@{/menu-suite}">Pedir room service</a>
                 <a class="button button--primary"
                    th:if="${demoMode and reserva.estadoReserva.name() == 'CHECKED_IN'}"
                    th:href="@{/cliente/reservas/{id}/extensiones/nueva(id=${reserva.id})}">Solicitar tiempo extra</a>

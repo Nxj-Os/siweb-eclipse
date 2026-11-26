@@ -258,6 +258,22 @@ public class ClienteReservaController {
         return "cliente/mis-reservas";
     }
 
+    @PostMapping("/{id}/check-in")
+    public String checkIn(@PathVariable Long id, Authentication authentication,
+                          RedirectAttributes redirectAttributes) {
+        try {
+            ReservaEstadia reserva = reservaService.registrarCheckInCliente(
+                    id, authentication.getName());
+            String suite = reserva.getHabitacion() == null ? ""
+                    : reserva.getHabitacion().getNumHabitacion();
+            redirectAttributes.addFlashAttribute("mensaje",
+                    "Check-in realizado. La suite " + suite + " ya está lista.");
+        } catch (IllegalArgumentException | IllegalStateException exception) {
+            redirectAttributes.addFlashAttribute("errorReserva", exception.getMessage());
+        }
+        return "redirect:/cliente/reservas/" + id;
+    }
+
     @PostMapping("/{id}/cancelar")
     public String cancelar(@PathVariable Long id, Authentication authentication,
                            RedirectAttributes redirectAttributes) {

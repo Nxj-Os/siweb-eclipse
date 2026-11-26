@@ -15,7 +15,13 @@
 <body class="perfil-page">
 
 <header class="perfil-topbar">
-    <a class="perfil-brand" th:href="@{/}">✦ Eclipse <span>Suites</span></a>
+    <a class="perfil-brand" th:href="@{/}" aria-label="Eclipse Suites Hotel, inicio">
+        <span class="brand__seal" aria-hidden="true"><span>E</span><i></i></span>
+        <span class="perfil-brand__text">
+            <span class="brand__name">ECLIPSE</span>
+            <span class="brand__descriptor">SUITES HOTEL</span>
+        </span>
+    </a>
     <nav class="perfil-topbar__nav">
         <a th:href="@{/}"><i class="bi bi-house-door"></i> Inicio</a>
         <a th:href="@{/cliente/reservas}"><i class="bi bi-calendar-check"></i> Mis reservas</a>

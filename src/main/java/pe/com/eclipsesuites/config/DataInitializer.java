@@ -15,7 +15,7 @@ import pe.com.eclipsesuites.entity.RolEmpleado;
 
 @Slf4j
 @Configuration
-@Profile({"demo", "dev"})
+@Profile({"demo", "dev", "default"})
 @RequiredArgsConstructor
 public class DataInitializer {
 

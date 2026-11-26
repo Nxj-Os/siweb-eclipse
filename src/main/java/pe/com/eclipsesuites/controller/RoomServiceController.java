@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,6 +18,8 @@ import pe.com.eclipsesuites.dto.request.CrearPedidoRequestDTO;
 import pe.com.eclipsesuites.dto.response.CartaResponseDTO;
 import pe.com.eclipsesuites.dto.response.PedidoResponseDTO;
 import pe.com.eclipsesuites.service.IRoomServiceService;
+
+import java.util.List;
 
 /**
  * API de la carta de room service para el huésped. Carta, creación y
@@ -34,8 +37,10 @@ public class RoomServiceController {
     @GetMapping("/menu")
     public CartaResponseDTO obtenerCarta(@RequestParam(required = false) String token,
                                          @RequestParam(required = false) String q,
-                                         @RequestParam(required = false) Integer idCategoria) {
-        return roomServiceService.obtenerCarta(token, q, idCategoria);
+                                         @RequestParam(required = false) Integer idCategoria,
+                                         Authentication authentication) {
+        return roomServiceService.obtenerCarta(token, q, idCategoria,
+                authentication == null ? null : authentication.getName());
     }
 
     @PostMapping("/pedidos")
@@ -43,6 +48,11 @@ public class RoomServiceController {
             @Valid @RequestBody CrearPedidoRequestDTO request) {
         PedidoResponseDTO pedido = roomServiceService.crearPedido(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(pedido);
+    }
+
+    @GetMapping("/pedidos")
+    public List<PedidoResponseDTO> listarPedidos() {
+        return roomServiceService.listarPedidos();
     }
 
     @GetMapping("/pedidos/{codigo}")

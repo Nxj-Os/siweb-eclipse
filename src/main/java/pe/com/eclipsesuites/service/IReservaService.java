@@ -49,6 +49,12 @@ public interface IReservaService {
 
     ReservaEstadia registrarCheckIn(String tokenQr);
 
+    /**
+     * Check-in hecho por el huésped desde su cuenta: valida propiedad y
+     * vigencia y deja la suite {@code OCUPADA} en el rack.
+     */
+    ReservaEstadia registrarCheckInCliente(Long reservaId, String correoCliente);
+
     List<ReservaEstadia> listarReservasPendientesCheckIn();
 
     List<ReservaEstadia> listarReservasEnCurso();

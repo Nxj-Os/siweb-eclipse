@@ -28,7 +28,7 @@ import java.util.List;
  */
 @Slf4j
 @Configuration
-@Profile({"demo", "dev"})
+@Profile({"demo", "dev", "default"})
 @RequiredArgsConstructor
 public class RoomServiceDataInitializer {
 
@@ -65,6 +65,7 @@ public class RoomServiceDataInitializer {
                         .descripcionTematica("Suite de demostración para el módulo de room service")
                         .galeriaFotos("[]")
                         .capacidadMaxima((short) 2)
+                        .amenidades("Wi-Fi|Smart TV|Agua caliente|Frigobar")
                         .build()));
         OffsetDateTime ahora = OffsetDateTime.now();
         habitacionRepository.save(Habitacion.builder()

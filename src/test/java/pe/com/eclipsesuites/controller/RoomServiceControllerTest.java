@@ -79,7 +79,7 @@ class RoomServiceControllerTest {
 
     @Test
     void menu_sinTokenRetornaLaCarta() throws Exception {
-        when(roomServiceService.obtenerCarta(null, null, null)).thenReturn(carta());
+        when(roomServiceService.obtenerCarta(null, null, null, null)).thenReturn(carta());
 
         mockMvc.perform(get("/api/roomservice/menu"))
                 .andExpect(status().isOk())
@@ -88,7 +88,7 @@ class RoomServiceControllerTest {
 
     @Test
     void menu_conTokenRetornaLaCarta() throws Exception {
-        when(roomServiceService.obtenerCarta(TOKEN, null, null)).thenReturn(carta());
+        when(roomServiceService.obtenerCarta(TOKEN, null, null, null)).thenReturn(carta());
 
         mockMvc.perform(get("/api/roomservice/menu").param("token", TOKEN))
                 .andExpect(status().isOk())
@@ -171,6 +171,27 @@ class RoomServiceControllerTest {
         mockMvc.perform(get("/api/roomservice/pedidos/A1488"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.codigo").value("A1488"));
+    }
+
+    @Test
+    void listarPedidos_sinSesionRetorna401() throws Exception {
+        mockMvc.perform(get("/api/roomservice/pedidos"))
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(roomServiceService);
+    }
+
+    @Test
+    void listarPedidos_empleadoRoomserviceRetorna200() throws Exception {
+        when(roomServiceService.listarPedidos()).thenReturn(List.of(pedido()));
+
+        mockMvc.perform(get("/api/roomservice/pedidos")
+                        .with(user("luis").roles("ROOMSERVICE")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].codigo").value("A1488"))
+                .andExpect(jsonPath("$[0].numHabitacion").value("101"));
+
+        verify(roomServiceService).listarPedidos();
     }
 
     @Test

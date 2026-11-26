@@ -11,6 +11,7 @@ import pe.com.eclipsesuites.dao.DetallePedidoRSRepository;
 import pe.com.eclipsesuites.dao.HabitacionRepository;
 import pe.com.eclipsesuites.dao.PedidoRoomServiceRepository;
 import pe.com.eclipsesuites.dao.ProductoRepository;
+import pe.com.eclipsesuites.dao.ReservaEstadiaRepository;
 import pe.com.eclipsesuites.dto.request.CrearPedidoRequestDTO;
 import pe.com.eclipsesuites.dto.request.PedidoItemDTO;
 import pe.com.eclipsesuites.dto.response.CartaResponseDTO;
@@ -21,9 +22,11 @@ import pe.com.eclipsesuites.dto.response.ProductoCartaDTO;
 import pe.com.eclipsesuites.entity.CategoriaProducto;
 import pe.com.eclipsesuites.entity.DetallePedidoRS;
 import pe.com.eclipsesuites.entity.EstadoPedido;
+import pe.com.eclipsesuites.entity.EstadoReserva;
 import pe.com.eclipsesuites.entity.Habitacion;
 import pe.com.eclipsesuites.entity.PedidoRoomService;
 import pe.com.eclipsesuites.entity.Producto;
+import pe.com.eclipsesuites.entity.ReservaEstadia;
 import pe.com.eclipsesuites.service.IRoomServiceService;
 
 import java.math.BigDecimal;
@@ -59,6 +62,7 @@ public class RoomServiceServiceImpl implements IRoomServiceService {
     private final ProductoRepository productoRepository;
     private final PedidoRoomServiceRepository pedidoRoomServiceRepository;
     private final DetallePedidoRSRepository detallePedidoRSRepository;
+    private final ReservaEstadiaRepository reservaEstadiaRepository;
 
     /** Minutos acumulados desde la última transición para cada avance. */
     @Value("${app.roomservice.estados.minutos-en-preparacion:3}")
@@ -73,7 +77,17 @@ public class RoomServiceServiceImpl implements IRoomServiceService {
     @Override
     @Transactional(readOnly = true)
     public CartaResponseDTO obtenerCarta(String token, String busqueda, Integer idCategoria) {
+        return obtenerCarta(token, busqueda, idCategoria, null);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CartaResponseDTO obtenerCarta(String token, String busqueda, Integer idCategoria,
+                                         String correoCliente) {
         Habitacion habitacion = resolverHabitacionPorToken(token);
+        if (habitacion == null) {
+            habitacion = suiteCheckeadaDelCliente(correoCliente);
+        }
 
         List<CategoriaCartaDTO> categorias = categoriaProductoRepository
                 .findAllByOrderByNombreCategoria()
@@ -205,6 +219,24 @@ public class RoomServiceServiceImpl implements IRoomServiceService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<PedidoResponseDTO> listarPedidos() {
+        return pedidoRoomServiceRepository.findAllConDetalles().stream()
+                .map(pedido -> {
+                    List<PedidoItemResponseDTO> items = pedido.getDetalles().stream()
+                            .map(detalle -> PedidoItemResponseDTO.builder()
+                                    .nombre(detalle.getProducto() == null ? null
+                                            : detalle.getProducto().getNombre())
+                                    .cantidad(detalle.getCantidadSolicitada())
+                                    .subtotal(detalle.getSubtotalLinea())
+                                    .build())
+                            .toList();
+                    return construirRespuesta(pedido, items);
+                })
+                .toList();
+    }
+
+    @Override
     @Transactional
     public PedidoResponseDTO actualizarEstadoPedido(String codigoPedido, String estado) {
         EstadoPedido objetivo = parsearEstado(estado);
@@ -261,6 +293,24 @@ public class RoomServiceServiceImpl implements IRoomServiceService {
         return habitacionRepository.findByTokenQrDinamico(tokenLimpio)
                 .filter(habitacion -> habitacion.getFechaExpiracionToken() == null
                         || habitacion.getFechaExpiracionToken().isAfter(OffsetDateTime.now()))
+                .orElse(null);
+    }
+
+    /**
+     * Suite del huésped autenticado: la reserva que ya hizo check-in.
+     * Es la que se precarga en el selector de entrega de la carta.
+     */
+    private Habitacion suiteCheckeadaDelCliente(String correoCliente) {
+        if (StringUtils.isBlank(correoCliente)) {
+            return null;
+        }
+        return reservaEstadiaRepository
+                .findByClienteCorreoElectronicoIgnoreCaseOrderByFechaCreacionDesc(correoCliente)
+                .stream()
+                .filter(reserva -> reserva.getEstadoReserva() == EstadoReserva.CHECKED_IN)
+                .map(ReservaEstadia::getHabitacion)
+                .filter(java.util.Objects::nonNull)
+                .findFirst()
                 .orElse(null);
     }
 

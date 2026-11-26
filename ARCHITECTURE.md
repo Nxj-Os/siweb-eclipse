@@ -242,7 +242,7 @@ En la carpeta `entity` hay otros nombres relacionados con pedidos, limpieza y av
 | `DB_PASSWORD` | Contraseña de PostgreSQL; no hay fallback de contraseña en el repositorio. |
 | `APP_AUTH_EMAIL_DOMINIOS_PERMITIDOS` | Dominios separados por coma; predeterminados: Gmail, Hotmail, Outlook y Yahoo. |
 | `APP_AUTH_EMAIL_DOMINIOS_DESECHABLES` | Dominios desechables conocidos, separados por coma. |
-| `APP_SEED_ADMIN_PASSWORD`, `APP_SEED_RECEPCION_PASSWORD`, `APP_SEED_ROOMSERVICE_PASSWORD` | Contraseñas semilla; el inicializador solo actúa con perfiles `demo`/`dev`. |
+| `APP_SEED_ADMIN_PASSWORD`, `APP_SEED_RECEPCION_PASSWORD`, `APP_SEED_ROOMSERVICE_PASSWORD` | Contraseñas semilla; el inicializador solo actúa con perfiles `demo`/`dev`/por defecto y solo crea cuentas si las tres variables están presentes. |
 | `GEMINI_API_KEY` | Clave de la API de Gemini. Vive en `.env` (raíz, ignorado por git) o en una variable de entorno; sin ella el asistente responde con respuestas predefinidas. |
 | `app.chat.*` en `application.properties` | `base-url`, `api-key`, `modelo`, `timeout-ms`, `max-historial`, `max-entrada`, `limite-publico-min`, `limite-cliente-min`, `max-mensajes-anonimos`. |
 
@@ -255,11 +255,11 @@ Las carpetas `templates/operaciones` y `templates/reportes` contienen diseños d
 - Controladores: `CheckoutController`, `OperacionesController` y `RackController`.
 - Implementaciones de servicio: `FacturacionServiceImpl` y `LimpiezaServiceImpl`.
 
-`RoomServiceController`, `RoomServiceServiceImpl`, `ReporteExcelController` y `ReporteExcelServiceImpl` ya tienen contenido y rutas activas, pero sus pruebas `RoomServiceControllerTest`, `DemoCatalogInitializerTest` y `ChatbotApiIntegrationTest` siguen en rojo con expectativas antiguas. Las interfaces/repositories relacionados que sí tienen contenido no reemplazan los flujos faltantes. Antes de anunciar reservas, pagos, limpieza o reportes como disponibles, se requiere implementar y conectar sus rutas, lógica y persistencia.
+`RoomServiceController`, `RoomServiceServiceImpl`, `ReporteExcelController` y `ReporteExcelServiceImpl` ya tienen contenido y rutas activas, y sus pruebas están en verde. La carta del huésped (`/menu-suite`, `roomservice/menu-suite.html`) y el panel del empleado (`/empleado/roomservice`, `roomservice/comandas.html`) usan templates distintos y comparten solo la API. Las interfaces/repositories relacionados que sí tienen contenido no reemplazan los flujos faltantes. Antes de anunciar reservas, pagos, limpieza o reportes como disponibles, se requiere implementar y conectar sus rutas, lógica y persistencia.
 
 ## Validación técnica del estado documentado
 
-- Suite Maven más reciente presente en los reportes del workspace: 245 pruebas, 10 fallos preexistentes en `developer` (`RoomServiceControllerTest`, `DemoCatalogInitializerTest` y `ChatbotApiIntegrationTest`), 0 errores. Las pruebas del perfil (29) están en verde.
+- Suite Maven más reciente: 255 pruebas, 0 fallos y 0 errores en `.\mvnw.cmd test` (incluye `RoomServiceControllerTest`, `DemoCatalogInitializerTest`, `ChatbotApiIntegrationTest`, `EmpleadoFrontendControllerTest` y los casos de rack de `ReservaServiceTest`).
 - Las pruebas de integración usan H2 en memoria.
 - El objetivo configurado en `pom.xml` es Java 21; no se ha cambiado aquí a Java 25.
 - Comando de pruebas en Windows: `.\mvnw.cmd test`.

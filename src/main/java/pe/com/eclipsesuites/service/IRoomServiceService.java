@@ -18,6 +18,14 @@ public interface IRoomServiceService {
     CartaResponseDTO obtenerCarta(String token, String busqueda, Integer idCategoria);
 
     /**
+     * Carta con la suite del huésped precargada: si no llega token de
+     * check-in, se usa la suite de la reserva {@code CHECKED_IN} del
+     * cliente autenticado.
+     */
+    CartaResponseDTO obtenerCarta(String token, String busqueda, Integer idCategoria,
+                                  String correoCliente);
+
+    /**
      * Registra la comanda: congela precios, descuenta stock y genera
      * el código de pedido que verá el huésped.
      *
@@ -32,6 +40,12 @@ public interface IRoomServiceService {
      * leerla; sin token se consulta por código.
      */
     PedidoResponseDTO obtenerPedido(String token, String codigoPedido);
+
+    /**
+     * Listado completo de comandas para el panel del empleado (room
+     * service y administración), con el estado efectivo por tiempo.
+     */
+    java.util.List<PedidoResponseDTO> listarPedidos();
 
     /**
      * Fuerza el estado de una comanda desde el sistema de empleado

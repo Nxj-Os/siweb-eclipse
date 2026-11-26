@@ -50,6 +50,12 @@
                           th:action="@{/cliente/reservas/{id}/cancelar(id=${reserva.id})}" method="post">
                         <button class="text-link text-link--danger" type="submit">Cancelar solicitud</button>
                     </form>
+                    <form th:if="${reserva.estadoReserva.name() == 'CONFIRMADA'}"
+                          th:action="@{/cliente/reservas/{id}/check-in(id=${reserva.id})}" method="post">
+                        <button class="text-link" type="submit">Realizar check-in</button>
+                    </form>
+                    <a class="text-link" th:if="${reserva.estadoReserva.name() == 'CHECKED_IN'}"
+                       th:href="@{/menu-suite}">Pedir room service</a>
                 </div>
             </article>
         </section>

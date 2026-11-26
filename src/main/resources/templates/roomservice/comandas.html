@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Comandas de room service | Hotel Eclipse</title>
+    <link rel="stylesheet" th:href="@{/css/empleado-eclipse.css}">
+    <link rel="stylesheet" th:href="@{/css/empleado-portal-demo.css}">
+    <link rel="stylesheet" th:href="@{/css/cuenta-eclipse.css}">
+    <style>
+        .rs-estado--RECIBIDO { background: #dce9ff; color: #265ba5; }
+        .rs-estado--EN_PREPARACION { background: #fff0c2; color: #855c00; }
+        .rs-estado--CONTROLADO { background: #ece0ff; color: #5b2fa8; }
+        .rs-estado--ENTREGADO { background: #d9f6e7; color: #167345; }
+        .rs-acciones { display: flex; gap: 6px; }
+        .rs-acciones button { background: #e8bb36; padding: 7px 11px; font-size: 12px; }
+        .rs-contenido { color: #5b6472; font-size: 12px; }
+        .rs-actualizar { background: #1a2432; color: #fff; }
+    </style>
+</head>
+
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-icon">✦</div>
+                <div><b>HOTEL ECLIPSE</b><small>Portal de empleados</small></div>
+            </div>
+            <div class="role">Área operativa</div>
+            <nav><a href="/empleado/recepcion" class="">Rack y recepción</a><a href="/empleado/checkout"
+                    class="">Check-out</a><a href="/empleado/limpieza" class="">Limpieza móvil</a><a
+                    href="/empleado/averias" class="">Reportar averías</a><a href="/empleado/reportes"
+                    class="">Reportes</a><a href="/empleado/roomservice" class="active">Room Service</a><a
+                    href="/empleado/extension" class="">Extensión de tiempo</a></nav>
+            <div class="sidebar-bottom"><a href="/empleado/perfil">Mi cuenta</a>
+                <form action="/logout" method="post"><input type="hidden" th:name="${_csrf.parameterName}"
+                        th:value="${_csrf.token}"><button type="submit" class="logout">Cerrar sesión</button></form>
+            </div>
+        </aside>
+        <main class="main">
+            <header class="top">
+                <div>
+                    <p class="eyebrow">HOTEL ECLIPSE · OPERACIONES</p>
+                    <h1>Room Service</h1>
+                    <p class="subtitle">Comandas de las suites en tiempo real</p>
+                </div>
+                <div class="user"><span class="user-icon">E</span>
+                    <div><b>Empleado</b><small>Sesión de trabajo</small></div>
+                </div>
+            </header>
+            <div class="content">
+                <div class="metrics">
+                    <article><small>Comandas totales</small><strong id="metric-total">—</strong><span>Según PostgreSQL</span></article>
+                    <article><small>En curso</small><strong id="metric-en-curso">—</strong><span>Recibidas o en preparación</span></article>
+                    <article><small>Entregadas</small><strong id="metric-entregadas">—</strong><span>Comandas cerradas</span></article>
+                </div>
+                <div class="panel">
+                    <div class="panel-head">
+                        <h2>Comandas</h2>
+                        <div class="rs-acciones">
+                            <input class="search" id="comanda-busqueda" placeholder="Buscar código o suite"
+                                data-filter="comandas" autocomplete="off">
+                            <button type="button" class="rs-actualizar" id="btn-actualizar">Actualizar</button>
+                        </div>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Suite</th>
+                                    <th>Contenido</th>
+                                    <th>Monto</th>
+                                    <th>Hora</th>
+                                    <th>Estado</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="comandas-tbody" aria-live="polite">
+                                <tr>
+                                    <td colspan="7">Cargando comandas…</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p id="comandas-vacias" hidden>No hay comandas registradas todavía.</p>
+                </div>
+            </div>
+            <footer>Hotel Eclipse Sta. Clara · Room Service conectado a PostgreSQL (consulta)</footer>
+        </main>
+        <aside class="notifications">
+            <h2>Notificaciones</h2>
+            <p>Últimas comandas recibidas</p>
+            <div id="rs-notificaciones"></div>
+        </aside>
+    </div>
+    <script th:src="@{/js/room-service-comandas.js}" defer></script>
+    <script th:src="@{/js/cuenta-eclipse.js}" defer></script>
+</body>
+
+</html>

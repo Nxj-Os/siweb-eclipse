@@ -66,6 +66,21 @@ public class SecurityConfig {
                     "/api/auth/client/reservas/**",
                     "/api/auth/client/cuenta"
                 ).hasRole("CLIENTE")
+                // Carta de room service: el huésped entra sin sesión y el
+                // token de check-in de la URL es opcional.
+                .requestMatchers(HttpMethod.GET,
+                        "/api/roomservice/menu",
+                        "/api/roomservice/pedidos/*").permitAll()
+                .requestMatchers(HttpMethod.POST,
+                        "/api/roomservice/pedidos").permitAll()
+                // Listado de comandas: solo el sistema de empleado.
+                .requestMatchers(HttpMethod.GET,
+                        "/api/roomservice/pedidos")
+                        .hasAnyRole("ROOMSERVICE", "ADMIN")
+                // Forzar estado de comanda: solo el sistema de empleado.
+                .requestMatchers(HttpMethod.PATCH,
+                        "/api/roomservice/pedidos/*/estado")
+                        .hasAnyRole("ROOMSERVICE", "ADMIN")
                 .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex
@@ -117,7 +132,8 @@ public class SecurityConfig {
                     "/webjars/**",
                     "/favicon.ico",
                     "/catalogo",
-                    "/catalogo/**"
+                    "/catalogo/**",
+                    "/menu-suite"
                 ).permitAll()
 
                 .requestMatchers("/cliente/**")

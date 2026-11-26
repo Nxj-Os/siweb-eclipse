@@ -224,6 +224,48 @@ class ReservaServiceTest {
         assertEquals(new BigDecimal("80.00"), extension.getMontoTotal());
     }
 
+    @Test
+    void checkInDejaLaSuiteOcupadaYLigaElQrAlRack() {
+        Habitacion habitacion = Habitacion.builder()
+                .id(27)
+                .numHabitacion("401")
+                .estadoRack("LIBRE")
+                .build();
+        ReservaEstadia reserva = ReservaEstadia.builder()
+                .id(11L)
+                .habitacion(habitacion)
+                .estadoReserva(EstadoReserva.CONFIRMADA)
+                .tokenQr("qr-11")
+                .fechaInicio(LocalDateTime.now().minusHours(1))
+                .fechaFin(LocalDateTime.now().plusHours(3))
+                .build();
+        when(reservaEstadiaRepository.findByTokenQr("qr-11"))
+                .thenReturn(Optional.of(reserva));
+        when(reservaEstadiaRepository.save(reserva)).thenReturn(reserva);
+
+        ReservaEstadia checkIn = reservaService.registrarCheckIn("qr-11");
+
+        assertEquals(EstadoReserva.CHECKED_IN, checkIn.getEstadoReserva());
+        assertEquals("OCUPADA", habitacion.getEstadoRack());
+        assertEquals("qr-11", habitacion.getTokenQrDinamico());
+        assertNotNull(habitacion.getFechaExpiracionToken());
+        verify(reservaEstadiaRepository).save(reserva);
+    }
+
+    @Test
+    void checkInDelHuespedSoloAceptaSuReservaConfirmada() {
+        ReservaEstadia pendiente = ReservaEstadia.builder()
+                .id(11L)
+                .cliente(Cliente.builder().correoElectronico("ana@example.com").build())
+                .estadoReserva(EstadoReserva.PENDIENTE_PAGO)
+                .build();
+        when(reservaEstadiaRepository.findByIdAndClienteCorreoElectronicoIgnoreCase(
+                11L, "ana@example.com")).thenReturn(Optional.of(pendiente));
+
+        assertThrows(IllegalStateException.class,
+                () -> reservaService.registrarCheckInCliente(11L, "ana@example.com"));
+    }
+
     private ReservaRequestDTO request(Integer tipoId, Integer habitacionId, Integer modalidadId,
                                       LocalDate fecha, Integer personas) {
         ReservaRequestDTO request = new ReservaRequestDTO();

@@ -11,6 +11,7 @@ import pe.com.eclipsesuites.dao.DetallePedidoRSRepository;
 import pe.com.eclipsesuites.dao.HabitacionRepository;
 import pe.com.eclipsesuites.dao.PedidoRoomServiceRepository;
 import pe.com.eclipsesuites.dao.ProductoRepository;
+import pe.com.eclipsesuites.dao.ReservaEstadiaRepository;
 import pe.com.eclipsesuites.dto.request.CrearPedidoRequestDTO;
 import pe.com.eclipsesuites.dto.request.PedidoItemDTO;
 import pe.com.eclipsesuites.dto.response.CartaResponseDTO;
@@ -54,6 +55,8 @@ class RoomServiceServiceImplTest {
     private PedidoRoomServiceRepository pedidoRoomServiceRepository;
     @Mock
     private DetallePedidoRSRepository detallePedidoRSRepository;
+    @Mock
+    private ReservaEstadiaRepository reservaEstadiaRepository;
 
     @org.mockito.Captor
     private ArgumentCaptor<List<DetallePedidoRS>> detallesCaptor;
@@ -63,7 +66,8 @@ class RoomServiceServiceImplTest {
     @BeforeEach
     void setUp() {
         servicio = new RoomServiceServiceImpl(habitacionRepository, categoriaProductoRepository,
-                productoRepository, pedidoRoomServiceRepository, detallePedidoRSRepository);
+                productoRepository, pedidoRoomServiceRepository, detallePedidoRSRepository,
+                reservaEstadiaRepository);
         ReflectionTestUtils.setField(servicio, "minutosEnPreparacion", 3L);
         ReflectionTestUtils.setField(servicio, "minutosControlado", 7L);
         ReflectionTestUtils.setField(servicio, "minutosEntregado", 12L);
