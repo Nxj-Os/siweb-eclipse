@@ -11,7 +11,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import pe.com.eclipsesuites.dto.response.ApiErrorDTO;
-import pe.com.eclipsesuites.service.impl.AccesoRoomServiceNoPermitidoException;
+import pe.com.eclipsesuites.service.impl.ChatbotLimiteExcedidoException;
 import pe.com.eclipsesuites.service.impl.DatosRegistroNoDisponiblesException;
 import pe.com.eclipsesuites.service.impl.LoginTemporalmenteBloqueadoException;
 import pe.com.eclipsesuites.service.impl.PedidoNoEncontradoException;
@@ -72,6 +72,16 @@ public class GlobalExceptionHandler {
                 ? "No se pudo completar el registro; verifica la información ingresada"
                 : ex.getMessage();
         return construir(HttpStatus.CONFLICT, "Conflicto", mensaje, null, request);
+    }
+
+    @ExceptionHandler(ChatbotLimiteExcedidoException.class)
+    public ResponseEntity<ApiErrorDTO> manejarLimiteChatbot(
+            ChatbotLimiteExcedidoException ex, HttpServletRequest request) {
+        String mensaje = ex.getMessage() == null
+                ? "Demasiadas consultas. Intenta en unos minutos"
+                : ex.getMessage();
+        return construir(HttpStatus.TOO_MANY_REQUESTS, "Límite de consultas", mensaje,
+                null, request);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

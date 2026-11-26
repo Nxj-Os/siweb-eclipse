@@ -13,19 +13,33 @@ Aplicación web para la gestión de un hotel. El proyecto usa Spring Boot y est�
 - Login de clientes por correo y contraseña.
 - Contraseñas de clientes y empleados almacenadas con BCrypt; nunca se guarda la contraseña en texto plano.
 - Sesiones HTTP para los accesos de cliente y empleado.
+- Catálogo de siete suites y flujo de reserva por habitación física, con disponibilidad por intervalo, duración de 4, 6 o 12 horas y vista previa.
+- Catálogo público `/catalogo` con disponibilidad operativa y por fecha/hora, filtros por texto, disponibilidad, duración y orden, ficha de detalle por suite, amenidades y API JSON reutilizable.
+- Retención de cinco minutos mientras se paga; en el perfil `demo` los métodos de pago se simulan y no se captura ni procesa dinero.
+- Código QR tras el pago para check-in de recepción; ampliaciones de estadía disponibles en el flujo demo después del check-in.
+- Catálogo de demostración con precios de muestra e inventario aislados en el perfil `demo`.
 - Bloqueo temporal de 3 minutos a partir del quinto fallo para la combinación de IP y usuario/correo.
 - Validación de datos, normalización de correos, rechazo de correo/documento duplicados y respuestas JSON de error.
 - Interfaz de autenticación adaptable a móvil, con fondo del hotel, wizard de registro, transiciones y animaciones breves; respeta `prefers-reduced-motion`.
 - Actualización del esquema mediante Hibernate con `spring.jpa.hibernate.ddl-auto=update`.
 - Pruebas unitarias, MVC y de integración con H2 en memoria para registro, autenticación, validaciones y sesión.
+- Asistente **Eclipse Suites** en `/asistente`: catálogo de suites a la izquierda y chat a la derecha, con tarjetas construidas desde `Habitacion`, `TipoHabitacion` y `TarifaHabitacion`.
+- Widget flotante de chat disponible en la portada y en `/inicio` para cualquier visitante.
+- Respuestas públicas sin cuenta para saludo, tarifas, disponibilidad, servicios y política de estadía; el resto de preguntas invita a crear una cuenta.
+- Preguntas libres de clientes logueados contra la API de Gemini (`GEMINI_API_KEY`), con respaldo automático a respuestas predefinidas si el servicio falla.
+- Límites de uso: 10 mensajes/minuto por IP y 12 por conversación anónima; 30/minuto para clientes.
+- Derivación a recepción registrada en la conversación con cola de espera estimada de 2 minutos.
 
 ### Pendiente o limitado
 
 - Recuperación de contraseña y controles independientes contra abuso distribuido (los límites actuales viven en memoria).
 - Paneles distintos por rol y controles visibles para cerrar sesión. El login redirige a `/inicio`, pero esa página no diferencia todavía las capacidades por rol.
-- Activar los módulos de reservas, checkout, rack, room service, operaciones y reportes. Hay plantillas y archivos con nombres de controlador/servicio, pero no tienen implementación activa ni rutas MVC registradas en el estado actual.
+- Activar checkout, rack, room service, operaciones y reportes. Esos módulos todavía no tienen implementación activa ni rutas MVC registradas.
+- Cargar en PostgreSQL el catálogo, inventario e importes reales del hotel. El perfil `demo` solo usa precios de muestra.
 - Validar la actualización del esquema sobre una copia de la base PostgreSQL usada por el equipo. Las pruebas automáticas usan H2 y no modifican esa base.
 - Cambiar o eliminar las credenciales de empleados de prueba antes de desplegar.
+- Conectar la cola de derivación del asistente a una pantalla de recepción. Hoy solo se registra `derivo_a_reserva` y el estado de cola en memoria.
+- Mover los límites del asistente y la cola de derivación a almacenamiento compartido antes de desplegar más de una instancia.
 
 ## Tecnologías
 
@@ -47,10 +61,12 @@ La aplicación es un monolito Spring Boot/MVC. La descripción de módulos, ruta
 flowchart LR
     U[Usuario] --> UI[Thymeleaf y recursos estáticos]
     UI -->|GET de páginas| MVC[Controladores MVC]
-    UI -->|fetch JSON y CSRF| API[API /api/auth]
+    UI -->|fetch JSON y CSRF| API[API /api/auth y /api/chatbot]
     MVC --> SEC[Spring Security y sesión HTTP]
     API --> SEC
-    API --> S[Servicios de autenticación]
+    API --> S[Servicios de autenticación y chatbot]
+    S -->|sin clave o fallo| P[Respuestas predefinidas]
+    S -->|cliente logueado| G[Gemini API]
     S --> R[Repositorios Spring Data JPA]
     R --> J[Hibernate / JPA]
     J --> DB[(PostgreSQL)]
@@ -59,14 +75,14 @@ flowchart LR
 
 ### Responsabilidades por capa
 
-- `controller`: recibe solicitudes REST y de páginas; las rutas activas son portada/inicio y autenticación.
-- `service`: valida y ejecuta reglas de registro, política de correo, autenticación y bloqueo de intentos.
+- `controller`: recibe solicitudes REST y de páginas; las rutas activas son portada/inicio, autenticación y asistente.
+- `service`: valida y ejecuta reglas de registro, política de correo, autenticación y bloqueo de intentos; `service/impl` contiene la orquestación del chatbot y `service/gemini` el cliente HTTP de Gemini.
 - `dao`: repositorios Spring Data JPA para consultar y persistir entidades.
-- `entity`: modelo relacional persistido, incluyendo `Cliente` y `Empleado`.
+- `entity`: modelo relacional persistido, incluyendo `Cliente`, `Empleado`, `Habitacion`, `ConversacionChatbot` y `MensajeChatbot`.
 - `dto`: contratos de entrada/salida de la API; evita exponer directamente las entidades.
-- `config`: seguridad, codificador BCrypt, inicialización de empleados de desarrollo y configuración de Spring.
-- `resources/static`: portada, imagen de fondo, estilos y JavaScript que consume la API; las animaciones y transiciones están en `home.css`.
-- `resources/templates`: páginas Thymeleaf de login, registro, error y vistas de los módulos.
+- `config`: seguridad, codificador BCrypt, configuración del chatbot, semillas de suites de desarrollo e inicialización de empleados.
+- `resources/static`: portada, imagen de fondo, estilos y JavaScript que consume la API; el asistente tiene sus propios `asistente.*` y `chatbot-widget.*`.
+- `resources/templates`: páginas Thymeleaf de login, registro, error, asistente y vistas de los módulos.
 
 La cadena API mantiene CSRF activo también para los endpoints públicos de login y registro; el JavaScript solicita el token antes de enviar operaciones POST.
 
@@ -79,6 +95,25 @@ La cadena API mantiene CSRF activo también para los endpoints públicos de logi
 | `GET` | `/login?tipo=cliente` | Formulario de login de cliente. |
 | `GET` | `/registro` | Formulario de registro de cliente. |
 | `GET` | `/inicio` | Página de entrada con sesión; redirige al login si no hay sesión autenticada. |
+| `GET` | `/catalogo` | Catálogo público con filtros `q`, `fecha`, `hora`, `modalidadId`, `soloDisponibles` y `orden`. |
+| `GET` | `/catalogo/{codTipo}` | Ficha pública de una suite con amenidades, tarifas y habitaciones. |
+| `GET` | `/api/catalogo` | API JSON pública con los mismos filtros del catálogo. |
+| `GET` | `/api/catalogo/{codTipo}` | Detalle JSON de una suite. |
+| `GET` | `/api/catalogo/disponibilidad?tipoHabitacionId=...&fecha=...&hora=...` | Disponibilidad pública por intervalo; acepta `modalidadId` y limita consultas por IP. |
+| `GET` | `/cliente/reservas/nueva?tipoId={id}` | Requiere rol `CLIENTE`; permite elegir habitación física, fecha, hora y duración. |
+| `GET` | `/cliente/reservas/disponibilidad` | Devuelve habitaciones libres para el intervalo seleccionado. |
+| `POST` | `/cliente/reservas` | Retiene una habitación durante cinco minutos y crea la reserva pendiente de pago. |
+| `GET` | `/cliente/reservas/{id}/pago` | Muestra el método de pago y la cuenta regresiva de la retención. |
+| `POST` | `/cliente/reservas/{id}/pagar` | Simula el pago en demo; en modo normal registra el método para validación manual. |
+| `GET` | `/cliente/reservas/{id}/qr` | Entrega el QR privado de una reserva pagada. |
+| `GET` | `/cliente/reservas` | Lista las reservas del cliente autenticado. |
+| `GET` | `/cliente/reservas/{id}` | Muestra el estado, habitación, horario y QR de una reserva propia. |
+| `GET/POST` | `/cliente/reservas/{id}/extensiones/**` | En demo, retiene y cobra una ampliación después del check-in. |
+| `POST` | `/cliente/reservas/{id}/cancelar` | Cancela una reserva propia aún pendiente de pago. |
+| `GET` | `/recepcion/reservas` | Bandeja para validar pagos y consultar reservas que esperan check-in. |
+| `POST` | `/recepcion/reservas/check-in` | Valida el token QR y registra el check-in. |
+| `POST` | `/recepcion/reservas/{id}/confirmar` | En modo normal, confirma una solicitud después de revisar el pago. |
+| `POST` | `/recepcion/reservas/{id}/cancelar` | Cancela una solicitud desde recepción. |
 | `GET` | `/api/auth/csrf` | Emite el token CSRF que se usa en las solicitudes POST de la API. |
 | `GET` | `/api/auth/client/disponibilidad?campo=...&valor=...` | Verifica disponibilidad de correo, documento o teléfono; limitado por IP. |
 | `POST` | `/api/auth/login` | Login de empleado; recibe `username` y `password`. |
@@ -93,12 +128,38 @@ La cadena API mantiene CSRF activo también para los endpoints públicos de logi
 | `POST` | `/api/roomservice/pedidos` | Crea la comanda desde la suite: acepta `token` (opcional) o `numHabitacion` del selector, congela precios, descuenta stock y devuelve el código. |
 | `GET` | `/api/roomservice/pedidos/{codigo}?token=...` | Estado de la comanda del huésped con avance automático; sin token se consulta solo por código. |
 | `PATCH` | `/api/roomservice/pedidos/{codigo}/estado` | Fuerza el estado desde el sistema de empleado (rol ROOMSERVICE o ADMIN); solo permite avances. |
+| `GET` | `/asistente` | Página pública del asistente con catálogo de suites y chat. |
+| `GET` | `/api/chatbot/catalogo` | Suites, tarifas y disponibilidad tomadas de la base de datos. |
+| `GET` | `/api/chatbot/estado` | Estado de cola, modo, uso de mensajes y bandera de derivación. |
+| `GET` | `/api/chatbot/historico` | Mensajes de la conversación actual. |
+| `POST` | `/api/chatbot/mensaje` | Envía un mensaje al asistente; requiere `X-XSRF-TOKEN`. |
+| `POST` | `/api/chatbot/reiniciar` | Limpia el estado de cola de la conversación. |
 
 El registro de cliente recibe `tipoDocumento`, `numDocumento`, `paisEmisionDoc`, `correoElectronico`, `nombre`, `apellido`, `telefono`, `edad` y `password`. El formulario pide repetir el correo y la contraseña; compara ambos valores en el navegador y no envía los campos de confirmación al servidor.
 
 Las rutas API usan sesión HTTP y responden JSON. CSRF también está activo para la API; la interfaz obtiene el token con `GET /api/auth/csrf` y lo envía como `X-XSRF-TOKEN`. Las contraseñas se almacenan con BCrypt. Los clientes tienen autoridad `ROLE_CLIENTE`; los empleados reciben sus roles y permisos desde la base.
 
 La carta de room service no exige sesión ni check-in: el token de check-in (`token_qr_dinamico`) es opcional y, cuando llega en la URL del QR, solo identifica la suite del huésped (un token inválido o expirado se ignora en vez de bloquear). Sin token, el huésped elige la suite de entrega en el selector de la carta, que muestra las suites con estado `OCUPADA`; si el pedido no incluye ninguna suite, responde `400`. Con token, `GET /api/roomservice/pedidos/{codigo}` solo devuelve los pedidos de la suite dueña (`404` en caso contrario). La comanda guarda el precio congelado al momento del pedido y descuenta el stock de forma atómica (si otra comanda se adelantó, revierte con `409 Stock insuficiente`). El estado `RECIBIDO → EN_PREPARACION → CONTROLADO → ENTREGADO` avanza solo con el tiempo según `app.roomservice.estados.minutos-*` en `application.properties`; el `PATCH` autenticado solo permite avanzar, nunca retroceder. En el perfil `demo` la suite 101 se siembra con el token `demo-suite-101`, por lo que puedes abrir `http://localhost:8080/menu-suite` (o con `?token=demo-suite-101`) para recorrer el flujo completo. La carta usa fotos de stock de Pexels guardadas como URL directa en `producto.imagen`, sin archivos locales.
+### Asistente Eclipse
+
+Abre `/asistente` sin iniciar sesión. A la izquierda aparecen las suites con su imagen, capacidad, estado y tarifa mínima; a la derecha está el chat. El mismo chat también está disponible como cajón flotante en la portada y en `/inicio`.
+
+Flujo de un mensaje:
+
+1. El navegador pide `GET /api/chatbot/estado` y `GET /api/chatbot/catalogo`.
+2. Envía `POST /api/chatbot/mensaje` con `{"mensaje": "..."}` y el encabezado `X-XSRF-TOKEN`.
+3. El servidor clasifica la intención y responde con `respuesta`, `intencion`, `estadoCola`, `derivado`, `sugerencias`, `modo`, `mensajesUsados` y `mensajesMaximos`.
+4. Sin sesión, la conversación se identifica con la cookie `ECLIPSE_CHAT_SID` (`HttpOnly`, `SameSite=Lax`, 30 días).
+
+Los tres modos posibles de `modo`:
+
+| Valor | Significado |
+| --- | --- |
+| `PUBLICO` | Visitante sin cuenta; solo intenciones del catálogo y máximo 12 mensajes por conversación. |
+| `CLIENTE` | Cliente logueado; preguntas libres contra Gemini, sin tope por conversación. |
+| `CLIENTE_FALLBACK` | Cliente logueado sin API key o con Gemini caído; recibe la respuesta predefinida de su intención. |
+
+`estadoCola` toma el valor `SIN_COLA` o `EN_COLA`; `minutosRestantes` estima la espera (2 minutos). La derivación solo marca la conversación: **no** hay pantalla de recepción que atienda esos casos, así que no lo presentes como un flujo de atención terminado.
 
 ### Flujo de uso
 
@@ -108,6 +169,10 @@ La carta de room service no exige sesión ni check-in: el token de check-in (`to
 4. Completa los dos pasos del registro. La cuenta se crea y la sesión se inicia al enviar el formulario.
 5. Para una cuenta de cliente existente, abre `/login?tipo=cliente` y usa el correo y la contraseña elegidos al registrarse.
 6. Para empleados, abre `/login?tipo=empleado` y usa username y contraseña de desarrollo o las credenciales de la base configurada.
+7. El cliente elige una suite, una habitación libre, la fecha, la hora y una duración de 4, 6 o 12 horas.
+8. El pago simulado retiene la habitación por cinco minutos; al confirmarse se muestra el QR para presentarlo a recepción.
+9. Recepción escanea el QR con la cámara cuando el navegador lo permite o introduce el token manualmente. Tras validar el check-in, el cliente puede solicitar y pagar tiempo extra en demo.
+10. La emisión de boletas PDF y el envío por correo quedan fuera de esta demo.
 
 ### Contratos JSON
 
@@ -201,6 +266,47 @@ SPRING_PROFILES_ACTIVE=demo ./mvnw spring-boot:run
 ```
 
 Abre [http://localhost:8080](http://localhost:8080). Puedes crear clientes desde `/registro` y entrar como empleado con una cuenta de desarrollo. La base H2 de demostración vive solo mientras la aplicación está abierta: al detenerla, sus registros se eliminan. No uses este perfil para producción.
+
+### API key de Gemini
+
+El asistente usa la API de Gemini solo cuando hay una clave configurada. La clave vive en el archivo **`.env` de la raíz del proyecto**, que está en `.gitignore` y por lo tanto **nunca se sube a Git**:
+
+```properties
+# .env  (raíz del proyecto, ignorado por git)
+GEMINI_API_KEY=tu-clave-aqui
+```
+
+`application.properties` lo importa con una sola línea y no guarda secretos:
+
+```properties
+spring.config.import=optional:file:./.env[.properties]
+app.chat.api-key=${GEMINI_API_KEY:}
+```
+
+También sigue funcionando la variable de entorno, y **tiene prioridad sobre el `.env`**:
+
+```powershell
+$env:GEMINI_API_KEY = "<tu-clave>"
+$env:SPRING_PROFILES_ACTIVE = "demo"
+.\mvnw.cmd spring-boot:run
+```
+
+```bash
+export GEMINI_API_KEY="<tu-clave>"
+SPRING_PROFILES_ACTIVE=demo ./mvnw spring-boot:run
+```
+
+Notas importantes:
+
+- `optional:` significa que si falta el `.env` la aplicación arranca igual. La ruta es relativa al **directorio de trabajo**, así que al ejecutar el `.jar` empaquetado desde otra carpeta no lo encontrará: en ese caso usa la variable de entorno.
+- No escribas la clave en `application.properties`, en el README ni en el código; ese archivo sí está versionado.
+- El modelo por defecto es `gemini-2.5-flash` y se cambia con `app.chat.modelo` (o la variable `GEMINI_MODEL`). `gemini-3.8-flash` existe pero el plan gratuito limita a 20 peticiones por día.
+- El plan gratuito tiene cuota diaria. Cuando se agota, el asistente no se rompe: los clientes logueados caen en `CLIENTE_FALLBACK` con la respuesta predefinida y el log registra el detalle.
+- Si la clave falta o Gemini falla, la aplicación sigue funcionando: los visitantes reciben las respuestas predefinidas del catálogo.
+
+Otras variables del asistente, todas opcionales y con valores en `application.properties`: `app.chat.base-url`, `app.chat.timeout-ms`, `app.chat.max-historial`, `app.chat.max-entrada`, `app.chat.limite-publico-min`, `app.chat.limite-cliente-min` y `app.chat.max-mensajes-anonimos`. También se pueden definir en el `.env`.
+
+Con los perfiles `demo` y `dev`, `ChatbotDemoDataInitializer` crea 3 tipos de suite, 2 modalidades, 6 tarifas y 8 habitaciones (4 disponibles) si las tablas están vacías. Esas suites también son las que alimentan el catálogo del asistente.
 
 ### Ejecución con PostgreSQL
 
@@ -296,6 +402,9 @@ Los clientes que ya existían antes de añadir contraseña pueden tener `passwor
 - El cliente debe usar el endpoint `/api/auth/client/me` y el empleado `/api/auth/me` para consultar su sesión.
 - El endpoint de logout API es `POST /api/auth/logout`. La cadena web también reconoce `POST /logout`.
 - El perfil `demo` es solo local: H2 usa memoria y se pierde al apagar la JVM.
+- El asistente no exige sesión: los límites por IP y por conversación evitan el abuso, pero los contadores viven en memoria y no son un control distribuido.
+- `GEMINI_API_KEY` se guarda en `.env` (ignorado por git) o en una variable de entorno; sin clave la aplicación funciona igual con respuestas predefinidas.
+- La derivación a recepción solo deja registro en la conversación; no hay dashboard de recepción que la atienda.
 - No hay recuperación de contraseña; los límites de login y reenvío se mantienen en memoria/locales a cada instancia.
 - El login confirma la autenticación en la misma página; no hay dashboards de cliente/empleado conectados todavía.
 - No despliegues con las credenciales semilla. Configura HTTPS, cookies `Secure`, secretos externos y monitoreo antes de producción.
@@ -329,7 +438,9 @@ En Linux/macOS:
 ./mvnw test
 ```
 
-Las pruebas de contexto e integración configuran H2 en memoria. No requieren `DB_PASSWORD` ni escriben en PostgreSQL. La última ejecución completa pasó 74 pruebas.
+Las pruebas de contexto e integración configuran H2 en memoria. No requieren `DB_PASSWORD` ni escriben en PostgreSQL. La última ejecución completa pasó 126 pruebas.
+
+Las pruebas del asistente cubren la clasificación de intenciones, el límite de mensajes, la cola de derivación, el servicio y el contrato JSON del controlador; `ChatbotApiIntegrationTest` arranca el contexto completo con el perfil `demo` y verifica catálogo, límite 429 y accesos públicos.
 
 ## Estructura del proyecto
 

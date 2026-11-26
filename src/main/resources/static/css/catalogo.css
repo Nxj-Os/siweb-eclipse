@@ -1,0 +1,418 @@
+/* Catálogo público de suites: complementa inicio-catalogo.css */
+
+.catalogo-page .inicio-header {
+    flex-wrap: wrap;
+    gap: 1.2rem;
+}
+
+.catalogo-eyebrow {
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-size: 0.72rem;
+    color: var(--aqua);
+}
+
+.catalogo-header__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.catalogo-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-bottom: 0.35rem;
+    color: var(--aqua);
+    font-size: 0.9rem;
+    text-decoration: none;
+}
+
+.catalogo-back:hover {
+    color: var(--gold);
+}
+
+.catalogo-filtros {
+    padding: clamp(1rem, 3vw, 1.5rem);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: var(--surface);
+    box-shadow: 0 18px 50px rgb(0 0 0 / 18%);
+}
+
+.catalogo-filtros__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 0.9rem;
+    align-items: end;
+}
+
+.catalogo-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    min-width: 0;
+}
+
+.catalogo-field__label {
+    color: var(--text-tertiary);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.catalogo-field .filter-field__input {
+    padding-left: 1rem;
+    color-scheme: dark;
+}
+
+.catalogo-field select.filter-field__input {
+    appearance: none;
+    cursor: pointer;
+}
+
+.catalogo-filtros__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1.1rem;
+}
+
+.catalogo-checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    cursor: pointer;
+}
+
+.catalogo-checkbox input {
+    width: 1.1rem;
+    height: 1.1rem;
+    accent-color: var(--gold);
+}
+
+.catalogo-filtros__buttons {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.9rem;
+    flex-wrap: wrap;
+}
+
+.catalogo-reset {
+    color: var(--text-secondary);
+    font-size: 0.92rem;
+    text-decoration: none;
+}
+
+.catalogo-reset:hover {
+    color: var(--gold);
+}
+
+.catalogo-submit {
+    border: 0;
+    font-family: inherit;
+    font-size: 0.95rem;
+    cursor: pointer;
+    gap: 0.5rem;
+}
+
+.catalogo-resultados {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    color: var(--text-secondary);
+}
+
+.catalogo-resultados p {
+    margin: 0;
+}
+
+.catalogo-resultados strong {
+    color: var(--gold);
+}
+
+.catalogo-resultados__detalle {
+    color: var(--aqua);
+}
+
+.catalogo-hint {
+    margin: 0;
+    color: var(--text-tertiary);
+    font-size: 0.88rem;
+}
+
+.catalogo-suite-card {
+    order: 0;
+}
+
+.catalogo-suite-card[hidden] {
+    display: none !important;
+}
+
+.catalogo-suite-card__code {
+    margin: 0;
+    color: var(--aqua);
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+.suite-card__title a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.suite-card__title a:hover {
+    color: var(--gold);
+}
+
+.catalogo-amenidades {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.catalogo-amenidades li {
+    padding: 0.35rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: rgb(154 217 215 / 6%);
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+}
+
+.catalogo-amenidades--compact li {
+    font-size: 0.78rem;
+}
+
+.catalogo-card__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    margin-top: auto;
+}
+
+.catalogo-card__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--aqua);
+    font-size: 0.92rem;
+    text-decoration: none;
+}
+
+.catalogo-card__link:hover {
+    color: var(--gold);
+}
+
+/* Detalle de la suite */
+
+.catalogo-detalle {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.4rem;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: var(--surface);
+    overflow: hidden;
+    box-shadow: 0 18px 50px rgb(0 0 0 / 22%);
+}
+
+.catalogo-detalle__media {
+    position: relative;
+    min-height: 280px;
+    background: var(--surface-raised);
+}
+
+.catalogo-detalle__media img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.catalogo-detalle__content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: clamp(1.2rem, 4vw, 2rem);
+}
+
+.catalogo-detalle__capacity {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    color: var(--text-secondary);
+}
+
+.catalogo-detalle__price {
+    font-size: 0.9rem;
+}
+
+.catalogo-detalle__price strong {
+    font-size: 1.6rem;
+}
+
+.catalogo-detalle__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+}
+
+.catalogo-disponibilidad-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border);
+}
+
+.catalogo-disponibilidad-form .catalogo-submit {
+    justify-self: start;
+    align-self: end;
+}
+
+.catalogo-bloque {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    padding: clamp(1.1rem, 3vw, 1.6rem);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: var(--surface);
+}
+
+.catalogo-bloque__title {
+    margin: 0;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1.3rem, 2.6vw, 1.7rem);
+    font-weight: 600;
+    color: var(--cream);
+}
+
+.catalogo-tabla-wrapper {
+    overflow-x: auto;
+}
+
+.catalogo-tabla {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.catalogo-tabla th,
+.catalogo-tabla td {
+    padding: 0.7rem 0.9rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+.catalogo-tabla th {
+    color: var(--text-tertiary);
+    font-size: 0.76rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.catalogo-tabla td {
+    color: var(--text-secondary);
+}
+
+.catalogo-tabla tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.catalogo-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    background: var(--badge-gray);
+    color: var(--text-secondary);
+    font-size: 0.76rem;
+}
+
+.catalogo-pill--ok {
+    background: rgb(154 217 215 / 16%);
+    color: var(--aqua);
+}
+
+.catalogo-habitaciones {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.7rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.catalogo-habitacion {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: 0.7rem 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface-raised);
+    color: var(--text-secondary);
+}
+
+.catalogo-habitacion i {
+    color: var(--aqua);
+}
+
+.catalogo-habitacion__numero {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.catalogo-habitacion__estado {
+    font-size: 0.78rem;
+    color: var(--text-tertiary);
+}
+
+.catalogo-habitacion--libre {
+    border-color: rgb(154 217 215 / 45%);
+}
+
+.catalogo-habitacion--libre .catalogo-habitacion__estado {
+    color: var(--aqua);
+}
+
+.catalogo-habitacion--ocupada {
+    opacity: 0.65;
+}
+
+@media (min-width: 860px) {
+    .catalogo-detalle {
+        grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    }
+
+    .catalogo-detalle__media {
+        min-height: 100%;
+    }
+}
+
+@media (max-width: 520px) {
+    .catalogo-header__actions {
+        width: 100%;
+    }
+
+    .catalogo-filtros__actions {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
