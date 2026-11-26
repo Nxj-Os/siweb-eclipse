@@ -88,17 +88,17 @@ La cadena API mantiene CSRF activo también para los endpoints públicos de logi
 | `GET` | `/api/auth/client/me` | Datos del cliente autenticado. |
 | `POST` | `/api/auth/logout` | Cierra la sesión API actual (filtro de logout de Spring Security). |
 | `POST` | `/logout` | Cierra sesión mediante la cadena web de Spring Security. |
-| `GET` | `/menu-suite?token=...` | Carta pública de room service para el huésped; el token de check-in llega en la URL del QR. |
-| `GET` | `/api/roomservice/menu?token=...` | Carta JSON con categorías y productos (precio y stock). Acepta `q` (búsqueda) e `idCategoria`. |
-| `POST` | `/api/roomservice/pedidos` | Crea la comanda desde la suite: congela precios, descuenta stock y devuelve el código. |
-| `GET` | `/api/roomservice/pedidos/{codigo}?token=...` | Estado de la comanda del huésped con avance automático. |
+| `GET` | `/menu-suite?token=...` | Carta pública de room service para el huésped; el token de check-in (opcional) llega en la URL del QR cuando existe. |
+| `GET` | `/api/roomservice/menu?token=...` | Carta JSON con categorías, productos (precio y stock) y `suitesDisponibles` para el selector de entrega. El token es opcional; acepta `q` (búsqueda) e `idCategoria`. |
+| `POST` | `/api/roomservice/pedidos` | Crea la comanda desde la suite: acepta `token` (opcional) o `numHabitacion` del selector, congela precios, descuenta stock y devuelve el código. |
+| `GET` | `/api/roomservice/pedidos/{codigo}?token=...` | Estado de la comanda del huésped con avance automático; sin token se consulta solo por código. |
 | `PATCH` | `/api/roomservice/pedidos/{codigo}/estado` | Fuerza el estado desde el sistema de empleado (rol ROOMSERVICE o ADMIN); solo permite avances. |
 
 El registro de cliente recibe `tipoDocumento`, `numDocumento`, `paisEmisionDoc`, `correoElectronico`, `nombre`, `apellido`, `telefono`, `edad` y `password`. El formulario pide repetir el correo y la contraseña; compara ambos valores en el navegador y no envía los campos de confirmación al servidor.
 
 Las rutas API usan sesión HTTP y responden JSON. CSRF también está activo para la API; la interfaz obtiene el token con `GET /api/auth/csrf` y lo envía como `X-XSRF-TOKEN`. Las contraseñas se almacenan con BCrypt. Los clientes tienen autoridad `ROLE_CLIENTE`; los empleados reciben sus roles y permisos desde la base.
 
-La carta de room service no exige sesión: el acceso lo autoriza el token de check-in de la habitación (`token_qr_dinamico` con `fecha_expiracion_token` vigente) y un token inválido o expirado responde `403` con `error: "Servicio bloqueado"`. La comanda guarda el precio congelado al momento del pedido y descuenta el stock de forma atómica (si otra comanda se adelantó, revierte con `409 Stock insuficiente`). El estado `RECIBIDO → EN_PREPARACION → CONTROLADO → ENTREGADO` avanza solo con el tiempo según `app.roomservice.estados.minutos-*` en `application.properties`; el `PATCH` autenticado solo permite avanzar, nunca retroceder. En el perfil `demo` la suite 101 se siembra con el token `demo-suite-101`, por lo que puedes abrir `http://localhost:8080/menu-suite?token=demo-suite-101` para recorrer el flujo completo.
+La carta de room service no exige sesión ni check-in: el token de check-in (`token_qr_dinamico`) es opcional y, cuando llega en la URL del QR, solo identifica la suite del huésped (un token inválido o expirado se ignora en vez de bloquear). Sin token, el huésped elige la suite de entrega en el selector de la carta, que muestra las suites con estado `OCUPADA`; si el pedido no incluye ninguna suite, responde `400`. Con token, `GET /api/roomservice/pedidos/{codigo}` solo devuelve los pedidos de la suite dueña (`404` en caso contrario). La comanda guarda el precio congelado al momento del pedido y descuenta el stock de forma atómica (si otra comanda se adelantó, revierte con `409 Stock insuficiente`). El estado `RECIBIDO → EN_PREPARACION → CONTROLADO → ENTREGADO` avanza solo con el tiempo según `app.roomservice.estados.minutos-*` en `application.properties`; el `PATCH` autenticado solo permite avanzar, nunca retroceder. En el perfil `demo` la suite 101 se siembra con el token `demo-suite-101`, por lo que puedes abrir `http://localhost:8080/menu-suite` (o con `?token=demo-suite-101`) para recorrer el flujo completo. La carta usa fotos de stock de Pexels guardadas como URL directa en `producto.imagen`, sin archivos locales.
 
 ### Flujo de uso
 
@@ -145,18 +145,18 @@ Login de empleado, `POST /api/auth/login`:
 }
 ```
 
-Crear pedido de room service, `POST /api/roomservice/pedidos`:
+Crear pedido de room service, `POST /api/roomservice/pedidos` (sin check-in se envía la suite del selector; con QR futuro se agrega `token`):
 
 ```json
 {
-  "token": "demo-suite-101",
+  "numHabitacion": "101",
   "items": [
     { "idProducto": 4, "cantidad": 2 }
   ]
 }
 ```
 
-La respuesta (`201`) incluye `codigo` (formato `A1488`), `estado`, `estadoEtiqueta`, `montoTotal`, `numHabitacion` e `items` con `nombre`, `cantidad` y `subtotal`. El mismo cuerpo de `items` sirve para consultar el seguimiento en `GET /api/roomservice/pedidos/{codigo}?token=...`.
+La respuesta (`201`) incluye `codigo` (formato `A1488`), `estado`, `estadoEtiqueta`, `montoTotal`, `numHabitacion` e `items` con `nombre`, `cantidad` y `subtotal`. El mismo cuerpo de `items` sirve para consultar el seguimiento en `GET /api/roomservice/pedidos/{codigo}`.
 
 Los logins y el registro devuelven datos básicos del usuario y guardan la autenticación en la sesión HTTP. En JavaScript las solicitudes usan `credentials: same-origin`, por lo que el navegador conserva la cookie de sesión. No se devuelve el hash de contraseña.
 

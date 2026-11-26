@@ -132,7 +132,7 @@
     </main>
 
     <nav class="bottom-nav" aria-label="Navegación inferior">
-        <a class="bottom-nav__item bottom-nav__item--active" href="#">
+        <a class="bottom-nav__item bottom-nav__item--active" th:href="@{/inicio}" aria-current="page">
             <span class="bottom-nav__icon">
                 <i class="bi bi-house-door"></i>
             </span>
@@ -144,7 +144,7 @@
             </span>
             <span>Reserva</span>
         </a>
-        <a class="bottom-nav__item" href="#">
+        <a class="bottom-nav__item" th:href="@{/menu-suite}">
             <span class="bottom-nav__icon">
                 <i class="bi bi-bell"></i>
             </span>
