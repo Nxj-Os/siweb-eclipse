@@ -15,8 +15,9 @@ Aplicación web para la gestión de un hotel. El proyecto usa Spring Boot y est�
 - Sesiones HTTP para los accesos de cliente y empleado.
 - Catálogo de siete suites y flujo de reserva por habitación física, con disponibilidad por intervalo, duración de 4, 6 o 12 horas y vista previa.
 - Catálogo público `/catalogo` con disponibilidad operativa y por fecha/hora, filtros por texto, disponibilidad, duración y orden, ficha de detalle por suite, amenidades y API JSON reutilizable.
-- Retención de cinco minutos mientras se paga; en el perfil `demo` los métodos de pago se simulan y no se captura ni procesa dinero.
-- Código QR tras el pago para check-in de recepción; ampliaciones de estadía disponibles en el flujo demo después del check-in.
+- Reserva confirmada de inmediato mientras no haya pasarela de pago integrada (`app.reserva.pago-directo=true`): sin retención de cinco minutos ni pantalla de cobro. Poniendo `APP_RESERVA_PAGO_DIRECTO=false` vuelve la retención y la validación manual en recepción.
+- Código QR desde el alta de la reserva para el check-in del huésped o de recepción; ampliaciones de estadía disponibles en el flujo demo después del check-in.
+- Tablero de novedades del portal del empleado: últimas reservas y comandas de room service en un solo panel, con conteos y refresco automático.
 - Catálogo de demostración con precios de muestra e inventario aislados en el perfil `demo`.
 - Bloqueo temporal de 3 minutos a partir del quinto fallo para la combinación de IP y usuario/correo.
 - Validación de datos, normalización de correos, rechazo de correo/documento duplicados y respuestas JSON de error.
@@ -109,8 +110,8 @@ La cadena API mantiene CSRF activo también para los endpoints públicos de logi
 | `GET` | `/api/catalogo/disponibilidad?tipoHabitacionId=...&fecha=...&hora=...` | Disponibilidad pública por intervalo; acepta `modalidadId` y limita consultas por IP. |
 | `GET` | `/cliente/reservas/nueva?tipoId={id}` | Requiere rol `CLIENTE`; permite elegir habitación física, fecha, hora y duración. |
 | `GET` | `/cliente/reservas/disponibilidad` | Devuelve habitaciones libres para el intervalo seleccionado. |
-| `POST` | `/cliente/reservas` | Retiene una habitación durante cinco minutos y crea la reserva pendiente de pago. |
-| `GET` | `/cliente/reservas/{id}/pago` | Muestra el método de pago y la cuenta regresiva de la retención. |
+| `POST` | `/cliente/reservas` | Con `app.reserva.pago-directo=true` (por defecto) crea la reserva `CONFIRMADA` con QR, sin retención ni pantalla de pago. Con `false`, retiene la habitación cinco minutos y la deja `PENDIENTE_PAGO`. |
+| `GET` | `/cliente/reservas/{id}/pago` | Muestra el método de pago y la cuenta regresiva de la retención (solo si la reserva sigue pendiente). |
 | `POST` | `/cliente/reservas/{id}/pagar` | Simula el pago en demo; en modo normal registra el método para validación manual. |
 | `GET` | `/cliente/reservas/{id}/qr` | Entrega el QR privado de una reserva pagada. |
 | `GET` | `/cliente/reservas` | Lista las reservas del cliente autenticado. |
@@ -143,7 +144,8 @@ La cadena API mantiene CSRF activo también para los endpoints públicos de logi
 | `GET` | `/api/roomservice/pedidos` | Listado de comandas para el panel del empleado; requiere rol `ROOMSERVICE` o `ADMIN`. |
 | `GET` | `/api/roomservice/pedidos/{codigo}?token=...` | Estado de la comanda del huésped con avance automático; sin token se consulta solo por código. |
 | `PATCH` | `/api/roomservice/pedidos/{codigo}/estado` | Fuerza el estado desde el sistema de empleado (rol ROOMSERVICE o ADMIN); solo permite avances. |
-| `POST` | `/cliente/reservas/{id}/check-in` | Check-in hecho por el huésped desde su cuenta: valida propiedad y vigencia, deja la reserva en `CHECKED_IN` y marca la suite `OCUPADA` en el rack. |
+| `POST` | `/cliente/reservas/{id}/check-in` | Check-in hecho por el huésped desde su cuenta: valida propiedad, deja la reserva en `CHECKED_IN` y marca la suite `OCUPADA` en el rack. Se permite check-in anticipado mientras la estadía no haya terminado. |
+| `GET` | `/api/empleado/novedades` | Tablero del empleado (roles ADMIN, RECEPCION, LIMPIEZA y ROOMSERVICE): `{resumen, notificaciones}` con las últimas reservas y comandas de room service. El panel del rack y el de comandas lo consultan cada 20 s. |
 | `GET` | `/asistente` | Página pública del asistente con catálogo de suites y chat. |
 | `GET` | `/api/chatbot/catalogo` | Suites, tarifas y disponibilidad tomadas de la base de datos. |
 | `GET` | `/api/chatbot/estado` | Estado de cola, modo, uso de mensajes y bandera de derivación. |
@@ -158,6 +160,9 @@ Las rutas API usan sesión HTTP y responden JSON. CSRF también está activo par
 La carta de room service no exige sesión ni check-in: el token de check-in (`token_qr_dinamico`) es opcional y, cuando llega en la URL del QR, solo identifica la suite del huésped (un token inválido o expirado se ignora en vez de bloquear). Si el cliente tiene sesión y una reserva `CHECKED_IN`, esa suite se precarga en el selector. Sin token, el huésped elige la suite de entrega en el selector de la carta, que muestra las suites con estado `OCUPADA`; si el pedido no incluye ninguna suite, responde `400`. Con token, `GET /api/roomservice/pedidos/{codigo}` solo devuelve los pedidos de la suite dueña (`404` en caso contrario). La comanda guarda el precio congelado al momento del pedido y descuenta el stock de forma atómica (si otra comanda se adelantó, revierte con `409 Stock insuficiente`). El estado `RECIBIDO → EN_PREPARACION → CONTROLADO → ENTREGADO` avanza solo con el tiempo según `app.roomservice.estados.minutos-*` en `application.properties`; el `PATCH` autenticado solo permite avanzar, nunca retroceder. El panel del empleado (`/empleado/roomservice`, template propio `roomservice/comandas.html`) consulta `GET /api/roomservice/pedidos` y avanza estados con el mismo `PATCH`.
 
 La reserva y el room service están unidos: `POST /cliente/reservas/{id}/check-in` (o el check-in de recepción con el QR) deja la suite en `OCUPADA` en el rack y liga `token_qr_dinamico` de la habitación al token de la reserva, por lo que la carta la reconoce y la reserva de esa suite queda bloqueada mientras esté ocupada. Cancelar una reserva pendiente devuelve la suite a `LIBRE`. En el perfil `demo` la suite 101 se siembra con el token `demo-suite-101`, por lo que puedes abrir `http://localhost:8080/menu-suite` (o con `?token=demo-suite-101`) para recorrer el flujo completo. La carta usa fotos de stock de Pexels guardadas como URL directa en `producto.imagen`, sin archivos locales.
+
+El panel de recepción (`/empleado/recepcion`) y el de room service (`/empleado/roomservice`) muestran el mismo tablero de novedades: `static/js/empleado-notificaciones.js` consulta `GET /api/empleado/novedades`, que mezcla las últimas diez reservas con las comandas reales, las ordena por fecha y devuelve un resumen de reservas pendientes, confirmadas, en curso y comandas activas. Cada aviso incluye `id`, `tipo` (`RESERVA`, `CHECK_IN` o `COMANDA`), `titulo`, `detalle`, `estado` y `fecha`. El bloque se actualiza solo cada 20 segundos. `GET /api/empleado/notificaciones` sigue siendo el feed del módulo de agenda y no cambió de formato.
+
 ### Asistente Eclipse
 
 Abre `/asistente` sin iniciar sesión. A la izquierda aparecen las suites con su imagen, capacidad, estado y tarifa mínima; a la derecha está el chat. El mismo chat también está disponible como cajón flotante en la portada y en `/inicio`.
@@ -188,8 +193,8 @@ Los tres modos posibles de `modo`:
 5. Para una cuenta de cliente existente, abre `/login?tipo=cliente` y usa el correo y la contraseña elegidos al registrarse.
 6. Para empleados, abre `/login?tipo=empleado` y usa username y contraseña de desarrollo o las credenciales de la base configurada.
 7. El cliente elige una suite, una habitación libre, la fecha, la hora y una duración de 4, 6 o 12 horas.
-8. El pago simulado retiene la habitación por cinco minutos; al confirmarse se muestra el QR para presentarlo a recepción.
-9. Recepción escanea el QR con la cámara cuando el navegador lo permite o introduce el token manualmente. Tras validar el check-in, el cliente puede solicitar y pagar tiempo extra en demo.
+8. Con la configuración actual la reserva queda confirmada al instante (sin retención ni cobro) y el QR aparece en el detalle. Si se activa la retención con `APP_RESERVA_PAGO_DIRECTO=false`, se muestra la pantalla de pago y recepción valida el pago en `/recepcion/reservas`.
+9. El cliente pulsa **Realizar check-in** en `mis-reservas` o en el detalle (también puede hacerlo recepción con el QR). La suite pasa a `OCUPADA`, aparece en el tablero de novedades del empleado y se precarga en el selector de `/menu-suite`; desde ahí puede pedir room service y, en demo, solicitar tiempo extra.
 10. La emisión de boletas PDF y el envío por correo quedan fuera de esta demo.
 
 ### Contratos JSON
@@ -498,7 +503,7 @@ En Linux/macOS:
 ./mvnw test
 ```
 
-Las pruebas de contexto e integración configuran H2 en memoria. No requieren `DB_PASSWORD` ni escriben en PostgreSQL (`DemoCatalogInitializerTest` y `ChatbotApiIntegrationTest` declaran su propio H2 en línea). La última ejecución completa corre 255 pruebas, 0 fallos y 0 errores.
+Las pruebas de contexto e integración configuran H2 en memoria. No requieren `DB_PASSWORD` ni escriben en PostgreSQL (`DemoCatalogInitializerTest` y `ChatbotApiIntegrationTest` declaran su propio H2 en línea). La última ejecución completa corre 259 pruebas, 0 fallos y 0 errores.
 
 Las pruebas del perfil cubren el controlador (`ClientePerfilControllerTest`, 12 casos: página, API, CSRF, validación, boleta y borrado), el servicio (`ClientePerfilServiceImplTest`, 6 casos: reserva activa, IGV y boleta) y la cuenta (`ClienteAuthServiceImplTest`, 11 casos: registro reactivo, edición, baja y disponibilidad).
 

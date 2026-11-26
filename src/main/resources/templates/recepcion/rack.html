@@ -56,15 +56,9 @@
         </main>
         <aside class="notifications">
             <h2>Notificaciones</h2>
-            <p>Actividad reciente del hotel</p>
-            <div class="notice"><b>🔔 Nueva reserva web</b><span>Habitación 401 · Reserva recibida</span><small>Hace un
-                    instante</small></div>
-            <div class="notice"><b>🍔 Nueva comanda</b><span>Habitación 301 · Pedido de Room Service</span><small>Hace
-                    30 minutos</small></div>
-            <div class="notice"><b>🧹 Check-out realizado</b><span>Habitación 503 · Pendiente de
-                    limpieza</span><small>Hace 2 horas</small></div>
-            <div class="notice"><b>⚠️ Avería técnica</b><span>Habitación 302 · Revisión
-                    pendiente</span><small>Hoy</small></div>
+            <p>Reservas y room service en vivo</p>
+            <div class="notice"><b>🔔 Cargando novedades</b><span>Consultando el tablero del
+                    empleado</span><small>Ahora</small></div>
         </aside>
     </div>
     <dialog id="demo-dialog">
@@ -74,6 +68,7 @@
             id="close-dialog">Entendido</button>
     </dialog>
     <script th:src="@{/js/empleado-portal-demo.js}" defer></script>
+    <script th:src="@{/js/empleado-notificaciones.js}" defer></script>
 <script src="/js/cuenta-eclipse.js" defer></script></body>
 
 </html>

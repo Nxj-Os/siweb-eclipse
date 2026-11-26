@@ -56,10 +56,10 @@ Raíz Java: `src/main/java/pe/com/eclipsesuites`.
 | --- | ---: | --- |
 | raíz | 1 | Punto de entrada `SiwebEclipseApplication`. |
 | `config` | 8 | Cadenas de seguridad, codificador BCrypt, configuración del chatbot, carga de suites de demo, carta de room service y datos de desarrollo. |
-| `controller` | 22 | Rutas API/MVC y manejo de errores. Con contenido: `AuthController`, `AuthPageController`, `CatalogoController`, `ChatbotController`, `AsistentePageController`, `HomeController`, `ClienteReservaController`, `ClientePerfilController`, `ClientePerfilPageController`, `RecepcionReservaController`, `RoomServiceController`, `AgendaEmpleadoController`, `EmpleadoFrontendController`, `EmpleadoHabitacionesApiController`, `EmpleadoPortalController`, `MenuSuitePageController`, `ReporteExcelController`, `ReportePanelController` y `GlobalExceptionHandler`. Vacíos: `CheckoutController`, `OperacionesController` y `RackController`. |
+| `controller` | 23 | Rutas API/MVC y manejo de errores. Con contenido: `AuthController`, `AuthPageController`, `CatalogoController`, `ChatbotController`, `AsistentePageController`, `HomeController`, `ClienteReservaController`, `ClientePerfilController`, `ClientePerfilPageController`, `RecepcionReservaController`, `RoomServiceController`, `AgendaEmpleadoController`, `EmpleadoFrontendController`, `EmpleadoNotificacionesApiController`, `EmpleadoHabitacionesApiController`, `EmpleadoPortalController`, `MenuSuitePageController`, `ReporteExcelController`, `ReportePanelController` y `GlobalExceptionHandler`. Vacíos: `CheckoutController`, `OperacionesController` y `RackController`. |
 | `dao` | 22 | Interfaces Spring Data JPA para los datos del hotel, incluidos `ClienteRepository`, `ReservaEstadiaRepository`, `ConversacionChatbotRepository` y `MensajeChatbotRepository`. |
 | `dto/request` | 13 | Contratos de solicitudes, incluidos login, registro, `PerfilClienteUpdateDTO` y `ChatMensajeRequestDTO`. |
-| `dto/response` | 25 | Respuestas JSON, errores, disponibilidad, los DTO del chatbot y los del perfil (`PerfilClienteResponseDTO`, `ReservaResumenDTO`, `BoletaReservaDTO`). |
+| `dto/response` | 26 | Respuestas JSON, errores, disponibilidad, los DTO del chatbot, los del perfil (`PerfilClienteResponseDTO`, `ReservaResumenDTO`, `BoletaReservaDTO`) y `NotificacionEmpleadoDTO` para el tablero del empleado. |
 | `entity` | 28 | Modelos Java. Hay 11 clases `@Entity` y un tipo `@Embeddable` con contenido; otros archivos son marcadores vacíos. |
 | `service` | 13 | Interfaces, política de consulta MX, `IChatbotService`, `IClientePerfilService` e `IClienteAuthService`. |
 | `service/impl` | 28 | Reglas de autenticación, correo, contraseña, límites, chatbot y perfil (`ClientePerfilServiceImpl`); algunos archivos de otros dominios están vacíos. |
@@ -99,8 +99,8 @@ Las cantidades se obtuvieron contando los archivos `.java` presentes, incluidos 
 | `GET` | `/api/catalogo/disponibilidad` | Público; disponibilidad real por fecha, hora y modalidad, con límite de consultas por IP. |
 | `GET` | `/cliente/reservas/nueva?tipoId={id}` | Requiere rol `CLIENTE`; permite elegir habitación física, fecha, hora y duración. |
 | `GET` | `/cliente/reservas/disponibilidad` | Requiere rol `CLIENTE`; devuelve habitaciones libres para el intervalo solicitado. |
-| `POST` | `/cliente/reservas` | Requiere rol `CLIENTE`; retiene la habitación por cinco minutos y crea una reserva pendiente de pago. |
-| `GET/POST` | `/cliente/reservas/{id}/pago` y `/pagar` | Requiere rol `CLIENTE`; muestra la cuenta regresiva y simula pago solo en demo. |
+| `POST` | `/cliente/reservas` | Requiere rol `CLIENTE`; con `app.reserva.pago-directo=true` crea la reserva `CONFIRMADA` y su QR sin retención ni pago. Con `false`, retiene cinco minutos y la deja `PENDIENTE_PAGO`. |
+| `GET/POST` | `/cliente/reservas/{id}/pago` y `/pagar` | Requiere rol `CLIENTE`; muestra la cuenta regresiva y simula pago solo en demo cuando existe una reserva pendiente. |
 | `GET` | `/cliente/reservas/{id}/qr` | Requiere rol `CLIENTE`; entrega el QR de una reserva propia pagada. |
 | `GET` | `/cliente/reservas` y `/cliente/reservas/{id}` | Requiere rol `CLIENTE`; lista y muestra únicamente las reservas del cliente autenticado. |
 | `GET/POST` | `/cliente/reservas/{id}/extensiones/**` | Requiere rol `CLIENTE`; en demo permite solicitar y pagar una ampliación tras check-in. |
@@ -255,11 +255,11 @@ Las carpetas `templates/operaciones` y `templates/reportes` contienen diseños d
 - Controladores: `CheckoutController`, `OperacionesController` y `RackController`.
 - Implementaciones de servicio: `FacturacionServiceImpl` y `LimpiezaServiceImpl`.
 
-`RoomServiceController`, `RoomServiceServiceImpl`, `ReporteExcelController` y `ReporteExcelServiceImpl` ya tienen contenido y rutas activas, y sus pruebas están en verde. La carta del huésped (`/menu-suite`, `roomservice/menu-suite.html`) y el panel del empleado (`/empleado/roomservice`, `roomservice/comandas.html`) usan templates distintos y comparten solo la API. Las interfaces/repositories relacionados que sí tienen contenido no reemplazan los flujos faltantes. Antes de anunciar reservas, pagos, limpieza o reportes como disponibles, se requiere implementar y conectar sus rutas, lógica y persistencia.
+`RoomServiceController`, `RoomServiceServiceImpl`, `ReporteExcelController` y `ReporteExcelServiceImpl` ya tienen contenido y rutas activas, y sus pruebas están en verde. La carta del huésped (`/menu-suite`, `roomservice/menu-suite.html`) y el panel del empleado (`/empleado/roomservice`, `roomservice/comandas.html`) usan templates distintos y comparten solo la API. `EmpleadoNotificacionesApiController` expone `GET /api/empleado/novedades` con el feed unificado de reservas y comandas; el rack y el panel de comandas lo consumen con `static/js/empleado-notificaciones.js`. `GET /api/empleado/notificaciones` sigue perteneciendo a `AgendaEmpleadoController` y no debe mapearse dos veces. Las interfaces/repositories relacionados que sí tienen contenido no reemplazan los flujos faltantes. Antes de anunciar pagos, limpieza o reportes como disponibles, se requiere implementar y conectar sus rutas, lógica y persistencia.
 
 ## Validación técnica del estado documentado
 
-- Suite Maven más reciente: 255 pruebas, 0 fallos y 0 errores en `.\mvnw.cmd test` (incluye `RoomServiceControllerTest`, `DemoCatalogInitializerTest`, `ChatbotApiIntegrationTest`, `EmpleadoFrontendControllerTest` y los casos de rack de `ReservaServiceTest`).
+- Suite Maven más reciente: 259 pruebas, 0 fallos y 0 errores en `.\mvnw.cmd test` (incluye `RoomServiceControllerTest`, `EmpleadoNotificacionesApiControllerTest`, `DemoCatalogInitializerTest`, `ChatbotApiIntegrationTest`, `EmpleadoFrontendControllerTest` y los casos de rack de `ReservaServiceTest`).
 - Las pruebas de integración usan H2 en memoria.
 - El objetivo configurado en `pom.xml` es Java 21; no se ha cambiado aquí a Java 25.
 - Comando de pruebas en Windows: `.\mvnw.cmd test`.

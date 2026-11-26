@@ -54,6 +54,10 @@ public class ClienteReservaController {
     @Value("${app.demo-mode:false}")
     private boolean demoMode;
 
+    /** Ver {@code ReservaServiceImpl#pagoDirecto}: sin pasarela de pago. */
+    @Value("${app.reserva.pago-directo:false}")
+    private boolean pagoDirecto;
+
     @GetMapping("/nueva")
     public String nueva(@RequestParam(required = false) Integer tipoId, Model model) {
         if (tipoId == null) {
@@ -101,6 +105,11 @@ public class ClienteReservaController {
         try {
             ReservaEstadia reserva = reservaService.crearReserva(
                     authentication.getName(), request);
+            if (pagoDirecto) {
+                // Sin pasarela: la reserva ya nace CONFIRMADA, vamos directo al
+                // detalle para que el huésped pueda hacer check-in y pedir room service.
+                return "redirect:/cliente/reservas/" + reserva.getId();
+            }
             return "redirect:/cliente/reservas/" + reserva.getId() + "/pago";
         } catch (IllegalArgumentException | IllegalStateException exception) {
             model.addAttribute("errorReserva", exception.getMessage());
@@ -169,6 +178,7 @@ public class ClienteReservaController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         model.addAttribute("reserva", reserva);
         model.addAttribute("demoMode", demoMode);
+        model.addAttribute("pagoDirecto", pagoDirecto);
         return "cliente/confirmacion-reserva";
     }
 

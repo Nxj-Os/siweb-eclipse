@@ -49,7 +49,7 @@ html+=panel('Actividad reciente',`<button type="button" data-op="export" data-id
 content.innerHTML=`<div class="portal-banner"><b>ENTORNO DE PRUEBAS</b> · Los cambios se guardan únicamente en este navegador, no en PostgreSQL. <button type="button" data-op="reset" data-id="0">Reiniciar datos</button></div>${html}`;
 const subtitle=$('.subtitle');if(subtitle)subtitle.textContent='Operaciones interactivas · Datos de prueba';
 const footer=$('footer');if(footer)footer.textContent='Hotel Eclipse · Simulación local, sin operaciones reales ni cobros';
-const notices=$('.notifications');if(notices)notices.innerHTML=`<h2>Actividad reciente</h2><p>Movimientos de prueba</p>${(db.log.length?db.log:[{message:'Entorno de pruebas iniciado',date:'Hoy'}]).slice(0,7).map(x=>`<button type="button" class="notice" data-op="log-detail" data-id="${db.log.indexOf(x)}"><b>${esc(x.message)}</b><small>${esc(x.date)}</small></button>`).join('')}`;
+const notices=$('.notifications');if(notices&&!notices.dataset.realtime)notices.innerHTML=`<h2>Actividad reciente</h2><p>Movimientos de prueba</p>${(db.log.length?db.log:[{message:'Entorno de pruebas iniciado',date:'Hoy'}]).slice(0,7).map(x=>`<button type="button" class="notice" data-op="log-detail" data-id="${db.log.indexOf(x)}"><b>${esc(x.message)}</b><small>${esc(x.date)}</small></button>`).join('')}`;
 }
 function mutate(action,id){
 const r=room(id);

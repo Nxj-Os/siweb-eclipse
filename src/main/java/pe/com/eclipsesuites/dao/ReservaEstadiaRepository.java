@@ -1,5 +1,6 @@
 package pe.com.eclipsesuites.dao;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -27,6 +28,21 @@ public interface ReservaEstadiaRepository extends JpaRepository<ReservaEstadia, 
     long countByTipoHabitacionIdAndEstadoReservaAndFechaInicioBeforeAndFechaFinAfter(
             Integer idTipoHabitacion, EstadoReserva estadoReserva,
             LocalDateTime fechaFin, LocalDateTime fechaInicio);
+
+    long countByEstadoReserva(EstadoReserva estadoReserva);
+
+    /**
+     * Últimas reservas para el tablero del empleado, con cliente, tipo y suite
+     * ya resueltos (todas las relaciones son {@code LAZY}).
+     */
+    @Query("""
+            select r from ReservaEstadia r
+            join fetch r.cliente
+            join fetch r.tipoHabitacion
+            left join fetch r.habitacion
+            order by r.fechaCreacion desc
+            """)
+    List<ReservaEstadia> buscarRecientesConCliente(Pageable pageable);
 
     @Query("""
             select count(r) > 0 from ReservaEstadia r

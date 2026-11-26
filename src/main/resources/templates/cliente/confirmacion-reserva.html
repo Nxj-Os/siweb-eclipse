@@ -28,7 +28,11 @@
             <p th:if="${reserva.estadoReserva.name() == 'PENDIENTE_PAGO'}">
                 Tu habitación está retenida por cinco minutos. Completa el pago para confirmar la reserva.
             </p>
-            <p th:if="${reserva.estadoReserva.name() == 'CONFIRMADA'}">
+            <p th:if="${reserva.estadoReserva.name() == 'CONFIRMADA' and pagoDirecto}">
+                Tu suite quedó reservada al instante. Pulsa <b>Realizar check-in</b> para dejar la
+                habitación lista y ya podrás pedir desde la carta de room service.
+            </p>
+            <p th:if="${reserva.estadoReserva.name() == 'CONFIRMADA' and not pagoDirecto}">
                 El pago se confirmó. Presenta este código QR al personal al llegar para realizar el check-in.
             </p>
             <p th:if="${reserva.estadoReserva.name() == 'CHECKED_IN' and demoMode}">
@@ -60,7 +64,7 @@
                 <h2>Código QR para check-in</h2>
                 <img class="reservation-qr" th:src="@{/cliente/reservas/{id}/qr(id=${reserva.id})}"
                      alt="Código QR de la reserva">
-                <p>Este QR es personal y solo puede validarse una vez durante el horario de tu reserva.</p>
+                <p>Este QR es personal y solo puede validarse una vez, hasta el final de tu estadía.</p>
             </section>
             <div class="reserva-alert reserva-alert--success"
                  th:if="${reserva.estadoReserva.name() == 'CHECKED_IN'}" role="status">

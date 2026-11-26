@@ -55,6 +55,15 @@ public class ReservaServiceImpl implements IReservaService {
     @Value("${app.demo-mode:false}")
     private boolean demoMode;
 
+    /**
+     * Sin pasarela de pago integrada, la reserva se confirma en el mismo
+     * alta: no se retiene la suite durante los {@link #MINUTOS_PARA_PAGAR}
+     * minutos ni se muestra la pantalla de pago. Ponlo en {@code false}
+     * cuando vuelva el cobro real.
+     */
+    @Value("${app.reserva.pago-directo:false}")
+    private boolean pagoDirecto;
+
     @Override
     @Transactional(readOnly = true)
     public List<TipoHabitacion> listarTiposHabitacion() {
@@ -129,9 +138,13 @@ public class ReservaServiceImpl implements IReservaService {
                 .cantidadPersonas(request.getCantidadPersonas())
                 .montoTotal(tarifa.getPrecioEstadiaBase())
                 .metodoPago(MetodoPagoReserva.EFECTIVO)
-                .estadoReserva(EstadoReserva.PENDIENTE_PAGO)
+                .estadoReserva(pagoDirecto ? EstadoReserva.CONFIRMADA
+                        : EstadoReserva.PENDIENTE_PAGO)
                 .fechaCreacion(LocalDateTime.now())
-                .reservaTemporalHasta(OffsetDateTime.now().plusMinutes(MINUTOS_PARA_PAGAR))
+                .fechaPago(pagoDirecto ? LocalDateTime.now() : null)
+                .tokenQr(pagoDirecto ? UUID.randomUUID().toString() : null)
+                .reservaTemporalHasta(pagoDirecto ? null
+                        : OffsetDateTime.now().plusMinutes(MINUTOS_PARA_PAGAR))
                 .build();
         return reservaEstadiaRepository.save(reserva);
     }
@@ -231,8 +244,11 @@ public class ReservaServiceImpl implements IReservaService {
             throw new IllegalStateException("El QR ya fue usado o la reserva no está confirmada.");
         }
         LocalDateTime ahora = LocalDateTime.now();
-        if (ahora.isBefore(reserva.getFechaInicio()) || !ahora.isBefore(reserva.getFechaFin())) {
-            throw new IllegalStateException("El horario de esta reserva no está vigente.");
+        // Check-in anticipado: basta con que la reserva esté confirmada. Solo
+        // se bloquea cuando la estadía ya terminó, de modo que el huésped puede
+        // solicitar room service en cuanto la reserva queda registrada.
+        if (reserva.getFechaFin() != null && !ahora.isBefore(reserva.getFechaFin())) {
+            throw new IllegalStateException("La estadía de esta reserva ya terminó; no se puede hacer check-in.");
         }
         reserva.setEstadoReserva(EstadoReserva.CHECKED_IN);
         reserva.setFechaCheckIn(ahora);

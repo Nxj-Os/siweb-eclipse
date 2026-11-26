@@ -52,22 +52,6 @@
         $('#metric-entregadas').textContent = entregadas;
     }
 
-    function pintarNotificaciones() {
-        const cont = $('#rs-notificaciones');
-        if (!cont) return;
-        const recientes = pedidos.slice(0, 5);
-        if (!recientes.length) {
-            cont.innerHTML = '<div class="notice"><b>📭 Sin comandas</b><span>Todavía no hay pedidos</span><small>Ahora</small></div>';
-            return;
-        }
-        cont.innerHTML = recientes.map((p) => {
-            const icono = p.estado === 'ENTREGADO' ? '✅' : p.estado === 'RECIBIDO' ? '🍔' : '⏳';
-            return '<div class="notice"><b>' + icono + ' ' + esc(ETIQUETA[p.estado] || p.estado) + '</b>'
-                + '<span>Suite ' + esc(p.numHabitacion) + ' · ' + esc(p.codigo) + '</span>'
-                + '<small>' + esc(hora(p.fHPedido)) + '</small></div>';
-        }).join('');
-    }
-
     function pintarTabla() {
         const tbody = $('#comandas-tbody');
         const vacias = $('#comandas-vacias');
@@ -112,7 +96,6 @@
         if (!Array.isArray(pedidos)) pedidos = [];
         pintarMetricas();
         pintarTabla();
-        pintarNotificaciones();
     }
 
     async function avanzar(codigo, estado) {
