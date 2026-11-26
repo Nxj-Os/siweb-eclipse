@@ -19,10 +19,10 @@ import pe.com.eclipsesuites.dto.response.PedidoResponseDTO;
 import pe.com.eclipsesuites.service.IRoomServiceService;
 
 /**
- * API de la carta de room service para el huésped. Los endpoints de
- * carta, creación y consulta funcionan con el token de check-in (sin
- * sesión) y quedan habilitados en SecurityConfig; el PATCH de estado
- * exige empleado autenticado (ROOMSERVICE o ADMIN).
+ * API de la carta de room service para el huésped. Carta, creación y
+ * consulta funcionan sin sesión (el token de check-in es opcional hasta
+ * que se integre el QR) y quedan habilitados en SecurityConfig; el PATCH
+ * de estado exige empleado autenticado (ROOMSERVICE o ADMIN).
  */
 @RestController
 @RequestMapping("/api/roomservice")
@@ -32,7 +32,7 @@ public class RoomServiceController {
     private final IRoomServiceService roomServiceService;
 
     @GetMapping("/menu")
-    public CartaResponseDTO obtenerCarta(@RequestParam String token,
+    public CartaResponseDTO obtenerCarta(@RequestParam(required = false) String token,
                                          @RequestParam(required = false) String q,
                                          @RequestParam(required = false) Integer idCategoria) {
         return roomServiceService.obtenerCarta(token, q, idCategoria);
@@ -47,7 +47,7 @@ public class RoomServiceController {
 
     @GetMapping("/pedidos/{codigo}")
     public PedidoResponseDTO obtenerPedido(@PathVariable String codigo,
-                                           @RequestParam String token) {
+                                           @RequestParam(required = false) String token) {
         return roomServiceService.obtenerPedido(token, codigo);
     }
 

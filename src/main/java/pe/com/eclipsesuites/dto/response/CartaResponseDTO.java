@@ -8,8 +8,9 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 /**
- * Carta de room service disponible para la habitación: categorías,
- * productos con precio/stock y el número de suite del huésped.
+ * Carta de room service disponible para la suite: categorías,
+ * productos con precio/stock, el número de suite del huésped (cuando
+ * llega en el token) y las suites ocupadas para el selector de entrega.
  */
 @Data
 @NoArgsConstructor
@@ -18,6 +19,7 @@ import java.util.List;
 public class CartaResponseDTO {
 
     private String numHabitacion;
+    private List<String> suitesDisponibles;
     private List<CategoriaCartaDTO> categorias;
     private List<ProductoCartaDTO> productos;
 }
