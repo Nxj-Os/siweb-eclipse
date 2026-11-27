@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -49,9 +50,37 @@ public class SecurityConfig {
                     "/api/auth/client/login",
                     "/api/auth/client/register",
                     "/api/auth/client/disponibilidad",
-                    "/api/auth/csrf"
+                    "/api/auth/csrf",
+                    "/api/catalogo",
+                    "/api/catalogo/**",
+                    "/api/chatbot/catalogo",
+                    "/api/chatbot/mensaje",
+                    "/api/chatbot/historico",
+                    "/api/chatbot/estado",
+                    "/api/chatbot/reiniciar"
                 ).permitAll()
                 .requestMatchers("/api/empleado/**").hasAnyRole("ADMIN", "RECEPCION", "LIMPIEZA", "ROOMSERVICE")
+                .requestMatchers(
+                    "/api/auth/client/perfil",
+                    "/api/auth/client/reservas",
+                    "/api/auth/client/reservas/**",
+                    "/api/auth/client/cuenta"
+                ).hasRole("CLIENTE")
+                // Carta de room service: el huésped entra sin sesión y el
+                // token de check-in de la URL es opcional.
+                .requestMatchers(HttpMethod.GET,
+                        "/api/roomservice/menu",
+                        "/api/roomservice/pedidos/*").permitAll()
+                .requestMatchers(HttpMethod.POST,
+                        "/api/roomservice/pedidos").permitAll()
+                // Listado de comandas: solo el sistema de empleado.
+                .requestMatchers(HttpMethod.GET,
+                        "/api/roomservice/pedidos")
+                        .hasAnyRole("ROOMSERVICE", "ADMIN")
+                // Forzar estado de comanda: solo el sistema de empleado.
+                .requestMatchers(HttpMethod.PATCH,
+                        "/api/roomservice/pedidos/*/estado")
+                        .hasAnyRole("ROOMSERVICE", "ADMIN")
                 .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex
@@ -75,28 +104,6 @@ public class SecurityConfig {
             )
             .userDetailsService(empleadoAuthService);
 
-                .securityMatcher("/api/**")
-                .csrf(csrf -> csrf
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                        .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler()))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/login", "/api/auth/client/login",
-                                "/api/auth/client/register",
-                                "/api/auth/client/disponibilidad",
-                                "/api/auth/csrf",
-                                "/api/chatbot/catalogo", "/api/chatbot/mensaje",
-                                "/api/chatbot/historico", "/api/chatbot/estado",
-                                "/api/chatbot/reiniciar").permitAll()
-                        .anyRequest().authenticated())
-                .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint(apiAuthenticationEntryPoint())
-                        .accessDeniedHandler(apiAccessDeniedHandler()))
-                .logout(logout -> logout
-                        .logoutUrl("/api/auth/logout")
-                        .logoutSuccessHandler((request, response, authentication) ->
-                                escribirJson(response, HttpServletResponse.SC_OK,
-                                        "{\"mensaje\":\"Sesión cerrada\"}")))
-                .userDetailsService(empleadoAuthService);
         return http.build();
     }
 
@@ -116,13 +123,17 @@ public class SecurityConfig {
                     "/index.html",
                     "/login",
                     "/registro",
+                    "/asistente",
                     "/error",
                     "/css/**",
                     "/js/**",
                     "/images/**",
                     "/img/**",
                     "/webjars/**",
-                    "/favicon.ico"
+                    "/favicon.ico",
+                    "/catalogo",
+                    "/catalogo/**",
+                    "/menu-suite"
                 ).permitAll()
 
                 .requestMatchers("/cliente/**")
@@ -157,7 +168,7 @@ public class SecurityConfig {
                     "/empleado/extension"
                 ).hasAnyRole("ROOMSERVICE", "ADMIN")
 
-                .requestMatchers("/empleado/agenda", "/empleado/perfil", "/api/empleado/**")
+                .requestMatchers("/empleado/agenda", "/empleado/perfil")
                 .hasAnyRole("ADMIN", "RECEPCION", "LIMPIEZA", "ROOMSERVICE")
 
                 .requestMatchers("/empleado")
@@ -191,8 +202,9 @@ public class SecurityConfig {
                                 request.getContextPath() + "/empleado"
                             );
                         } else {
+                            // El inicio real es la portada, no el catálogo de suites.
                             response.sendRedirect(
-                                request.getContextPath() + "/inicio"
+                                request.getContextPath() + "/"
                             );
                         }
                     }
@@ -207,20 +219,6 @@ public class SecurityConfig {
 
             .userDetailsService(empleadoAuthService);
 
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/index.html", "/login", "/registro", "/asistente",
-                                "/error", "/css/**", "/js/**",
-                                "/images/**", "/img/**", "/webjars/**", "/favicon.ico").permitAll()
-                        .requestMatchers("/cliente/**").hasRole("CLIENTE")
-                        .requestMatchers("/admin/**", "/reportes/**").hasRole("ADMIN")
-                        .requestMatchers("/recepcion/**").hasAnyRole("RECEPCION", "ADMIN")
-                        .requestMatchers("/roomservice/**").hasAnyRole("ROOMSERVICE", "ADMIN")
-                        .anyRequest().authenticated())
-                .formLogin(form -> form.loginPage("/login").permitAll())
-                .logout(logout -> logout
-                        .logoutUrl("/logout")
-                        .logoutSuccessUrl("/login?logout"))
-                .userDetailsService(empleadoAuthService);
         return http.build();
     }
 

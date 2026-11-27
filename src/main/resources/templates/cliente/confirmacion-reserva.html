@@ -13,7 +13,7 @@
 </head>
 <body class="reserva-page">
     <header class="reserva-header">
-        <a class="reserva-brand" th:href="@{/inicio}">Eclipse <span>Suites</span></a>
+        <a class="reserva-brand" th:href="@{/}">Eclipse <span>Suites</span></a>
         <a class="reserva-header__link" th:href="@{/cliente/reservas}">Mis reservas</a>
     </header>
     <main class="reserva-shell reserva-shell--narrow">
@@ -28,7 +28,11 @@
             <p th:if="${reserva.estadoReserva.name() == 'PENDIENTE_PAGO'}">
                 Tu habitación está retenida por cinco minutos. Completa el pago para confirmar la reserva.
             </p>
-            <p th:if="${reserva.estadoReserva.name() == 'CONFIRMADA'}">
+            <p th:if="${reserva.estadoReserva.name() == 'CONFIRMADA' and pagoDirecto}">
+                Tu suite quedó reservada al instante. Pulsa <b>Realizar check-in</b> para dejar la
+                habitación lista y ya podrás pedir desde la carta de room service.
+            </p>
+            <p th:if="${reserva.estadoReserva.name() == 'CONFIRMADA' and not pagoDirecto}">
                 El pago se confirmó. Presenta este código QR al personal al llegar para realizar el check-in.
             </p>
             <p th:if="${reserva.estadoReserva.name() == 'CHECKED_IN' and demoMode}">
@@ -60,21 +64,28 @@
                 <h2>Código QR para check-in</h2>
                 <img class="reservation-qr" th:src="@{/cliente/reservas/{id}/qr(id=${reserva.id})}"
                      alt="Código QR de la reserva">
-                <p>Este QR es personal y solo puede validarse una vez durante el horario de tu reserva.</p>
+                <p>Este QR es personal y solo puede validarse una vez, hasta el final de tu estadía.</p>
             </section>
             <div class="reserva-alert reserva-alert--success"
                  th:if="${reserva.estadoReserva.name() == 'CHECKED_IN'}" role="status">
-                <i class="bi bi-check-circle" aria-hidden="true"></i> Check-in validado por recepción.
+                <i class="bi bi-check-circle" aria-hidden="true"></i> Check-in completado: tu suite ya está lista.
             </div>
             <div class="confirmation-actions">
                 <a class="button button--primary"
                    th:if="${reserva.estadoReserva.name() == 'PENDIENTE_PAGO'}"
                    th:href="@{/cliente/reservas/{id}/pago(id=${reserva.id})}">Completar pago</a>
+                <form th:if="${reserva.estadoReserva.name() == 'CONFIRMADA'}"
+                      th:action="@{/cliente/reservas/{id}/check-in(id=${reserva.id})}" method="post">
+                    <button class="button button--primary" type="submit">Realizar check-in</button>
+                </form>
+                <a class="button button--primary"
+                   th:if="${reserva.estadoReserva.name() == 'CHECKED_IN'}"
+                   th:href="@{/menu-suite}">Pedir room service</a>
                 <a class="button button--primary"
                    th:if="${demoMode and reserva.estadoReserva.name() == 'CHECKED_IN'}"
                    th:href="@{/cliente/reservas/{id}/extensiones/nueva(id=${reserva.id})}">Solicitar tiempo extra</a>
                 <a class="button button--secondary" th:href="@{/cliente/reservas}">Ver mis reservas</a>
-                <a class="button button--secondary" th:href="@{/inicio}">Volver a suites</a>
+                <a class="button button--secondary" th:href="@{/catalogo}">Volver a suites</a>
             </div>
         </section>
     </main>

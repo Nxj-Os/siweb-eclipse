@@ -65,4 +65,19 @@ public class Cliente {
     @Column(name = "fecha_aceptacion_privacidad")
     private Instant fechaAceptacionPrivacidad;
 
+    /**
+     * Cuenta lógicamente eliminada. Nulo se trata como activa para no romper
+     * las filas creadas antes de añadir la columna.
+     */
+    @Builder.Default
+    @Column(name = "activo")
+    private Boolean activo = true;
+
+    @Column(name = "fecha_baja")
+    private Instant fechaBaja;
+
+    public boolean estaActivo() {
+        return !Boolean.FALSE.equals(activo);
+    }
+
 }

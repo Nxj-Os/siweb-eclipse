@@ -157,7 +157,11 @@ public class ChatContextoBuilder {
     private HabitacionCardDTO aTarjeta(Habitacion habitacion) {
         TipoHabitacion tipo = habitacion.getTipoHabitacion();
         String estado = habitacion.getEstadoRack();
-        boolean disponible = "DISPONIBLE".equalsIgnoreCase(estado == null ? "" : estado.trim());
+        String limpio = estado == null ? "" : estado.trim();
+        // LIBRE y DISPONIBLE son "sin huésped": el mismo criterio que usa
+        // la reserva para ofrecer la suite.
+        boolean disponible = "DISPONIBLE".equalsIgnoreCase(limpio)
+                || "LIBRE".equalsIgnoreCase(limpio);
         return new HabitacionCardDTO(
                 habitacion.getNumHabitacion(),
                 habitacion.getPiso(),

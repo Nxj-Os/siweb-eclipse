@@ -19,6 +19,7 @@ import pe.com.eclipsesuites.entity.TarifaHabitacion;
 import pe.com.eclipsesuites.entity.TarifaHabitacionPK;
 import pe.com.eclipsesuites.entity.TipoHabitacion;
 import pe.com.eclipsesuites.service.IEmpleadoAuthService;
+import pe.com.eclipsesuites.service.IClientePerfilService;
 import pe.com.eclipsesuites.service.IReservaService;
 import pe.com.eclipsesuites.service.QrCodeService;
 
@@ -52,6 +53,9 @@ class ClienteReservaControllerTest {
 
     @MockitoBean
     private IReservaService reservaService;
+
+    @MockitoBean
+    private IClientePerfilService clientePerfilService;
 
     @MockitoBean
     private IEmpleadoAuthService empleadoAuthService;

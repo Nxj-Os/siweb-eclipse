@@ -54,6 +54,10 @@ public class ClienteReservaController {
     @Value("${app.demo-mode:false}")
     private boolean demoMode;
 
+    /** Ver {@code ReservaServiceImpl#pagoDirecto}: sin pasarela de pago. */
+    @Value("${app.reserva.pago-directo:false}")
+    private boolean pagoDirecto;
+
     @GetMapping("/nueva")
     public String nueva(@RequestParam(required = false) Integer tipoId, Model model) {
         if (tipoId == null) {
@@ -101,6 +105,11 @@ public class ClienteReservaController {
         try {
             ReservaEstadia reserva = reservaService.crearReserva(
                     authentication.getName(), request);
+            if (pagoDirecto) {
+                // Sin pasarela: la reserva ya nace CONFIRMADA, vamos directo al
+                // detalle para que el huésped pueda hacer check-in y pedir room service.
+                return "redirect:/cliente/reservas/" + reserva.getId();
+            }
             return "redirect:/cliente/reservas/" + reserva.getId() + "/pago";
         } catch (IllegalArgumentException | IllegalStateException exception) {
             model.addAttribute("errorReserva", exception.getMessage());
@@ -169,6 +178,7 @@ public class ClienteReservaController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         model.addAttribute("reserva", reserva);
         model.addAttribute("demoMode", demoMode);
+        model.addAttribute("pagoDirecto", pagoDirecto);
         return "cliente/confirmacion-reserva";
     }
 
@@ -256,6 +266,22 @@ public class ClienteReservaController {
                 reservaService.listarReservasCliente(authentication.getName()));
         model.addAttribute("demoMode", demoMode);
         return "cliente/mis-reservas";
+    }
+
+    @PostMapping("/{id}/check-in")
+    public String checkIn(@PathVariable Long id, Authentication authentication,
+                          RedirectAttributes redirectAttributes) {
+        try {
+            ReservaEstadia reserva = reservaService.registrarCheckInCliente(
+                    id, authentication.getName());
+            String suite = reserva.getHabitacion() == null ? ""
+                    : reserva.getHabitacion().getNumHabitacion();
+            redirectAttributes.addFlashAttribute("mensaje",
+                    "Check-in realizado. La suite " + suite + " ya está lista.");
+        } catch (IllegalArgumentException | IllegalStateException exception) {
+            redirectAttributes.addFlashAttribute("errorReserva", exception.getMessage());
+        }
+        return "redirect:/cliente/reservas/" + id;
     }
 
     @PostMapping("/{id}/cancelar")

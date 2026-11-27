@@ -19,10 +19,12 @@ public class EmpleadoFrontendController {
 
     @GetMapping("/empleado/reportes")
     public String reportes() { return "reportes/panel-reportes"; }
-
     @GetMapping("/empleado/roomservice")
-    public String roomservice() { return "roomservice/menu-suite"; }
-
+    public String roomservice() {
+        // Panel del empleado con las comandas reales; la carta del huésped
+        // vive en /menu-suite y ya no comparte template con este dashboard.
+        return "roomservice/comandas";
+    }
     @GetMapping("/empleado/extension")
     public String extension() { return "roomservice/extension-tiempo"; }
 

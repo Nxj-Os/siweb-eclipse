@@ -11,9 +11,12 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import pe.com.eclipsesuites.dto.response.ApiErrorDTO;
+import pe.com.eclipsesuites.service.impl.AccesoRoomServiceNoPermitidoException;
 import pe.com.eclipsesuites.service.impl.ChatbotLimiteExcedidoException;
 import pe.com.eclipsesuites.service.impl.DatosRegistroNoDisponiblesException;
 import pe.com.eclipsesuites.service.impl.LoginTemporalmenteBloqueadoException;
+import pe.com.eclipsesuites.service.impl.PedidoNoEncontradoException;
+import pe.com.eclipsesuites.service.impl.StockInsuficienteException;
 
 import java.time.OffsetDateTime;
 import java.util.LinkedHashMap;
@@ -87,6 +90,34 @@ public class GlobalExceptionHandler {
                                                                 HttpServletRequest request) {
         String mensaje = ex.getMessage() == null ? "Solicitud inválida" : ex.getMessage();
         return construir(HttpStatus.BAD_REQUEST, "Solicitud inválida", mensaje, null, request);
+    }
+
+    @ExceptionHandler(AccesoRoomServiceNoPermitidoException.class)
+    public ResponseEntity<ApiErrorDTO> manejarAccesoRoomService(
+            AccesoRoomServiceNoPermitidoException ex, HttpServletRequest request) {
+        String mensaje = ex.getMessage() == null
+                ? "Necesitas validar el check-in de tu reserva para acceder"
+                : ex.getMessage();
+        return construir(HttpStatus.FORBIDDEN, "Servicio bloqueado", mensaje, null, request);
+    }
+
+    @ExceptionHandler(PedidoNoEncontradoException.class)
+    public ResponseEntity<ApiErrorDTO> manejarPedidoNoEncontrado(
+            PedidoNoEncontradoException ex, HttpServletRequest request) {
+        return construir(HttpStatus.NOT_FOUND, "Pedido no encontrado",
+                ex.getMessage(), null, request);
+    }
+
+    @ExceptionHandler(StockInsuficienteException.class)
+    public ResponseEntity<ApiErrorDTO> manejarStockInsuficiente(
+            StockInsuficienteException ex, HttpServletRequest request) {
+        Map<String, String> detalles = new LinkedHashMap<>();
+        detalles.put("producto", ex.getNombreProducto());
+        detalles.put("stockDisponible", String.valueOf(ex.getStockDisponible()));
+        return construir(HttpStatus.CONFLICT, "Stock insuficiente",
+                "La existencia de " + ex.getNombreProducto()
+                        + " cambió; quedan " + ex.getStockDisponible() + " unidades.",
+                detalles, request);
     }
 
     private ResponseEntity<ApiErrorDTO> construir(HttpStatus status, String error, String mensaje,

@@ -1,0 +1,895 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap');
+
+.perfil-page {
+    --bg: #071514;
+    --surface: #101918;
+    --surface-raised: #172321;
+    --text-primary: #f6f0df;
+    --text-secondary: rgb(246 240 223 / 72%);
+    --text-tertiary: rgb(246 240 223 / 52%);
+    --border: rgb(229 207 131 / 22%);
+    --border-input: rgb(154 217 215 / 24%);
+    --gold: #e5cf83;
+    --gold-hover: #f0d98f;
+    --aqua: #9ad9d7;
+    --danger: #e88a7d;
+    --danger-bg: rgb(232 138 125 / 12%);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+[hidden] {
+    display: none !important;
+}
+
+body.perfil-page {
+    margin: 0;
+    min-height: 100vh;
+    background:
+        radial-gradient(ellipse at 12% 0%, rgb(154 217 215 / 7%), transparent 34rem),
+        radial-gradient(ellipse at 92% 8%, rgb(229 207 131 / 6%), transparent 30rem),
+        var(--bg);
+    color: var(--text-primary);
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    line-height: 1.6;
+}
+
+/* ---------------- barra superior ---------------- */
+.perfil-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 1.2rem clamp(1rem, 5vw, 2.5rem);
+    border-bottom: 1px solid var(--border);
+}
+
+.perfil-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--aqua);
+    text-decoration: none;
+}
+
+.perfil-brand .brand__seal {
+    position: relative;
+    display: grid;
+    width: 48px;
+    height: 48px;
+    margin: 0;
+    border: 1px solid rgb(154 217 215 / 75%);
+    border-radius: 50%;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 32px;
+    line-height: 1;
+    place-items: center;
+}
+
+.perfil-brand .brand__seal::before {
+    position: absolute;
+    inset: 5px;
+    border: 1px solid rgb(154 217 215 / 35%);
+    border-radius: inherit;
+    content: "";
+}
+
+.perfil-brand .brand__seal i {
+    position: absolute;
+    top: 2px;
+    right: 7px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-primary);
+    box-shadow: 0 0 10px var(--text-primary);
+}
+
+.perfil-brand__text {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.perfil-brand .brand__name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 19px;
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: 0.16em;
+    color: var(--text-primary);
+}
+
+.perfil-brand .brand__descriptor {
+    margin: 0;
+    font-size: 8px;
+    letter-spacing: 0.2em;
+    color: var(--text-primary);
+}
+
+.perfil-topbar__nav {
+    display: flex;
+    align-items: center;
+    gap: 1.1rem;
+    flex-wrap: wrap;
+}
+
+.perfil-topbar__nav a,
+.perfil-topbar__logout button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: none;
+    border: 0;
+    padding: 0;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 0.92rem;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.perfil-topbar__nav a:hover,
+.perfil-topbar__logout button:hover {
+    color: var(--gold);
+}
+
+.perfil-topbar__logout {
+    margin: 0;
+}
+
+/* ---------------- cabecera ---------------- */
+.perfil-shell {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: clamp(1.5rem, 4vw, 2.6rem) clamp(1rem, 5vw, 2.5rem) 3rem;
+}
+
+.perfil-hero {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-bottom: clamp(1.5rem, 3vw, 2.4rem);
+}
+
+.perfil-eyebrow {
+    margin: 0 0 0.35rem;
+    font-size: 0.76rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--aqua);
+}
+
+.perfil-hero h1 {
+    margin: 0;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 600;
+    line-height: 1.1;
+    color: #f6f0df;
+}
+
+.perfil-hero__sub {
+    margin: 0.4rem 0 0;
+    color: var(--text-secondary);
+    font-size: 0.98rem;
+}
+
+.perfil-hero__identity {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.6rem 0.9rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+}
+
+.perfil-hero__name {
+    font-weight: 600;
+    font-size: 0.98rem;
+    white-space: nowrap;
+}
+
+.perfil-chip {
+    font-size: 0.74rem;
+    font-weight: 600;
+    padding: 0.18rem 0.6rem;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.perfil-chip--on {
+    background: rgb(154 217 215 / 16%);
+    color: var(--aqua);
+    border: 1px solid rgb(154 217 215 / 40%);
+}
+
+.perfil-chip--off {
+    background: var(--danger-bg);
+    color: var(--danger);
+    border: 1px solid rgb(232 138 125 / 40%);
+}
+
+/* ---------------- disposición ---------------- */
+.perfil-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: clamp(1.2rem, 3vw, 2rem);
+    align-items: start;
+}
+
+.perfil-content {
+    min-width: 0;
+}
+
+.perfil-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 1.1rem;
+    padding: clamp(1.2rem, 3vw, 1.8rem);
+}
+
+.perfil-panel__title {
+    margin: 0 0 0.3rem;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.7rem;
+    font-weight: 600;
+}
+
+.perfil-panel__title--peligro {
+    color: var(--danger);
+}
+
+.perfil-section-title {
+    margin: 1.8rem 0 0.7rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+}
+
+.perfil-muted {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.92rem;
+}
+
+/* ---------------- identidad ---------------- */
+.perfil-card--identidad {
+    display: flex;
+    align-items: center;
+    gap: 1.1rem;
+    padding: 1.1rem;
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    border-radius: 0.9rem;
+}
+
+.perfil-card--identidad h2 {
+    margin: 0;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.perfil-card--identidad p {
+    margin: 0.15rem 0 0;
+}
+
+.perfil-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 4.6rem;
+    height: 4.6rem;
+    border-radius: 50%;
+    background: #0d1c1a;
+    border: 2px solid var(--border);
+    color: var(--aqua);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.9rem;
+    font-weight: 600;
+}
+
+.perfil-avatar--sm {
+    width: 2.1rem;
+    height: 2.1rem;
+    font-size: 1rem;
+    border-width: 1px;
+}
+
+/* ---------------- datos ---------------- */
+.perfil-datos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 0.7rem;
+    margin: 0;
+}
+
+.perfil-datos > div {
+    background: var(--surface-raised);
+    border: 1px solid rgb(229 207 131 / 14%);
+    border-radius: 0.7rem;
+    padding: 0.75rem 0.9rem;
+}
+
+.perfil-datos dt {
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+}
+
+.perfil-datos dd {
+    margin: 0.2rem 0 0;
+    font-size: 0.98rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    word-break: break-word;
+}
+
+.perfil-activa {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 1.2rem;
+    padding: 1rem 1.1rem;
+    background: rgb(154 217 215 / 8%);
+    border: 1px solid rgb(154 217 215 / 30%);
+    border-radius: 0.9rem;
+}
+
+.perfil-activa__suite {
+    margin: 0.15rem 0 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+
+.perfil-status {
+    display: inline-block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.25rem 0.7rem;
+    border-radius: 999px;
+    background: rgb(246 240 223 / 10%);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+.perfil-status--on {
+    background: rgb(154 217 215 / 16%);
+    color: var(--aqua);
+    border-color: rgb(154 217 215 / 40%);
+}
+
+/* ---------------- botones ---------------- */
+.perfil-acciones {
+    display: flex;
+    gap: 0.7rem;
+    flex-wrap: wrap;
+    margin-top: 1.5rem;
+}
+
+.perfil-acciones form {
+    margin: 0;
+}
+
+.perfil-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    min-height: 2.7rem;
+    padding: 0.55rem 1.2rem;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.perfil-btn--sm {
+    min-height: 2.2rem;
+    padding: 0.35rem 0.95rem;
+    font-size: 0.86rem;
+}
+
+.perfil-btn--gold {
+    background: var(--gold);
+    color: #101918;
+}
+
+.perfil-btn--gold:hover {
+    background: var(--gold-hover);
+}
+
+.perfil-btn--ghost {
+    background: transparent;
+    color: var(--text-secondary);
+    border-color: var(--border);
+}
+
+.perfil-btn--ghost:hover {
+    color: var(--gold);
+    background: rgb(229 207 131 / 8%);
+}
+
+.perfil-btn--peligro {
+    background: var(--danger);
+    color: #1a0f0d;
+}
+
+.perfil-btn--peligro:hover {
+    background: #f0a094;
+}
+
+.perfil-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* ---------------- historial ---------------- */
+.perfil-vacio {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.8rem;
+    text-align: center;
+    padding: 3rem 1rem;
+    border: 1px dashed var(--border);
+    border-radius: 0.9rem;
+    margin-top: 1.2rem;
+}
+
+.perfil-vacio i {
+    font-size: 2.4rem;
+    color: var(--text-tertiary);
+}
+
+.perfil-vacio p {
+    margin: 0;
+    font-size: 1.05rem;
+    color: var(--text-secondary);
+}
+
+.perfil-reservas {
+    list-style: none;
+    margin: 1.2rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.perfil-reserva {
+    display: grid;
+    grid-template-columns: 200px minmax(0, 1fr);
+    gap: 0;
+    overflow: hidden;
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    border-radius: 0.9rem;
+}
+
+.perfil-reserva__img {
+    position: relative;
+    min-height: 170px;
+    background: #0d1c1a;
+}
+
+.perfil-reserva__img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.perfil-reserva__fallback {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-tertiary);
+    font-size: 2rem;
+}
+
+.perfil-reserva__body {
+    padding: 1rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.perfil-reserva__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.7rem;
+    flex-wrap: wrap;
+    font-size: 0.85rem;
+}
+
+.perfil-reserva__body h3 {
+    margin: 0;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--gold);
+}
+
+.perfil-reserva__meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 0.4rem 1rem;
+    margin: 0;
+}
+
+.perfil-reserva__meta dt {
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+}
+
+.perfil-reserva__meta dd {
+    margin: 0;
+    font-size: 0.92rem;
+    font-weight: 600;
+}
+
+.perfil-reserva__acciones {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-top: 0.4rem;
+}
+
+/* ---------------- formulario ---------------- */
+.perfil-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+    margin-top: 1.3rem;
+}
+
+.perfil-campo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.perfil-campo label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.perfil-campo input {
+    min-height: 2.7rem;
+    padding: 0.55rem 0.8rem;
+    background: var(--bg);
+    border: 1px solid var(--border-input);
+    border-radius: 0.6rem;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.98rem;
+}
+
+.perfil-campo input:focus {
+    outline: none;
+    border-color: var(--gold);
+}
+
+.perfil-campo input[aria-invalid="true"] {
+    border-color: var(--danger);
+}
+
+.perfil-hint {
+    font-size: 0.78rem;
+    color: var(--text-tertiary);
+}
+
+.perfil-error {
+    min-height: 1rem;
+    font-size: 0.78rem;
+    color: var(--danger);
+}
+
+.perfil-form .perfil-acciones,
+.perfil-form .perfil-aviso {
+    grid-column: 1 / -1;
+}
+
+.perfil-aviso {
+    padding: 0.7rem 0.95rem;
+    border-radius: 0.6rem;
+    font-size: 0.92rem;
+    background: rgb(154 217 215 / 10%);
+    border: 1px solid rgb(154 217 215 / 35%);
+    color: var(--aqua);
+}
+
+.perfil-aviso.is-error {
+    background: var(--danger-bg);
+    border-color: rgb(232 138 125 / 45%);
+    color: var(--danger);
+}
+
+/* ---------------- peligro ---------------- */
+.perfil-peligro {
+    display: flex;
+    gap: 0.9rem;
+    align-items: flex-start;
+    margin-top: 1rem;
+    padding: 1rem 1.1rem;
+    background: var(--danger-bg);
+    border: 1px solid rgb(232 138 125 / 40%);
+    border-radius: 0.8rem;
+}
+
+.perfil-peligro i {
+    font-size: 1.3rem;
+    color: var(--danger);
+    margin-top: 0.15rem;
+}
+
+.perfil-peligro p {
+    margin: 0 0 0.4rem;
+}
+
+.perfil-panel .perfil-campo {
+    margin-top: 1.2rem;
+    max-width: 420px;
+}
+
+/* ---------------- menú lateral ---------------- */
+.perfil-menu {
+    position: sticky;
+    top: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+
+.perfil-menu__item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.9rem 1rem;
+    text-align: left;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 0.8rem;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.perfil-menu__item > i:first-child {
+    font-size: 1.05rem;
+    color: var(--aqua);
+}
+
+.perfil-menu__item span {
+    flex: 1;
+}
+
+.perfil-menu__arrow {
+    color: var(--text-tertiary);
+    font-size: 0.85rem;
+}
+
+.perfil-menu__item:hover {
+    background: var(--surface-raised);
+    color: var(--text-primary);
+}
+
+.perfil-menu__item.is-active {
+    background: rgb(229 207 131 / 10%);
+    border-color: var(--gold);
+    color: var(--gold);
+}
+
+.perfil-menu__item.is-active > i:first-child,
+.perfil-menu__item.is-active .perfil-menu__arrow {
+    color: var(--gold);
+}
+
+.perfil-menu__item--peligro,
+.perfil-menu__item--peligro > i:first-child {
+    color: var(--danger);
+}
+
+.perfil-menu__item--peligro.is-active {
+    background: var(--danger-bg);
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+.perfil-menu__item--peligro.is-active > i:first-child,
+.perfil-menu__item--peligro.is-active .perfil-menu__arrow {
+    color: var(--danger);
+}
+
+/* ---------------- pie ---------------- */
+.perfil-footer {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 1.4rem clamp(1rem, 5vw, 2.5rem) 2.4rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.85rem;
+    color: var(--gold);
+}
+
+/* ---------------- boleta ---------------- */
+.boleta-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.2rem;
+    background: rgb(3 10 9 / 78%);
+    backdrop-filter: blur(3px);
+}
+
+.boleta {
+    width: min(430px, 100%);
+    max-height: 90vh;
+    overflow-y: auto;
+    background: #0c1a18;
+    border: 1px solid var(--gold);
+    border-radius: 0.9rem;
+    padding: 1.3rem;
+}
+
+.boleta__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 1px dashed var(--border);
+    padding-bottom: 0.8rem;
+}
+
+.boleta__hotel {
+    margin: 0;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--gold);
+}
+
+.boleta__dir {
+    margin: 0.15rem 0 0;
+    font-size: 0.78rem;
+    color: var(--text-tertiary);
+}
+
+.boleta__cerrar {
+    background: none;
+    border: 0;
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 0 0.2rem;
+}
+
+.boleta__cerrar:hover {
+    color: var(--gold);
+}
+
+.boleta__datos {
+    margin: 0.9rem 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.3rem 0.8rem;
+    font-size: 0.88rem;
+}
+
+.boleta__datos dt {
+    color: var(--text-tertiary);
+}
+
+.boleta__datos dd {
+    margin: 0;
+    text-align: right;
+    font-weight: 600;
+    word-break: break-word;
+}
+
+.boleta__totales {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.boleta__totales td {
+    padding: 0.4rem 0;
+    border-top: 1px solid rgb(229 207 131 / 14%);
+}
+
+.boleta__totales td:last-child {
+    text-align: right;
+    font-weight: 600;
+}
+
+.boleta__totales tr.is-total td {
+    color: var(--gold);
+    font-size: 1.05rem;
+    font-weight: 700;
+    border-top: 1px solid var(--gold);
+}
+
+.boleta__nota {
+    margin: 0.9rem 0 1.1rem;
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+}
+
+.boleta .perfil-btn {
+    width: 100%;
+}
+
+/* ---------------- responsive ---------------- */
+@media (max-width: 940px) {
+    .perfil-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .perfil-menu {
+        position: static;
+        order: -1;
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .perfil-menu__item {
+        flex: 1 1 240px;
+    }
+
+    .perfil-menu__arrow {
+        display: none;
+    }
+}
+
+@media (max-width: 640px) {
+    .perfil-reserva {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .perfil-reserva__img {
+        min-height: 150px;
+    }
+
+    .perfil-hero__identity {
+        width: 100%;
+    }
+
+    .perfil-form {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

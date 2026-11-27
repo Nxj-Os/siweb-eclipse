@@ -21,7 +21,7 @@
             <p class="inicio-header__subtitle">Explora, compara y reserva la suite perfecta para tu estadía.</p>
         </div>
         <div class="catalogo-header__actions">
-            <a class="inicio-header__reservation-link" th:href="@{/inicio}">Ir al inicio</a>
+            <a class="inicio-header__reservation-link" th:href="@{/}">Ir al inicio</a>
             <a class="inicio-header__reservation-link" sec:authorize="isAuthenticated()"
                th:href="@{/cliente/reservas}">Mis reservas</a>
             <a class="inicio-header__reservation-link" sec:authorize="!isAuthenticated()"

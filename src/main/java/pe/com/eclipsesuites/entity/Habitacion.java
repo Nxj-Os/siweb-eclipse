@@ -44,6 +44,9 @@ public class Habitacion {
     @Column(name = "estado_rack", nullable = false, length = 30)
     private String estadoRack;
 
+    // Sin columnDefinition explícito: Hibernate mapea OffsetDateTime a
+    // timestamp with time zone (idéntico a timestamptz en PostgreSQL)
+    // y así el esquema también puede crearse en H2 (perfiles demo/test).
     @Column(name = "token_qr_dinamico", nullable = false, unique = true, length = 255)
     private String tokenQrDinamico;
 

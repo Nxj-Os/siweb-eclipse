@@ -11,11 +11,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pe.com.eclipsesuites.dao.ClienteRepository;
 import pe.com.eclipsesuites.dto.request.ClienteRegistroRequestDTO;
+import pe.com.eclipsesuites.dto.request.PerfilClienteUpdateDTO;
 import pe.com.eclipsesuites.entity.Cliente;
 import pe.com.eclipsesuites.service.IClienteAuthService;
 
 import java.time.Instant;
 import java.util.Locale;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -29,32 +31,75 @@ public class ClienteAuthServiceImpl implements IClienteAuthService {
     public Cliente registrar(ClienteRegistroRequestDTO request) {
         String correo = normalizarCorreo(request.getCorreoElectronico());
         String documento = StringUtils.trim(request.getNumDocumento());
+        String telefono = StringUtils.trim(request.getTelefono());
 
         if (!request.isAceptaPoliticaPrivacidad()) {
             throw new IllegalArgumentException("Debes aceptar los Términos y la Política de Datos Personales");
         }
-        if (clienteRepository.existsByCorreoElectronicoIgnoreCase(correo)) {
-            throw new IllegalArgumentException("Ya existe una cuenta con ese correo electr├│nico");
-        }
-        if (clienteRepository.existsByNumDocumento(documento)) {
-            throw new IllegalArgumentException("Ya existe una cuenta con ese documento");
-        }
 
-        Cliente cliente = Cliente.builder()
-                .tipoDocumento(StringUtils.trim(request.getTipoDocumento()))
-                .numDocumento(documento)
-                .paisEmisionDoc(StringUtils.upperCase(StringUtils.trim(request.getPaisEmisionDoc())))
-                .correoElectronico(correo)
-                .nombre(StringUtils.trim(request.getNombre()))
-                .apellido(StringUtils.trim(request.getApellido()))
-                .telefono(StringUtils.trim(request.getTelefono()))
-                .edad(request.getEdad())
-                .passwordHash(passwordEncoder.encode(request.getPassword()))
-                .aceptoPoliticaPrivacidad(true)
-                .fechaAceptacionPrivacidad(Instant.now())
-                .build();
+        // Una cuenta eliminada se reutiliza: conserva su id y sus reservas.
+        Cliente candidato = clienteRepository.findByCorreoElectronicoIgnoreCase(correo).orElse(null);
+        if (candidato != null && candidato.estaActivo()) {
+            throw new IllegalArgumentException("Ya existe una cuenta con ese correo electrónico");
+        }
+        exigirLibre(clienteRepository.findByNumDocumento(documento), candidato,
+                "Ya existe una cuenta con ese documento");
+        exigirLibre(clienteRepository.findByTelefono(telefono), candidato,
+                "Ya existe una cuenta con ese teléfono");
+
+        Cliente cliente = candidato == null ? new Cliente() : candidato;
+        cliente.setTipoDocumento(StringUtils.trim(request.getTipoDocumento()));
+        cliente.setNumDocumento(documento);
+        cliente.setPaisEmisionDoc(StringUtils.upperCase(StringUtils.trim(request.getPaisEmisionDoc())));
+        cliente.setCorreoElectronico(correo);
+        cliente.setNombre(StringUtils.trim(request.getNombre()));
+        cliente.setApellido(StringUtils.trim(request.getApellido()));
+        cliente.setTelefono(telefono);
+        cliente.setEdad(request.getEdad());
+        cliente.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        cliente.setAceptoPoliticaPrivacidad(true);
+        cliente.setFechaAceptacionPrivacidad(Instant.now());
+        cliente.setActivo(true);
+        cliente.setFechaBaja(null);
 
         return clienteRepository.save(cliente);
+    }
+
+    private static void exigirLibre(Optional<Cliente> encontrado, Cliente candidato, String mensaje) {
+        encontrado.filter(otro -> candidato == null || !candidato.getId().equals(otro.getId()))
+                .ifPresent(otro -> {
+                    throw new IllegalArgumentException(mensaje);
+                });
+    }
+
+    @Override
+    @Transactional
+    public Cliente actualizarPerfil(String correoElectronico, PerfilClienteUpdateDTO request) {
+        Cliente cliente = buscarPorCorreo(correoElectronico);
+        if (!cliente.estaActivo()) {
+            throw new IllegalArgumentException("Tu cuenta ya no está activa");
+        }
+
+        String telefono = StringUtils.trim(request.getTelefono());
+        if (!telefono.equals(cliente.getTelefono())) {
+            exigirLibre(clienteRepository.findByTelefono(telefono), cliente,
+                    "Ya existe una cuenta con ese teléfono");
+            cliente.setTelefono(telefono);
+        }
+
+        cliente.setNombre(StringUtils.trim(request.getNombre()));
+        cliente.setApellido(StringUtils.trim(request.getApellido()));
+        cliente.setEdad(request.getEdad());
+        return clienteRepository.save(cliente);
+    }
+
+    @Override
+    @Transactional
+    public void eliminarCuenta(String correoElectronico) {
+        Cliente cliente = buscarPorCorreo(correoElectronico);
+        cliente.setActivo(false);
+        cliente.setFechaBaja(Instant.now());
+        clienteRepository.save(cliente);
     }
 
     @Override
@@ -72,6 +117,10 @@ public class ClienteAuthServiceImpl implements IClienteAuthService {
                 || !passwordEncoder.matches(password, cliente.getPasswordHash())) {
             throw new BadCredentialsException("Credenciales inv├ílidas");
         }
+        if (!cliente.estaActivo()) {
+            throw new IllegalArgumentException(
+                    "Tu cuenta fue eliminada. Puedes crear una nueva con el mismo correo.");
+        }
         return cliente;
     }
 
@@ -83,15 +132,18 @@ public class ClienteAuthServiceImpl implements IClienteAuthService {
         }
 
         return switch (campo) {
-            case "correo" -> !clienteRepository.existsByCorreoElectronicoIgnoreCase(
-                    normalizarCorreo(valor));
+            // Una cuenta eliminada no bloquea el dato: queda libre para reutilizarlo.
+            case "correo" -> clienteRepository.findByCorreoElectronicoIgnoreCase(
+                    normalizarCorreo(valor)).filter(Cliente::estaActivo).isEmpty();
             case "documento" -> {
                 if (StringUtils.isBlank(tipoDocumento)) {
                     throw new IllegalArgumentException("El tipo de documento es obligatorio");
                 }
-                yield !clienteRepository.existsByNumDocumento(StringUtils.trim(valor));
+                yield clienteRepository.findByNumDocumento(StringUtils.trim(valor))
+                        .filter(Cliente::estaActivo).isEmpty();
             }
-            case "telefono" -> !clienteRepository.existsByTelefono(StringUtils.trim(valor));
+            case "telefono" -> clienteRepository.findByTelefono(StringUtils.trim(valor))
+                    .filter(Cliente::estaActivo).isEmpty();
             default -> throw new IllegalArgumentException("Campo de disponibilidad no válido");
         };
     }

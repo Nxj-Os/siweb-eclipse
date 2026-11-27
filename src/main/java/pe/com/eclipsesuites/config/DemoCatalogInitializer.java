@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.Ordered;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,9 +27,19 @@ import java.util.UUID;
 
 @Slf4j
 @Component
-@Profile("demo")
+@Profile({"demo", "default"})
 @RequiredArgsConstructor
-public class DemoCatalogInitializer implements ApplicationRunner {
+public class DemoCatalogInitializer implements ApplicationRunner, Ordered {
+
+    /**
+     * Siempre primero: los demás sembradores de demo (room service y
+     * datos del asistente) deciden si actúan en función de lo que ya
+     * existe, así que el orden no puede quedar al azar.
+     */
+    @Override
+    public int getOrder() {
+        return Ordered.HIGHEST_PRECEDENCE;
+    }
 
     private static final List<DemoSuite> SUITES = List.of(
             new DemoSuite("BASICA", "Suite Básica",
