@@ -3,7 +3,7 @@
 
     // Tablero de novedades del portal de empleados: reservas web + comandas
     // de room service en el mismo panel, refrescado en vivo.
-    const aside = document.querySelector('.notification-feed') || document.querySelector('.notifications');
+    const aside = document.querySelector('.notifications');
     if (!aside) return;
 
     // Le avisa al demo del rack que este bloque ya no es contenido de prueba.
