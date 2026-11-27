@@ -15,7 +15,7 @@ import pe.com.eclipsesuites.entity.RolEmpleado;
 
 @Slf4j
 @Configuration
-@Profile({"demo", "dev"})
+@Profile({"demo", "dev", "default"})
 @RequiredArgsConstructor
 public class DataInitializer {
 
@@ -34,6 +34,16 @@ public class DataInitializer {
             String passwordAdmin = environment.getProperty("APP_SEED_ADMIN_PASSWORD");
             String passwordRecepcion = environment.getProperty("APP_SEED_RECEPCION_PASSWORD");
             String passwordRoomservice = environment.getProperty("APP_SEED_ROOMSERVICE_PASSWORD");
+
+            String nuevaPasswordRecepcion = environment.getProperty("APP_RESET_RECEPCION_PASSWORD");
+            if (org.apache.commons.lang3.StringUtils.isNotBlank(nuevaPasswordRecepcion)) {
+                empleadoRepository.findByUsernameLogin("recepcion1").ifPresentOrElse(empleado -> {
+                    empleado.setPasswordHashBcrypt(passwordEncoder.encode(nuevaPasswordRecepcion));
+                    empleadoRepository.save(empleado);
+                    log.info("Se restableció la contraseña de la cuenta de recepción.");
+                }, () -> log.warn("No se pudo restablecer la contraseña: no existe la cuenta recepcion1."));
+            }
+
             if (org.apache.commons.lang3.StringUtils.isAnyBlank(
                     passwordAdmin, passwordRecepcion, passwordRoomservice)) {
                 log.warn("Se omitió la creación de cuentas semilla; configura las contraseñas por entorno.");

@@ -14,6 +14,7 @@ import pe.com.eclipsesuites.dao.TarifaHabitacionRepository;
 import pe.com.eclipsesuites.dao.TipoHabitacionRepository;
 import pe.com.eclipsesuites.dto.request.ReservaRequestDTO;
 import pe.com.eclipsesuites.entity.EstadoExtensionReserva;
+import pe.com.eclipsesuites.entity.EstadoPagoReserva;
 import pe.com.eclipsesuites.entity.EstadoReserva;
 import pe.com.eclipsesuites.entity.ExtensionEstadia;
 import pe.com.eclipsesuites.entity.Habitacion;
@@ -28,6 +29,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.DayOfWeek;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -53,6 +56,15 @@ public class ReservaServiceImpl implements IReservaService {
 
     @Value("${app.demo-mode:false}")
     private boolean demoMode;
+
+    /**
+     * Sin pasarela de pago integrada, la reserva se confirma en el mismo
+     * alta: no se retiene la suite durante los {@link #MINUTOS_PARA_PAGAR}
+     * minutos ni se muestra la pantalla de pago. Ponlo en {@code false}
+     * cuando vuelva el cobro real.
+     */
+    @Value("${app.reserva.pago-directo:false}")
+    private boolean pagoDirecto;
 
     @Override
     @Transactional(readOnly = true)
@@ -128,22 +140,44 @@ public class ReservaServiceImpl implements IReservaService {
                 .cantidadPersonas(request.getCantidadPersonas())
                 .montoTotal(tarifa.getPrecioEstadiaBase())
                 .metodoPago(MetodoPagoReserva.EFECTIVO)
-                .estadoReserva(EstadoReserva.PENDIENTE_PAGO)
+                .estadoReserva(pagoDirecto ? EstadoReserva.CONFIRMADA
+                        : EstadoReserva.PENDIENTE_PAGO)
                 .fechaCreacion(LocalDateTime.now())
-                .reservaTemporalHasta(OffsetDateTime.now().plusMinutes(MINUTOS_PARA_PAGAR))
+                .fechaPago(null)
+                .tokenQr(pagoDirecto ? UUID.randomUUID().toString() : null)
+                .reservaTemporalHasta(pagoDirecto ? null
+                        : OffsetDateTime.now().plusMinutes(MINUTOS_PARA_PAGAR))
                 .build();
-        return reservaEstadiaRepository.save(reserva);
+        ReservaEstadia guardada = reservaEstadiaRepository.save(reserva);
+        if (!pagoDirecto) {
+            habitacion.setEstadoRack("BLOQUEADA");
+            habitacion.setMotivoBloqueo("Retención temporal de reserva #" + guardada.getId());
+            habitacion.setBloqueoTemporalHasta(guardada.getReservaTemporalHasta());
+            habitacionRepository.save(habitacion);
+        } else {
+            habitacion.setEstadoRack("RESERVADA");
+            habitacionRepository.save(habitacion);
+        }
+        return guardada;
     }
 
     @Override
     @Transactional
     public ReservaEstadia simularPagoReserva(String correoCliente, Long reservaId,
                                              MetodoPagoReserva metodoPago) {
+        return simularPagoReserva(correoCliente, reservaId, metodoPago, null);
+    }
+
+    @Override
+    @Transactional
+    public ReservaEstadia simularPagoReserva(String correoCliente, Long reservaId,
+                                             MetodoPagoReserva metodoPago, String referenciaPago) {
         if (!demoMode) {
             throw new IllegalStateException("El pago simulado solo está disponible en modo demo.");
         }
         ReservaEstadia reserva = buscarReservaPropia(reservaId, correoCliente);
         validarReservaPendienteDePago(reserva);
+        reserva.setReferenciaPago(limpiarReferencia(referenciaPago));
         return confirmarPago(reserva, metodoPago);
     }
 
@@ -151,9 +185,19 @@ public class ReservaServiceImpl implements IReservaService {
     @Transactional
     public ReservaEstadia registrarMetodoPagoReserva(String correoCliente, Long reservaId,
                                                       MetodoPagoReserva metodoPago) {
+        return registrarMetodoPagoReserva(correoCliente, reservaId, metodoPago, null);
+    }
+
+    @Override
+    @Transactional
+    public ReservaEstadia registrarMetodoPagoReserva(String correoCliente, Long reservaId,
+                                                      MetodoPagoReserva metodoPago,
+                                                      String referenciaPago) {
         ReservaEstadia reserva = buscarReservaPropia(reservaId, correoCliente);
         validarReservaPendienteDePago(reserva);
         reserva.setMetodoPago(metodoPago);
+        reserva.setEstadoPago(EstadoPagoReserva.EN_PROCESO);
+        reserva.setReferenciaPago(limpiarReferencia(referenciaPago));
         return reservaEstadiaRepository.save(reserva);
     }
 
@@ -176,6 +220,7 @@ public class ReservaServiceImpl implements IReservaService {
         ReservaEstadia reserva = buscarReservaPropia(id, correoCliente);
         validarReservaPendienteDePago(reserva);
         reserva.setEstadoReserva(EstadoReserva.CANCELADA);
+        liberarSuite(reserva);
         return reservaEstadiaRepository.save(reserva);
     }
 
@@ -202,6 +247,91 @@ public class ReservaServiceImpl implements IReservaService {
 
     @Override
     @Transactional
+    public Habitacion bloquearHabitacion(Integer habitacionId, String motivo) {
+        String motivoValidado = motivo == null ? "" : motivo.trim();
+        if (motivoValidado.isEmpty() || motivoValidado.length() > 250) {
+            throw new IllegalArgumentException("Indica un motivo de bloqueo de hasta 250 caracteres.");
+        }
+        Habitacion habitacion = habitacionRepository.findByIdForUpdate(habitacionId)
+                .orElseThrow(() -> new IllegalArgumentException("La habitación seleccionada no existe."));
+        if (!"LIBRE".equalsIgnoreCase(habitacion.getEstadoRack())
+                && !"DISPONIBLE".equalsIgnoreCase(habitacion.getEstadoRack())) {
+            throw new IllegalStateException("Solo se pueden bloquear habitaciones libres.");
+        }
+        if (reservaEstadiaRepository.existeReservaActivaPorHabitacion(
+                habitacionId, ESTADOS_QUE_OCUPAN_HABITACION, EstadoReserva.PENDIENTE_PAGO,
+                OffsetDateTime.now(), LocalDateTime.now())) {
+            throw new IllegalStateException(
+                    "La habitación tiene una reserva activa y no se puede bloquear sin cancelarla.");
+        }
+        habitacion.setEstadoRack("BLOQUEADA");
+        habitacion.setMotivoBloqueo(motivoValidado);
+        return habitacionRepository.save(habitacion);
+    }
+
+    @Override
+    @Transactional
+    public Habitacion liberarHabitacion(Integer habitacionId) {
+        Habitacion habitacion = habitacionRepository.findByIdForUpdate(habitacionId)
+                .orElseThrow(() -> new IllegalArgumentException("La habitación seleccionada no existe."));
+        if (!"BLOQUEADA".equalsIgnoreCase(habitacion.getEstadoRack())) {
+            throw new IllegalStateException("La habitación no está bloqueada.");
+        }
+        habitacion.setEstadoRack("LIBRE");
+        habitacion.setMotivoBloqueo(null);
+        return habitacionRepository.save(habitacion);
+    }
+
+    @Override
+    @Transactional
+    public ExtensionEstadia extenderReservaRecepcion(Long reservaId, Integer horas) {
+        if (horas == null || horas < 1 || horas > 24) {
+            throw new IllegalArgumentException("La extensión debe ser de 1 a 24 horas.");
+        }
+        ReservaEstadia reserva = reservaEstadiaRepository.findByIdForUpdate(reservaId)
+                .orElseThrow(() -> new IllegalArgumentException("No se encontró esa reserva."));
+        if (reserva.getEstadoReserva() != EstadoReserva.CHECKED_IN) {
+            throw new IllegalStateException("Solo se puede ampliar una estadía con check-in vigente.");
+        }
+        if (reserva.getFechaFin() == null || reserva.getFechaFin().isBefore(LocalDateTime.now())) {
+            throw new IllegalStateException("La estadía ya terminó y no se puede ampliar.");
+        }
+        if (reserva.getHabitacion() == null) {
+            throw new IllegalStateException("La reserva no tiene una habitación asignada.");
+        }
+        Habitacion habitacion = habitacionRepository.findByIdForUpdate(reserva.getHabitacion().getId())
+                .orElseThrow(() -> new IllegalStateException("La habitación de la reserva ya no existe."));
+        if (!"OCUPADA".equalsIgnoreCase(habitacion.getEstadoRack())) {
+            throw new IllegalStateException("La habitación ya no está ocupada por esta estadía.");
+        }
+        LocalDateTime inicio = reserva.getFechaFin();
+        LocalDateTime fin = inicio.plusHours(horas);
+        if (!habitacionDisponibleParaExtension(habitacion, reserva, inicio, fin)) {
+            throw new IllegalStateException("La habitación ya está reservada después de tu horario.");
+        }
+        BigDecimal duracion = BigDecimal.valueOf(horas);
+        BigDecimal monto = calcularMontoHoraAdicional(
+                reserva.getTipoHabitacion().getId(), inicio, horas);
+        ExtensionEstadia extension = ExtensionEstadia.builder()
+                .reserva(reserva)
+                .modalidadTurno(null)
+                .duracionHoras(duracion)
+                .fechaInicio(inicio)
+                .fechaFin(fin)
+                .montoTotal(monto)
+                .metodoPago(reserva.getMetodoPago())
+                .estado(EstadoExtensionReserva.CONFIRMADA)
+                .reservaTemporalHasta(OffsetDateTime.now())
+                .fechaCreacion(LocalDateTime.now())
+                .build();
+        reserva.setFechaFin(fin);
+        reserva.setMontoTotal(reserva.getMontoTotal().add(monto));
+        reservaEstadiaRepository.save(reserva);
+        return extensionEstadiaRepository.save(extension);
+    }
+
+    @Override
+    @Transactional
     public ReservaEstadia actualizarEstadoPendiente(Long id, EstadoReserva nuevoEstado) {
         if (nuevoEstado != EstadoReserva.CONFIRMADA && nuevoEstado != EstadoReserva.CANCELADA) {
             throw new IllegalArgumentException("El estado solicitado no es válido.");
@@ -211,6 +341,7 @@ public class ReservaServiceImpl implements IReservaService {
         validarReservaPendienteDePago(reserva);
         if (nuevoEstado == EstadoReserva.CANCELADA) {
             reserva.setEstadoReserva(EstadoReserva.CANCELADA);
+            liberarSuite(reserva);
             return reservaEstadiaRepository.save(reserva);
         }
         if (reserva.getFechaInicio().isBefore(LocalDateTime.now())) {
@@ -228,12 +359,26 @@ public class ReservaServiceImpl implements IReservaService {
             throw new IllegalStateException("El QR ya fue usado o la reserva no está confirmada.");
         }
         LocalDateTime ahora = LocalDateTime.now();
-        if (ahora.isBefore(reserva.getFechaInicio()) || !ahora.isBefore(reserva.getFechaFin())) {
-            throw new IllegalStateException("El horario de esta reserva no está vigente.");
+        // Check-in anticipado: basta con que la reserva esté confirmada. Solo
+        // se bloquea cuando la estadía ya terminó, de modo que el huésped puede
+        // solicitar room service en cuanto la reserva queda registrada.
+        if (reserva.getFechaFin() != null && !ahora.isBefore(reserva.getFechaFin())) {
+            throw new IllegalStateException("La estadía de esta reserva ya terminó; no se puede hacer check-in.");
         }
         reserva.setEstadoReserva(EstadoReserva.CHECKED_IN);
         reserva.setFechaCheckIn(ahora);
+        marcarSuiteOcupada(reserva);
         return reservaEstadiaRepository.save(reserva);
+    }
+
+    @Override
+    @Transactional
+    public ReservaEstadia registrarCheckInCliente(Long reservaId, String correoCliente) {
+        ReservaEstadia reserva = buscarReservaPropia(reservaId, correoCliente);
+        if (reserva.getEstadoReserva() != EstadoReserva.CONFIRMADA) {
+            throw new IllegalStateException("Esta reserva aún no puede hacer check-in.");
+        }
+        return registrarCheckIn(reserva.getTokenQr());
     }
 
     @Override
@@ -262,6 +407,7 @@ public class ReservaServiceImpl implements IReservaService {
         ExtensionEstadia extension = ExtensionEstadia.builder()
                 .reserva(reserva)
                 .modalidadTurno(modalidad)
+                .duracionHoras(modalidad.getDuracionHoras())
                 .fechaInicio(inicio)
                 .fechaFin(fin)
                 .montoTotal(tarifa.getPrecioEstadiaBase())
@@ -285,6 +431,13 @@ public class ReservaServiceImpl implements IReservaService {
     @Transactional
     public ExtensionEstadia simularPagoExtension(String correoCliente, Long extensionId,
                                                   MetodoPagoReserva metodoPago) {
+        return simularPagoExtension(correoCliente, extensionId, metodoPago, null);
+    }
+
+    @Override
+    @Transactional
+    public ExtensionEstadia simularPagoExtension(String correoCliente, Long extensionId,
+                                                  MetodoPagoReserva metodoPago, String referenciaPago) {
         if (!demoMode) {
             throw new IllegalStateException("El pago simulado solo está disponible en modo demo.");
         }
@@ -304,8 +457,10 @@ public class ReservaServiceImpl implements IReservaService {
         }
 
         extension.setMetodoPago(metodoPago);
+        extension.setReferenciaPago(limpiarReferencia(referenciaPago));
+        extension.setEstadoPago(EstadoPagoReserva.PAGADO);
         extension.setEstado(EstadoExtensionReserva.CONFIRMADA);
-        extension.setReservaTemporalHasta(null);
+        extension.setReservaTemporalHasta(OffsetDateTime.now());
         reserva.setFechaFin(extension.getFechaFin());
         reserva.setMontoTotal(reserva.getMontoTotal().add(extension.getMontoTotal()));
         reservaEstadiaRepository.save(reserva);
@@ -316,49 +471,77 @@ public class ReservaServiceImpl implements IReservaService {
     @Transactional
     public ExtensionEstadia registrarMetodoPagoExtension(String correoCliente, Long extensionId,
                                                           MetodoPagoReserva metodoPago) {
+        return registrarMetodoPagoExtension(correoCliente, extensionId, metodoPago, null);
+    }
+
+    @Override
+    @Transactional
+    public ExtensionEstadia registrarMetodoPagoExtension(String correoCliente, Long extensionId,
+                                                          MetodoPagoReserva metodoPago,
+                                                          String referenciaPago) {
         ExtensionEstadia extension = extensionEstadiaRepository
                 .findByIdAndReservaClienteCorreoElectronicoIgnoreCase(extensionId, correoCliente)
                 .orElseThrow(() -> new IllegalArgumentException("No se encontró la ampliación."));
         validarExtensionPendienteDePago(extension);
         extension.setMetodoPago(metodoPago);
+        extension.setEstadoPago(EstadoPagoReserva.EN_PROCESO);
+        extension.setReferenciaPago(limpiarReferencia(referenciaPago));
+        return extensionEstadiaRepository.save(extension);
+    }
+
+    @Override
+    @Transactional
+    public ExtensionEstadia cancelarExtensionCliente(String correoCliente, Long extensionId) {
+        ExtensionEstadia extension = extensionEstadiaRepository
+                .findByIdAndReservaClienteCorreoElectronicoIgnoreCase(extensionId, correoCliente)
+                .orElseThrow(() -> new IllegalArgumentException("No se encontró la ampliación."));
+        if (extension.getEstado() != EstadoExtensionReserva.PENDIENTE_PAGO) {
+            throw new IllegalStateException("La ampliación ya no se puede cancelar.");
+        }
+        extension.setEstado(EstadoExtensionReserva.CANCELADA);
+        extension.setEstadoPago(EstadoPagoReserva.RECHAZADO);
+        extension.setReservaTemporalHasta(OffsetDateTime.now());
         return extensionEstadiaRepository.save(extension);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<ExtensionEstadia> listarExtensionesPendientes() {
-        return extensionEstadiaRepository.findByEstadoOrderByFechaCreacionAsc(
-                EstadoExtensionReserva.PENDIENTE_PAGO);
+    public List<ExtensionEstadia> listarExtensionesPendientesValidacion() {
+        return extensionEstadiaRepository.listarPendientesDeValidacion(
+                EstadoExtensionReserva.PENDIENTE_PAGO, EstadoPagoReserva.EN_PROCESO);
     }
 
     @Override
     @Transactional
-    public ExtensionEstadia actualizarEstadoExtension(Long id,
-                                                       EstadoExtensionReserva nuevoEstado) {
-        if (nuevoEstado != EstadoExtensionReserva.CONFIRMADA
-                && nuevoEstado != EstadoExtensionReserva.CANCELADA) {
-            throw new IllegalArgumentException("El estado solicitado no es válido.");
+    public ExtensionEstadia validarExtensionRecepcion(Long extensionId, boolean aprobar) {
+        ExtensionEstadia extension = extensionEstadiaRepository.findByIdForUpdate(extensionId)
+                .orElseThrow(() -> new IllegalArgumentException("No se encontró la ampliación."));
+        if (extension.getEstado() != EstadoExtensionReserva.PENDIENTE_PAGO
+                || extension.getEstadoPago() != EstadoPagoReserva.EN_PROCESO) {
+            throw new IllegalStateException("La ampliación no está pendiente de validación.");
         }
-        ExtensionEstadia extension = extensionEstadiaRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("No se encontró esa ampliación."));
         validarExtensionPendienteDePago(extension);
-        if (nuevoEstado == EstadoExtensionReserva.CANCELADA) {
-            extension.setEstado(EstadoExtensionReserva.CANCELADA);
+        if (!aprobar) {
+            extension.setEstado(EstadoExtensionReserva.RECHAZADA);
+            extension.setEstadoPago(EstadoPagoReserva.RECHAZADO);
+            extension.setReservaTemporalHasta(OffsetDateTime.now());
             return extensionEstadiaRepository.save(extension);
         }
 
-        ReservaEstadia reserva = extension.getReserva();
-        if (reserva.getEstadoReserva() != EstadoReserva.CHECKED_IN) {
-            throw new IllegalStateException("La estadía ya no está habilitada para ampliaciones.");
-        }
-        Habitacion habitacion = habitacionRepository.findByIdForUpdate(reserva.getHabitacion().getId())
-                .orElseThrow(() -> new IllegalStateException("La habitación ya no existe."));
-        if (!habitacionDisponibleParaExtension(habitacion, reserva,
+        ReservaEstadia reserva = reservaEstadiaRepository.findByIdForUpdate(
+                extension.getReserva().getId()).orElseThrow(
+                () -> new IllegalStateException("La reserva asociada ya no existe."));
+        Habitacion habitacion = habitacionRepository.findByIdForUpdate(
+                reserva.getHabitacion().getId()).orElseThrow(
+                () -> new IllegalStateException("La habitación ya no existe."));
+        if (reserva.getEstadoReserva() != EstadoReserva.CHECKED_IN
+                || !habitacionDisponibleParaExtension(habitacion, reserva,
                 extension.getFechaInicio(), extension.getFechaFin(), extension.getId())) {
-            throw new IllegalStateException("La habitación ya está reservada después de tu horario.");
+            throw new IllegalStateException("La habitación ya no está disponible para esa extensión.");
         }
         extension.setEstado(EstadoExtensionReserva.CONFIRMADA);
-        extension.setReservaTemporalHasta(null);
+        extension.setEstadoPago(EstadoPagoReserva.PAGADO);
+        extension.setReservaTemporalHasta(OffsetDateTime.now());
         reserva.setFechaFin(extension.getFechaFin());
         reserva.setMontoTotal(reserva.getMontoTotal().add(extension.getMontoTotal()));
         reservaEstadiaRepository.save(reserva);
@@ -369,6 +552,16 @@ public class ReservaServiceImpl implements IReservaService {
     @Transactional
     public void expirarHoldsVencidos() {
         OffsetDateTime ahora = OffsetDateTime.now();
+        reservaEstadiaRepository.buscarReservasPendientesVencidas(
+                EstadoReserva.PENDIENTE_PAGO, ahora).forEach(reserva -> {
+            Habitacion habitacion = reserva.getHabitacion();
+            if (habitacion != null && "BLOQUEADA".equalsIgnoreCase(habitacion.getEstadoRack())) {
+                habitacion.setEstadoRack("LIBRE");
+                habitacion.setMotivoBloqueo(null);
+                habitacion.setBloqueoTemporalHasta(ahora);
+                habitacionRepository.save(habitacion);
+            }
+        });
         reservaEstadiaRepository.expirarReservasPendientes(
                 EstadoReserva.PENDIENTE_PAGO, EstadoReserva.EXPIRADA, ahora);
         extensionEstadiaRepository.expirarExtensionesPendientes(
@@ -381,10 +574,57 @@ public class ReservaServiceImpl implements IReservaService {
         }
         reserva.setMetodoPago(metodoPago);
         reserva.setEstadoReserva(EstadoReserva.CONFIRMADA);
+        reserva.setEstadoPago(EstadoPagoReserva.PAGADO);
         reserva.setFechaPago(LocalDateTime.now());
         reserva.setReservaTemporalHasta(null);
         reserva.setTokenQr(UUID.randomUUID().toString());
+        if (reserva.getHabitacion() != null) {
+            reserva.getHabitacion().setEstadoRack("RESERVADA");
+            reserva.getHabitacion().setMotivoBloqueo(null);
+            reserva.getHabitacion().setBloqueoTemporalHasta(OffsetDateTime.now());
+            habitacionRepository.save(reserva.getHabitacion());
+        }
         return reservaEstadiaRepository.save(reserva);
+    }
+
+    /**
+     * El check-in deja la suite {@code OCUPADA} en el rack y liga el QR
+     * de la reserva a la habitación: así la carta de room service sabe a
+     * qué suite entregar y el selector deja de mostrar suites libres.
+     */
+    private void marcarSuiteOcupada(ReservaEstadia reserva) {
+        Habitacion habitacion = reserva.getHabitacion();
+        if (habitacion == null) {
+            return;
+        }
+        habitacion.setEstadoRack("OCUPADA");
+        habitacion.setTokenQrDinamico(reserva.getTokenQr());
+        habitacion.setFechaExpiracionToken(reserva.getFechaFin() == null ? null
+                : reserva.getFechaFin().atZone(ZoneId.systemDefault()).toOffsetDateTime());
+    }
+
+    /**
+     * Devuelve la suite al rack al cancelar la reserva, siempre que el
+     * QR que tiene la habitación siga siendo el de esta reserva.
+     */
+    private void liberarSuite(ReservaEstadia reserva) {
+        Habitacion habitacion = reserva.getHabitacion();
+        if (habitacion == null) {
+            return;
+        }
+        if ("OCUPADA".equalsIgnoreCase(habitacion.getEstadoRack())
+                || "BLOQUEADA".equalsIgnoreCase(habitacion.getEstadoRack())
+                || "RESERVADA".equalsIgnoreCase(habitacion.getEstadoRack())) {
+            habitacion.setEstadoRack("LIBRE");
+        }
+        habitacion.setMotivoBloqueo(null);
+        // La columna es NOT NULL; LIBRE se representa por el estado, no por una fecha nula.
+        habitacion.setBloqueoTemporalHasta(OffsetDateTime.now());
+        if (habitacion.getTokenQrDinamico() != null
+                && habitacion.getTokenQrDinamico().equals(reserva.getTokenQr())) {
+            habitacion.setTokenQrDinamico(null);
+            habitacion.setFechaExpiracionToken(null);
+        }
     }
 
     private ReservaEstadia buscarReservaPropia(Long reservaId, String correoCliente) {
@@ -430,8 +670,7 @@ public class ReservaServiceImpl implements IReservaService {
                                                        LocalDateTime inicio, LocalDateTime fin,
                                                        Long extensionExcluir) {
         if (habitacion.getEstadoRack() == null
-                || !(habitacion.getEstadoRack().equalsIgnoreCase("LIBRE")
-                || habitacion.getEstadoRack().equalsIgnoreCase("DISPONIBLE"))) {
+                || !habitacion.getEstadoRack().equalsIgnoreCase("OCUPADA")) {
             return false;
         }
         if (reservaEstadiaRepository.existeCruceActivo(habitacion.getId(), inicio, fin,
@@ -501,5 +740,38 @@ public class ReservaServiceImpl implements IReservaService {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException(
                         "No hay una tarifa vigente para esa suite y duración en la fecha elegida."));
+    }
+
+    private TarifaHabitacion buscarTarifaHoraAdicional(Integer tipoId, LocalDate fecha) {
+        boolean finDeSemana = fecha.getDayOfWeek() == DayOfWeek.SATURDAY
+                || fecha.getDayOfWeek() == DayOfWeek.SUNDAY;
+        List<TarifaHabitacion> vigentes = tarifaHabitacionRepository
+                .findByIdIdTipoHabitacion(tipoId).stream()
+                .filter(tarifa -> !fecha.isBefore(tarifa.getVigenciaDesde())
+                        && !fecha.isAfter(tarifa.getVigenciaHasta()))
+                .toList();
+        return vigentes.stream()
+                .filter(tarifa -> Boolean.valueOf(finDeSemana).equals(tarifa.getEsTarifaFinSemana()))
+                .findFirst()
+                .or(() -> vigentes.stream().findFirst())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "No hay una tarifa de hora adicional vigente para esa suite y fecha."));
+    }
+
+    private BigDecimal calcularMontoHoraAdicional(Integer tipoId, LocalDateTime inicio, int horas) {
+        BigDecimal monto = BigDecimal.ZERO;
+        for (int hora = 0; hora < horas; hora++) {
+            LocalDate fechaHora = inicio.plusHours(hora).toLocalDate();
+            monto = monto.add(buscarTarifaHoraAdicional(tipoId, fechaHora)
+                    .getCostoHoraAdicional());
+        }
+        return monto;
+    }
+
+    private String limpiarReferencia(String referencia) {
+        if (referencia == null || referencia.isBlank()) {
+            return null;
+        }
+        return referencia.trim();
     }
 }

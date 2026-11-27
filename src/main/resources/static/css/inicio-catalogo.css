@@ -88,7 +88,15 @@ body.inicio-page {
     font-family: inherit;
     font-size: 0.98rem;
     color: var(--text-primary);
-    cursor: default;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+a.inicio-header__user:hover {
+    background: var(--surface-raised);
+    border-color: var(--gold);
+    color: var(--gold);
 }
 
 .inicio-header__reservation-link {

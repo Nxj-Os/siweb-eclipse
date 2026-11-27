@@ -45,14 +45,20 @@ import java.util.Set;
 public class ClienteReservaController {
 
     private static final List<MetodoPagoReserva> METODOS_PAGO =
-            List.of(MetodoPagoReserva.TARJETA, MetodoPagoReserva.YAPE,
-                    MetodoPagoReserva.PLIN, MetodoPagoReserva.EFECTIVO);
+            List.of(MetodoPagoReserva.EFECTIVO, MetodoPagoReserva.TARJETA, MetodoPagoReserva.YAPE);
 
     private final IReservaService reservaService;
     private final QrCodeService qrCodeService;
 
     @Value("${app.demo-mode:false}")
     private boolean demoMode;
+
+    /** Ver {@code ReservaServiceImpl#pagoDirecto}: sin pasarela de pago. */
+    @Value("${app.reserva.pago-directo:false}")
+    private boolean pagoDirecto;
+
+    @Value("${app.pagos.yape-destino:}")
+    private String yapeDestino;
 
     @GetMapping("/nueva")
     public String nueva(@RequestParam(required = false) Integer tipoId, Model model) {
@@ -101,6 +107,11 @@ public class ClienteReservaController {
         try {
             ReservaEstadia reserva = reservaService.crearReserva(
                     authentication.getName(), request);
+            if (pagoDirecto) {
+                // Sin pasarela: la reserva ya nace CONFIRMADA, vamos directo al
+                // detalle para que el huésped pueda hacer check-in y pedir room service.
+                return "redirect:/cliente/reservas/" + reserva.getId();
+            }
             return "redirect:/cliente/reservas/" + reserva.getId() + "/pago";
         } catch (IllegalArgumentException | IllegalStateException exception) {
             model.addAttribute("errorReserva", exception.getMessage());
@@ -121,6 +132,7 @@ public class ClienteReservaController {
         model.addAttribute("metodosPago", METODOS_PAGO);
         model.addAttribute("pago", new PagoReservaRequestDTO());
         model.addAttribute("demoMode", demoMode);
+        model.addAttribute("yapeDestino", yapeDestino);
         return "cliente/reserva-pago";
     }
 
@@ -135,13 +147,25 @@ public class ClienteReservaController {
                     "Selecciona un método de pago.");
             return "redirect:/cliente/reservas/" + id + "/pago";
         }
+        if (!metodoPagoDisponible(pago.getMetodoPago())
+                || (!demoMode && pago.getMetodoPago() == MetodoPagoReserva.TARJETA)) {
+            redirectAttributes.addFlashAttribute("errorReserva",
+                    "El pago con tarjeta estará disponible cuando se configure la pasarela segura del establecimiento. Por ahora puedes pagar con Yape.");
+            return "redirect:/cliente/reservas/" + id + "/pago";
+        }
+        if (!demoMode && requiereReferencia(pago.getMetodoPago())
+                && !datosYapeValidos(pago)) {
+            redirectAttributes.addFlashAttribute("errorReserva",
+                    "Ingresa el celular usado en Yape y el código de aprobación.");
+            return "redirect:/cliente/reservas/" + id + "/pago";
+        }
         try {
-            if (demoMode) {
+            if (demoMode && pago.getMetodoPago() != MetodoPagoReserva.EFECTIVO) {
                 reservaService.simularPagoReserva(
-                        authentication.getName(), id, pago.getMetodoPago());
+                        authentication.getName(), id, pago.getMetodoPago(), pago.referenciaYapeFormateada());
             } else {
                 reservaService.registrarMetodoPagoReserva(
-                        authentication.getName(), id, pago.getMetodoPago());
+                        authentication.getName(), id, pago.getMetodoPago(), pago.referenciaYapeFormateada());
             }
             return "redirect:/cliente/reservas/" + id;
         } catch (IllegalArgumentException | IllegalStateException exception) {
@@ -169,6 +193,7 @@ public class ClienteReservaController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         model.addAttribute("reserva", reserva);
         model.addAttribute("demoMode", demoMode);
+        model.addAttribute("pagoDirecto", pagoDirecto);
         return "cliente/confirmacion-reserva";
     }
 
@@ -216,6 +241,7 @@ public class ClienteReservaController {
         model.addAttribute("metodosPago", METODOS_PAGO);
         model.addAttribute("pago", new PagoReservaRequestDTO());
         model.addAttribute("demoMode", demoMode);
+        model.addAttribute("yapeDestino", yapeDestino);
         model.addAttribute("extensionExpirada",
                 extension.getEstado() == EstadoExtensionReserva.EXPIRADA);
         return "cliente/extension-pago";
@@ -232,15 +258,42 @@ public class ClienteReservaController {
                     "Selecciona un método de pago.");
             return "redirect:/cliente/reservas/extensiones/" + extensionId + "/pago";
         }
+        if (!metodoPagoDisponible(pago.getMetodoPago())
+                || (!demoMode && pago.getMetodoPago() == MetodoPagoReserva.TARJETA)) {
+            redirectAttributes.addFlashAttribute("errorReserva",
+                    "El pago con tarjeta estará disponible cuando se configure la pasarela segura del establecimiento. Por ahora puedes pagar con Yape.");
+            return "redirect:/cliente/reservas/extensiones/" + extensionId + "/pago";
+        }
+        if (!demoMode && requiereReferencia(pago.getMetodoPago())
+                && !datosYapeValidos(pago)) {
+            redirectAttributes.addFlashAttribute("errorReserva",
+                    "Ingresa el celular usado en Yape y el código de aprobación.");
+            return "redirect:/cliente/reservas/extensiones/" + extensionId + "/pago";
+        }
         try {
-            ExtensionEstadia extension;
-            if (demoMode) {
-                extension = reservaService.simularPagoExtension(
-                        authentication.getName(), extensionId, pago.getMetodoPago());
-            } else {
-                extension = reservaService.registrarMetodoPagoExtension(
-                        authentication.getName(), extensionId, pago.getMetodoPago());
-            }
+            ExtensionEstadia extension = demoMode && pago.getMetodoPago() != MetodoPagoReserva.EFECTIVO
+                    ? reservaService.simularPagoExtension(
+                            authentication.getName(), extensionId, pago.getMetodoPago(),
+                            pago.referenciaYapeFormateada())
+                    : reservaService.registrarMetodoPagoExtension(
+                            authentication.getName(), extensionId, pago.getMetodoPago(),
+                            pago.referenciaYapeFormateada());
+            return "redirect:/cliente/reservas/" + extension.getReserva().getId();
+        } catch (IllegalArgumentException | IllegalStateException exception) {
+            redirectAttributes.addFlashAttribute("errorReserva", exception.getMessage());
+            return "redirect:/cliente/reservas/extensiones/" + extensionId + "/pago";
+        }
+    }
+
+    @PostMapping("/extensiones/{extensionId}/cancelar")
+    public String cancelarExtension(@PathVariable Long extensionId,
+                                    Authentication authentication,
+                                    RedirectAttributes redirectAttributes) {
+        try {
+            ExtensionEstadia extension = reservaService.cancelarExtensionCliente(
+                    authentication.getName(), extensionId);
+            redirectAttributes.addFlashAttribute("mensajeReserva",
+                    "La solicitud de extensión fue cancelada.");
             return "redirect:/cliente/reservas/" + extension.getReserva().getId();
         } catch (IllegalArgumentException | IllegalStateException exception) {
             redirectAttributes.addFlashAttribute("errorReserva", exception.getMessage());
@@ -254,6 +307,22 @@ public class ClienteReservaController {
                 reservaService.listarReservasCliente(authentication.getName()));
         model.addAttribute("demoMode", demoMode);
         return "cliente/mis-reservas";
+    }
+
+    @PostMapping("/{id}/check-in")
+    public String checkIn(@PathVariable Long id, Authentication authentication,
+                          RedirectAttributes redirectAttributes) {
+        try {
+            ReservaEstadia reserva = reservaService.registrarCheckInCliente(
+                    id, authentication.getName());
+            String suite = reserva.getHabitacion() == null ? ""
+                    : reserva.getHabitacion().getNumHabitacion();
+            redirectAttributes.addFlashAttribute("mensaje",
+                    "Check-in realizado. La suite " + suite + " ya está lista.");
+        } catch (IllegalArgumentException | IllegalStateException exception) {
+            redirectAttributes.addFlashAttribute("errorReserva", exception.getMessage());
+        }
+        return "redirect:/cliente/reservas/" + id;
     }
 
     @PostMapping("/{id}/cancelar")
@@ -278,6 +347,23 @@ public class ClienteReservaController {
         reservaService.listarModalidades().stream().findFirst()
                 .ifPresent(modalidad -> request.setModalidadId(modalidad.getId()));
         return request;
+    }
+
+    private boolean requiereReferencia(MetodoPagoReserva metodoPago) {
+        return metodoPago == MetodoPagoReserva.YAPE;
+    }
+
+    private boolean datosYapeValidos(PagoReservaRequestDTO pago) {
+        return pago.getNumeroYape() != null
+                && pago.getNumeroYape().replaceAll("\\D", "").matches("9\\d{8}")
+                && pago.getCodigoAprobacion() != null
+                && pago.getCodigoAprobacion().replaceAll("\\D", "").matches("\\d{6}");
+    }
+
+    private boolean metodoPagoDisponible(MetodoPagoReserva metodoPago) {
+        return metodoPago == MetodoPagoReserva.EFECTIVO
+                || metodoPago == MetodoPagoReserva.TARJETA
+                || metodoPago == MetodoPagoReserva.YAPE;
     }
 
     private void cargarOpcionesFormulario(Model model, ReservaRequestDTO request) {

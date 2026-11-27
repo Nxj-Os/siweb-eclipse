@@ -19,6 +19,7 @@ import pe.com.eclipsesuites.entity.TarifaHabitacion;
 import pe.com.eclipsesuites.entity.TarifaHabitacionPK;
 import pe.com.eclipsesuites.entity.TipoHabitacion;
 import pe.com.eclipsesuites.service.IEmpleadoAuthService;
+import pe.com.eclipsesuites.service.IClientePerfilService;
 import pe.com.eclipsesuites.service.IReservaService;
 import pe.com.eclipsesuites.service.QrCodeService;
 
@@ -34,9 +35,13 @@ import java.util.Set;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -52,6 +57,9 @@ class ClienteReservaControllerTest {
 
     @MockitoBean
     private IReservaService reservaService;
+
+    @MockitoBean
+    private IClientePerfilService clientePerfilService;
 
     @MockitoBean
     private IEmpleadoAuthService empleadoAuthService;
@@ -128,7 +136,42 @@ class ClienteReservaControllerTest {
                 .andExpect(view().name("cliente/reserva-pago"))
                 .andExpect(content().string(containsString("Tiempo para pagar")))
                 .andExpect(content().string(containsString("Simular pago y confirmar")))
-                .andExpect(content().string(containsString("Yape")));
+                .andExpect(content().string(containsString("Efectivo")))
+                .andExpect(content().string(containsString("Número de celular asociado a Yape")))
+                .andExpect(content().string(containsString("Código de aprobación")))
+                .andExpect(content().string(containsString("Acércate al área de recepción para realizar el pago")))
+                .andExpect(content().string(containsString("Se emitirá la boleta de pago una vez realizado")))
+                .andExpect(content().string(containsString("Yape")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("Plin"))));
+    }
+
+    @Test
+    void cancelarReservaEnProcesoNoExigeSeleccionarMetodoDePago() throws Exception {
+        when(reservaService.cancelarReservaCliente(17L, "cliente@example.com"))
+                .thenReturn(reservaPendiente());
+
+        mockMvc.perform(post("/cliente/reservas/17/cancelar")
+                        .with(csrf())
+                        .with(user("cliente@example.com").roles("CLIENTE")))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(view().name("redirect:/cliente/reservas"));
+
+        verify(reservaService).cancelarReservaCliente(17L, "cliente@example.com");
+    }
+
+    @Test
+    void pagoEnEfectivoSeEnvíaARecepcionSinSimularUnCobro() throws Exception {
+        mockMvc.perform(post("/cliente/reservas/17/pagar")
+                        .param("metodoPago", "EFECTIVO")
+                        .with(csrf())
+                        .with(user("cliente@example.com").roles("CLIENTE")))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(view().name("redirect:/cliente/reservas/17"));
+
+        verify(reservaService).registrarMetodoPagoReserva(
+                "cliente@example.com", 17L, MetodoPagoReserva.EFECTIVO, null);
+        verify(reservaService, never()).simularPagoReserva(
+                "cliente@example.com", 17L, MetodoPagoReserva.EFECTIVO, null);
     }
 
     @Test

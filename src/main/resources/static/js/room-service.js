@@ -1,8 +1,8 @@
 /* Carta de room service para el huésped (Figma C-09).
- * Acceso por token de check-in en la URL (?token=...), carrito en el
- * navegador, envío del pedido con CSRF y seguimiento del estado con
- * consultas periódicas (sin WebSocket: las notificaciones del lado
- * empleado las resuelve el sistema de recepción). */
+ * La carta no exige check-in: el huésped elige la suite de entrega en
+ * el selector (el token ?token=... de la URL se mantiene para cuando
+ * llegue el QR). Carrito en el navegador, envío del pedido con CSRF y
+ * seguimiento del estado con consultas periódicas (sin WebSocket). */
 
 (function () {
     "use strict";
@@ -20,16 +20,15 @@
         "Platos fuertes": "🍛",
         "Bebidas": "🥤",
         "Postres": "🍰",
-        "Snacks": "🍟"
+        "Snacks": "🍟",
+        "Consumibles": "🧊",
+        "Amenities": "🧴"
     };
 
-    // Token de check-in de la URL (?token=...). Sin parámetro se usa el
-    // token demo de la seed (solo existe en perfiles demo/dev) para que
-    // la carta sea visible sin reserva; con un token inválido en la URL
-    // el backend sigue bloqueando el acceso (RNF-08).
-    const token =
-        new URLSearchParams(window.location.search).get("token") ||
-        "demo-suite-101";
+    // Token de check-in de la URL (?token=...). Es opcional: sin él la
+    // carta funciona eligiendo la suite en el selector; con él, la suite
+    // se preselecciona y el pedido queda ligado al check-in (QR futuro).
+    const token = new URLSearchParams(window.location.search).get("token");
 
     const estado = {
         categorias: [],
@@ -39,7 +38,8 @@
         consulta: "",
         codigoPedido: null,
         estadoPedido: null,
-        temporizador: null
+        temporizador: null,
+        suiteEntrega: null
     };
 
     // ------------------------------------------------------- helpers
@@ -131,27 +131,54 @@
 
     // ------------------------------------------------------- acceso
 
-    function bloquearServicio(mensaje) {
-        window.clearInterval(estado.temporizador);
-        porId("vista-carta").hidden = true;
-        porId("bloqueada-mensaje").textContent =
-            mensaje || "Necesitas validar el check-in de tu reserva para acceder";
-        porId("vista-bloqueada").hidden = false;
+    function renderSelectorSuites(carta) {
+        const selector = porId("suite-entrega");
+        selector.replaceChildren();
+
+        const suites = carta.suitesDisponibles || [];
+        if (suites.length === 0) {
+            const vacio = crear("option", null, "No hay suites ocupadas");
+            vacio.value = "";
+            selector.appendChild(vacio);
+            selector.disabled = true;
+            return;
+        }
+
+        suites.forEach((numHabitacion) => {
+            const opcion = crear("option", null, "Suite " + numHabitacion);
+            opcion.value = numHabitacion;
+            selector.appendChild(opcion);
+        });
+
+        // Con token de check-in se preselecciona la suite propia.
+        const preseleccion = carta.numHabitacion || suites[0];
+        selector.value = preseleccion;
+        estado.suiteEntrega = preseleccion;
+        selector.disabled = false;
+        selector.addEventListener("change", () => {
+            estado.suiteEntrega = selector.value || null;
+        });
     }
 
     // ------------------------------------------------------- carta
 
     async function cargarCarta() {
-        const carta = await apiJson(
-            "/api/roomservice/menu?token=" + encodeURIComponent(token)
-        );
+        const consultaToken = token
+            ? "?token=" + encodeURIComponent(token)
+            : "";
+        const carta = await apiJson("/api/roomservice/menu" + consultaToken);
         estado.categorias = carta.categorias || [];
         estado.productos = carta.productos || [];
 
         const badge = porId("badge-suite");
-        badge.textContent = "Suite " + carta.numHabitacion;
-        badge.hidden = false;
+        if (carta.numHabitacion) {
+            badge.textContent = "Suite " + carta.numHabitacion;
+            badge.hidden = false;
+        } else {
+            badge.hidden = true;
+        }
 
+        renderSelectorSuites(carta);
         renderCategorias();
         renderProductos();
         porId("vista-carta").hidden = false;
@@ -239,6 +266,11 @@
             img.src = producto.imagen;
             img.alt = producto.nombre;
             img.loading = "lazy";
+            // Si la foto externa no carga, se muestra el emoji de la categoría.
+            img.addEventListener("error", () => {
+                imagen.textContent =
+                    EMOJI_CATEGORIA[producto.categoria] || "🍽️";
+            });
             imagen.appendChild(img);
         }
         tarjeta.appendChild(imagen);
@@ -409,7 +441,11 @@
         try {
             const pedido = await apiJson("/api/roomservice/pedidos", {
                 metodo: "POST",
-                cuerpo: { token: token, items: items }
+                cuerpo: {
+                    token: token || undefined,
+                    numHabitacion: estado.suiteEntrega || undefined,
+                    items: items
+                }
             });
             estado.codigoPedido = pedido.codigo;
             estado.estadoPedido = pedido.estado;
@@ -419,10 +455,6 @@
             mostrarEstadoPedido(pedido, true);
             mostrarAviso("Pedido " + pedido.codigo + " enviado. ¡Buen provecho!", true);
         } catch (error) {
-            if (error.status === 403) {
-                bloquearServicio(error.message);
-                return;
-            }
             if (error.status === 409 && error.detalles) {
                 const idAgotado = estado.productos.find(
                     (p) => p.nombre === error.detalles.producto
@@ -506,17 +538,19 @@
             return;
         }
         try {
+            const consulta = token
+                ? "?token=" + encodeURIComponent(token)
+                : "";
             const pedido = await apiJson(
                 "/api/roomservice/pedidos/" +
                     encodeURIComponent(estado.codigoPedido) +
-                    "?token=" +
-                    encodeURIComponent(token)
+                    consulta
             );
             if (pedido.estado !== estado.estadoPedido) {
                 mostrarEstadoPedido(pedido, true);
             }
         } catch (error) {
-            if (error.status === 403 || error.status === 404) {
+            if (error.status === 404) {
                 window.clearInterval(estado.temporizador);
             }
             // Los fallos transitorios se ignoran: reintentará el próximo ciclo.
@@ -552,23 +586,10 @@
     async function iniciar() {
         conectarEventos();
 
-        if (!token) {
-            bloquearServicio(
-                "No se detectó tu código de acceso. Escanea el QR de tu suite para entrar a la carta."
-            );
-            return;
-        }
-
         try {
             await cargarCarta();
         } catch (error) {
-            if (error.status === 403) {
-                bloquearServicio(error.message);
-            } else {
-                bloquearServicio(
-                    "No pudimos cargar la carta en este momento. Vuelve a intentarlo en unos minutos."
-                );
-            }
+            mostrarAviso(error.message);
         }
     }
 

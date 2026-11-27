@@ -827,6 +827,103 @@ body.reserva-page {
     font-size: 0.94rem;
 }
 
+.payment-option:has(input:focus-visible) {
+    outline: 2px solid var(--reserva-aqua);
+    outline-offset: 3px;
+}
+
+.duration-selection.is-invalid .payment-option {
+    border-color: rgb(225 91 91 / 70%);
+}
+
+.reserva-field.is-invalid input {
+    border-color: #e15b5b;
+    outline: 2px solid rgb(225 91 91 / 22%);
+}
+
+.payment-method-help {
+    margin-top: 0.9rem;
+    padding: 1rem 1.1rem;
+    border: 1px solid rgb(154 217 215 / 22%);
+    border-radius: 12px;
+    background: linear-gradient(115deg, rgb(154 217 215 / 8%), rgb(7 21 20 / 35%));
+    color: var(--reserva-text);
+    font-size: 0.9rem;
+    line-height: 1.55;
+}
+
+.payment-method-help[data-kind="card"] {
+    border-color: rgb(229 207 131 / 40%);
+    background: rgb(229 207 131 / 6%);
+}
+
+.payment-method-help[data-kind="error"] {
+    border-color: rgb(225 91 91 / 65%);
+    background: rgb(225 91 91 / 8%);
+    color: #ffaaaa;
+}
+
+.payment-instruction--cash {
+    margin: 1.2rem auto;
+    max-width: 27rem;
+    color: #76d565;
+    font-size: 0.98rem;
+    line-height: 1.4;
+    text-align: center;
+}
+
+.payment-invoice-note {
+    margin: 1.25rem 0 0;
+    color: var(--reserva-gold);
+    font-size: 0.78rem;
+    text-align: center;
+}
+
+.card-fields:not([hidden]) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.85rem 1rem;
+    margin-top: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--reserva-border);
+    border-radius: 14px;
+    background: rgb(7 21 20 / 35%);
+}
+
+.card-field--wide,
+.card-security-note {
+    grid-column: 1 / -1;
+}
+
+.card-field input {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.035em;
+}
+
+.card-field .field-error {
+    margin-top: -0.1rem;
+    color: #ffaaa0;
+    font-size: 0.78rem;
+    font-weight: 500;
+}
+
+.card-security-note {
+    margin: 0;
+    color: var(--reserva-muted);
+    font-size: 0.78rem;
+    line-height: 1.45;
+}
+
+.reservation-card__cancel-form {
+    margin-top: 0.8rem;
+}
+
+.hold-payment-form button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+    transform: none;
+}
+
 .payment-disclaimer {
     margin: 1rem 0 0;
     padding: 0.8rem 1rem;
@@ -1084,6 +1181,15 @@ body.reserva-page {
 
     .reserva-fields--schedule {
         grid-template-columns: 1fr;
+    }
+
+    .card-fields:not([hidden]) {
+        grid-template-columns: 1fr;
+    }
+
+    .card-field--wide,
+    .card-security-note {
+        grid-column: auto;
     }
 
     .reserva-steps__item {

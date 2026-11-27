@@ -15,7 +15,7 @@
 </head>
 <body class="reserva-page">
     <header class="reserva-header">
-        <a class="reserva-brand" th:href="@{/inicio}">Eclipse <span>Suites</span></a>
+        <a class="reserva-brand" th:href="@{/}">Eclipse <span>Suites</span></a>
         <a class="reserva-header__link" th:href="@{/cliente/reservas}">Mis reservas</a>
     </header>
 
@@ -59,7 +59,8 @@
                         <div class="room-selection-grid">
                             <label class="room-option" th:each="habitacion : ${habitaciones}"
                                    th:classappend="${#sets.contains(habitacionesDisponibles, habitacion.id) ? '' : ' room-option--unavailable'}"
-                                   th:attr="data-room-number=${habitacion.numHabitacion}">
+                                   th:attr="data-room-number=${habitacion.numHabitacion},
+                                            data-room-state=${habitacion.estadoRack}">
                                 <input type="radio" th:field="*{habitacionId}"
                                        th:value="${habitacion.id}" required
                                        th:disabled="${not #sets.contains(habitacionesDisponibles, habitacion.id)}">
@@ -71,7 +72,7 @@
                                 <span class="room-option__details">
                                     <strong th:text="${'Habitación ' + habitacion.numHabitacion}">Habitación 509</strong>
                                     <span class="availability-pill" data-room-status
-                                          th:text="${#sets.contains(habitacionesDisponibles, habitacion.id) ? 'Disponible' : 'Ocupada'}">Disponible</span>
+                                          th:text="${#sets.contains(habitacionesDisponibles, habitacion.id) ? 'Disponible' : (#strings.equalsIgnoreCase(habitacion.estadoRack, 'BLOQUEADA') ? 'Bloqueada' : 'No disponible')}">Disponible</span>
                                 </span>
                             </label>
                         </div>
@@ -137,7 +138,7 @@
                             Selecciona habitación, fecha y duración para consultar el precio.
                         </p>
                         <div class="reservation-card__actions">
-                            <a class="button button--secondary" th:href="@{/inicio}">Volver a suites</a>
+                            <a class="button button--secondary" th:href="@{/catalogo}">Volver a suites</a>
                             <button class="button button--primary" type="submit"
                                     th:disabled="${#lists.isEmpty(habitaciones)}">
                                 Reservar esta habitación

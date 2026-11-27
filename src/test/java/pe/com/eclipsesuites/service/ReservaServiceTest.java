@@ -18,6 +18,7 @@ import pe.com.eclipsesuites.dto.request.ReservaRequestDTO;
 import pe.com.eclipsesuites.entity.Cliente;
 import pe.com.eclipsesuites.entity.EstadoReserva;
 import pe.com.eclipsesuites.entity.EstadoExtensionReserva;
+import pe.com.eclipsesuites.entity.EstadoPagoReserva;
 import pe.com.eclipsesuites.entity.ExtensionEstadia;
 import pe.com.eclipsesuites.entity.Habitacion;
 import pe.com.eclipsesuites.entity.MetodoPagoReserva;
@@ -39,6 +40,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -155,6 +157,34 @@ class ReservaServiceTest {
     }
 
     @Test
+    void cancelarReservaPendienteLiberaHabitacionSinAnularFechaNoNula() {
+        Habitacion habitacion = Habitacion.builder()
+                .id(12)
+                .estadoRack("BLOQUEADA")
+                .motivoBloqueo("RetenciÃ³n temporal")
+                .bloqueoTemporalHasta(OffsetDateTime.now().plusMinutes(4))
+                .build();
+        ReservaEstadia reserva = ReservaEstadia.builder()
+                .id(12L)
+                .cliente(Cliente.builder().correoElectronico("ana@example.com").build())
+                .habitacion(habitacion)
+                .estadoReserva(EstadoReserva.PENDIENTE_PAGO)
+                .reservaTemporalHasta(OffsetDateTime.now().plusMinutes(4))
+                .build();
+        when(reservaEstadiaRepository.findByIdAndClienteCorreoElectronicoIgnoreCase(
+                12L, "ana@example.com")).thenReturn(Optional.of(reserva));
+        when(reservaEstadiaRepository.save(reserva)).thenReturn(reserva);
+
+        ReservaEstadia cancelada = reservaService.cancelarReservaCliente(12L, "ana@example.com");
+
+        assertEquals(EstadoReserva.CANCELADA, cancelada.getEstadoReserva());
+        assertEquals("LIBRE", habitacion.getEstadoRack());
+        assertNull(habitacion.getMotivoBloqueo());
+        assertNotNull(habitacion.getBloqueoTemporalHasta());
+        verify(reservaEstadiaRepository).save(reserva);
+    }
+
+    @Test
     void recepcionConfirmaPagoYGeneraCodigoQr() {
         ReservaEstadia reserva = ReservaEstadia.builder()
                 .id(11L)
@@ -179,12 +209,11 @@ class ReservaServiceTest {
 
     @Test
     void ampliacionRetieneLaMismaHabitacionDesdeLaHoraDeSalida() {
-        ReflectionTestUtils.setField(reservaService, "demoMode", false);
         TipoHabitacion tipo = TipoHabitacion.builder().id(3).build();
         Habitacion habitacion = Habitacion.builder()
                 .id(27)
                 .tipoHabitacion(tipo)
-                .estadoRack("LIBRE")
+                .estadoRack("OCUPADA")
                 .build();
         ReservaEstadia reserva = ReservaEstadia.builder()
                 .id(11L)
@@ -223,29 +252,193 @@ class ReservaServiceTest {
         assertEquals(FECHA_FUTURA.atTime(22, 0), extension.getFechaInicio());
         assertEquals(FECHA_FUTURA.plusDays(1).atTime(2, 0), extension.getFechaFin());
         assertEquals(new BigDecimal("80.00"), extension.getMontoTotal());
+        assertEquals(new BigDecimal("4.00"), extension.getDuracionHoras());
     }
 
     @Test
-    void modoNormalRegistraMetodoDePagoDeAmpliacionSinConfirmarla() {
+    void recepcionApruebaExtensionPendienteYActualizaSalidaYPago() {
+        Habitacion habitacion = Habitacion.builder().id(27).estadoRack("OCUPADA").build();
+        ReservaEstadia reserva = ReservaEstadia.builder()
+                .id(11L).habitacion(habitacion).estadoReserva(EstadoReserva.CHECKED_IN)
+                .fechaFin(FECHA_FUTURA.atTime(22, 0)).montoTotal(new BigDecimal("100.00")).build();
         ExtensionEstadia extension = ExtensionEstadia.builder()
-                .id(31L)
+                .id(41L).reserva(reserva).estado(EstadoExtensionReserva.PENDIENTE_PAGO)
+                .estadoPago(EstadoPagoReserva.EN_PROCESO)
+                .fechaInicio(FECHA_FUTURA.atTime(22, 0)).fechaFin(FECHA_FUTURA.plusDays(1).atTime(2, 0))
+                .montoTotal(new BigDecimal("40.00"))
+                .reservaTemporalHasta(OffsetDateTime.now().plusMinutes(4)).build();
+        when(extensionEstadiaRepository.findByIdForUpdate(41L)).thenReturn(Optional.of(extension));
+        when(reservaEstadiaRepository.findByIdForUpdate(11L)).thenReturn(Optional.of(reserva));
+        when(habitacionRepository.findByIdForUpdate(27)).thenReturn(Optional.of(habitacion));
+        when(reservaEstadiaRepository.existeCruceActivo(eq(27), any(), any(), any(), any(), any()))
+                .thenReturn(false);
+        when(extensionEstadiaRepository.existeOtroCrucePendiente(eq(41L), eq(27), any(), any(), any(), any()))
+                .thenReturn(false);
+        when(reservaEstadiaRepository.save(reserva)).thenReturn(reserva);
+        when(extensionEstadiaRepository.save(extension)).thenReturn(extension);
+
+        ExtensionEstadia resultado = reservaService.validarExtensionRecepcion(41L, true);
+
+        assertEquals(EstadoExtensionReserva.CONFIRMADA, resultado.getEstado());
+        assertEquals(EstadoPagoReserva.PAGADO, resultado.getEstadoPago());
+        assertEquals(FECHA_FUTURA.plusDays(1).atTime(2, 0), reserva.getFechaFin());
+        assertEquals(new BigDecimal("140.00"), reserva.getMontoTotal());
+        assertNotNull(extension.getReservaTemporalHasta());
+    }
+
+    @Test
+    void cancelarExtensionConservaFechaDeRetencionNoNula() {
+        ExtensionEstadia extension = ExtensionEstadia.builder()
+                .id(43L)
                 .estado(EstadoExtensionReserva.PENDIENTE_PAGO)
-                .metodoPago(MetodoPagoReserva.EFECTIVO)
+                .estadoPago(EstadoPagoReserva.PENDIENTE)
                 .reservaTemporalHasta(OffsetDateTime.now().plusMinutes(4))
                 .build();
         when(extensionEstadiaRepository
-                .findByIdAndReservaClienteCorreoElectronicoIgnoreCase(
-                        31L, "ana@example.com"))
+                .findByIdAndReservaClienteCorreoElectronicoIgnoreCase(43L, "ana@example.com"))
                 .thenReturn(Optional.of(extension));
         when(extensionEstadiaRepository.save(extension)).thenReturn(extension);
 
-        ReflectionTestUtils.setField(reservaService, "demoMode", false);
-        ExtensionEstadia registrada = reservaService.registrarMetodoPagoExtension(
-                "ana@example.com", 31L, MetodoPagoReserva.YAPE);
+        ExtensionEstadia cancelada = reservaService.cancelarExtensionCliente("ana@example.com", 43L);
 
-        assertEquals(EstadoExtensionReserva.PENDIENTE_PAGO, registrada.getEstado());
-        assertEquals(MetodoPagoReserva.YAPE, registrada.getMetodoPago());
+        assertEquals(EstadoExtensionReserva.CANCELADA, cancelada.getEstado());
+        assertEquals(EstadoPagoReserva.RECHAZADO, cancelada.getEstadoPago());
+        assertNotNull(cancelada.getReservaTemporalHasta());
         verify(extensionEstadiaRepository).save(extension);
+    }
+
+    @Test
+    void recepcionRechazaExtensionYLiberaLaRetencion() {
+        ExtensionEstadia extension = ExtensionEstadia.builder()
+                .id(42L).estado(EstadoExtensionReserva.PENDIENTE_PAGO)
+                .estadoPago(EstadoPagoReserva.EN_PROCESO)
+                .reservaTemporalHasta(OffsetDateTime.now().plusMinutes(4)).build();
+        when(extensionEstadiaRepository.findByIdForUpdate(42L)).thenReturn(Optional.of(extension));
+        when(extensionEstadiaRepository.save(extension)).thenReturn(extension);
+
+        ExtensionEstadia resultado = reservaService.validarExtensionRecepcion(42L, false);
+
+        assertEquals(EstadoExtensionReserva.RECHAZADA, resultado.getEstado());
+        assertEquals(EstadoPagoReserva.RECHAZADO, resultado.getEstadoPago());
+        assertNotNull(extension.getReservaTemporalHasta());
+    }
+
+    @Test
+    void recepcionBloqueaHabitacionLibreConMotivo() {
+        Habitacion habitacion = Habitacion.builder()
+                .id(27)
+                .numHabitacion("401")
+                .estadoRack("LIBRE")
+                .build();
+        when(habitacionRepository.findByIdForUpdate(27)).thenReturn(Optional.of(habitacion));
+        when(reservaEstadiaRepository.existeReservaActivaPorHabitacion(
+                eq(27), any(), eq(EstadoReserva.PENDIENTE_PAGO),
+                any(OffsetDateTime.class), any(LocalDateTime.class))).thenReturn(false);
+        when(habitacionRepository.save(habitacion)).thenReturn(habitacion);
+
+        Habitacion bloqueada = reservaService.bloquearHabitacion(27, "Mantenimiento preventivo");
+
+        assertEquals("BLOQUEADA", bloqueada.getEstadoRack());
+        assertEquals("Mantenimiento preventivo", bloqueada.getMotivoBloqueo());
+    }
+
+    @Test
+    void recepcionNoBloqueaHabitacionConReservaActiva() {
+        Habitacion habitacion = Habitacion.builder().id(27).estadoRack("LIBRE").build();
+        when(habitacionRepository.findByIdForUpdate(27)).thenReturn(Optional.of(habitacion));
+        when(reservaEstadiaRepository.existeReservaActivaPorHabitacion(
+                eq(27), any(), eq(EstadoReserva.PENDIENTE_PAGO),
+                any(OffsetDateTime.class), any(LocalDateTime.class))).thenReturn(true);
+
+        assertThrows(IllegalStateException.class,
+                () -> reservaService.bloquearHabitacion(27, "Mantenimiento"));
+    }
+
+    @Test
+    void recepcionExtiendeCheckInEnHorasYActualizaSalidaConTarifaAdicional() {
+        TipoHabitacion tipo = TipoHabitacion.builder().id(3).build();
+        Habitacion habitacion = Habitacion.builder()
+                .id(27).tipoHabitacion(tipo).estadoRack("OCUPADA").build();
+        LocalDateTime salidaActual = LocalDateTime.now().plusHours(1);
+        ReservaEstadia reserva = ReservaEstadia.builder()
+                .id(11L)
+                .tipoHabitacion(tipo)
+                .habitacion(habitacion)
+                .fechaFin(salidaActual)
+                .montoTotal(new BigDecimal("100.00"))
+                .metodoPago(MetodoPagoReserva.EFECTIVO)
+                .estadoReserva(EstadoReserva.CHECKED_IN)
+                .build();
+        TarifaHabitacion tarifa = TarifaHabitacion.builder()
+                .id(new TarifaHabitacionPK(3, 5))
+                .costoHoraAdicional(new BigDecimal("20.00"))
+                .esTarifaFinSemana(false)
+                .vigenciaDesde(LocalDate.now().minusDays(1))
+                .vigenciaHasta(LocalDate.now().plusDays(1))
+                .build();
+        when(reservaEstadiaRepository.findByIdForUpdate(11L)).thenReturn(Optional.of(reserva));
+        when(habitacionRepository.findByIdForUpdate(27)).thenReturn(Optional.of(habitacion));
+        when(tarifaHabitacionRepository.findByIdIdTipoHabitacion(3)).thenReturn(List.of(tarifa));
+        when(reservaEstadiaRepository.existeCruceActivo(
+                eq(27), any(LocalDateTime.class), any(LocalDateTime.class), any(),
+                eq(EstadoReserva.PENDIENTE_PAGO), any(OffsetDateTime.class))).thenReturn(false);
+        when(extensionEstadiaRepository.existeCrucePendiente(
+                eq(27), any(LocalDateTime.class), any(LocalDateTime.class), any(),
+                any(OffsetDateTime.class))).thenReturn(false);
+        when(reservaEstadiaRepository.save(reserva)).thenReturn(reserva);
+        when(extensionEstadiaRepository.save(any(ExtensionEstadia.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        ExtensionEstadia extension = reservaService.extenderReservaRecepcion(11L, 3);
+
+        assertEquals(salidaActual.plusHours(3), extension.getFechaFin());
+        assertEquals(new BigDecimal("3"), extension.getDuracionHoras());
+        assertEquals(new BigDecimal("60.00"), extension.getMontoTotal());
+        assertEquals(EstadoExtensionReserva.CONFIRMADA, extension.getEstado());
+        assertEquals(salidaActual.plusHours(3), reserva.getFechaFin());
+        assertEquals(new BigDecimal("160.00"), reserva.getMontoTotal());
+    }
+
+    @Test
+    void checkInDejaLaSuiteOcupadaYLigaElQrAlRack() {
+        Habitacion habitacion = Habitacion.builder()
+                .id(27)
+                .numHabitacion("401")
+                .estadoRack("LIBRE")
+                .build();
+        ReservaEstadia reserva = ReservaEstadia.builder()
+                .id(11L)
+                .habitacion(habitacion)
+                .estadoReserva(EstadoReserva.CONFIRMADA)
+                .tokenQr("qr-11")
+                .fechaInicio(LocalDateTime.now().minusHours(1))
+                .fechaFin(LocalDateTime.now().plusHours(3))
+                .build();
+        when(reservaEstadiaRepository.findByTokenQr("qr-11"))
+                .thenReturn(Optional.of(reserva));
+        when(reservaEstadiaRepository.save(reserva)).thenReturn(reserva);
+
+        ReservaEstadia checkIn = reservaService.registrarCheckIn("qr-11");
+
+        assertEquals(EstadoReserva.CHECKED_IN, checkIn.getEstadoReserva());
+        assertEquals("OCUPADA", habitacion.getEstadoRack());
+        assertEquals("qr-11", habitacion.getTokenQrDinamico());
+        assertNotNull(habitacion.getFechaExpiracionToken());
+        verify(reservaEstadiaRepository).save(reserva);
+    }
+
+    @Test
+    void checkInDelHuespedSoloAceptaSuReservaConfirmada() {
+        ReservaEstadia pendiente = ReservaEstadia.builder()
+                .id(11L)
+                .cliente(Cliente.builder().correoElectronico("ana@example.com").build())
+                .estadoReserva(EstadoReserva.PENDIENTE_PAGO)
+                .build();
+        when(reservaEstadiaRepository.findByIdAndClienteCorreoElectronicoIgnoreCase(
+                11L, "ana@example.com")).thenReturn(Optional.of(pendiente));
+
+        assertThrows(IllegalStateException.class,
+                () -> reservaService.registrarCheckInCliente(11L, "ana@example.com"));
     }
 
     private ReservaRequestDTO request(Integer tipoId, Integer habitacionId, Integer modalidadId,

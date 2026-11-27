@@ -5,75 +5,56 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Rack y recepción | Hotel Eclipse</title>
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
     <link rel="stylesheet" href="/css/empleado-eclipse.css">
     <link rel="stylesheet" th:href="@{/css/empleado-portal-demo.css}">
 <link rel="stylesheet" href="/css/cuenta-eclipse.css"></head>
 
-<body>
+<body class="employee-portal employee-rack">
     <div class="layout">
-        <aside class="sidebar">
-            <div class="brand">
-                <div class="brand-icon">✦</div>
-                <div><b>HOTEL ECLIPSE</b><small>Portal de empleados</small></div>
-            </div>
-            <div class="role">Área operativa</div>
-            <nav><a href="/empleado/recepcion" class="active">Rack y recepción</a><a href="/empleado/checkout"
-                    class="">Check-out</a><a href="/empleado/limpieza" class="">Limpieza móvil</a><a
-                    href="/empleado/averias" class="">Reportar averías</a><a href="/empleado/reportes"
-                    class="">Reportes</a><a href="/empleado/roomservice" class="">Room Service</a><a
-                    href="/empleado/extension" class="">Extensión de tiempo</a></nav>
-            <div class="sidebar-bottom"><a href="/empleado/perfil">Mi cuenta</a>
-                <form action="/logout" method="post"><input type="hidden" th:name="${_csrf.parameterName}"
-                        th:value="${_csrf.token}"><button type="submit" class="logout">Cerrar sesión</button></form>
-            </div>
-        </aside>
+        <aside th:replace="~{fragments/empleado-sidebar :: sidebar('recepcion')}"></aside>
         <main class="main">
             <header class="top">
                 <div>
                     <p class="eyebrow">HOTEL ECLIPSE · OPERACIONES</p>
-                    <h1>Rack y recepción</h1>
+                    <h1>Monitoreo de Recepción</h1>
                     <p class="subtitle">Gestión interna · Datos de habitaciones en tiempo real</p>
                 </div>
-                <div class="user"><span class="user-icon">E</span>
-                    <div><b>Empleado</b><small>Sesión de trabajo</small></div>
-                </div>
+
             </header>
             <div class="content">
                 <div class="metrics">
+                    <article><small>Total</small><strong id="metric-total">—</strong><span>Habitaciones</span></article>
                     <article><small>Habitaciones disponibles</small><strong id="metric-disponibles">—</strong><span>Según PostgreSQL</span></article>
+                    <article><small>Bloqueadas</small><strong id="metric-bloqueadas">—</strong><span>Retenciones y bloqueos</span></article>
+                    <article><small>Reservadas</small><strong id="metric-reservadas">—</strong><span>Reservas confirmadas</span></article>
                     <article><small>Ocupadas</small><strong id="metric-ocupadas">—</strong><span>Según PostgreSQL</span></article>
-                    <article><small>Pendientes de limpieza</small><strong id="metric-limpieza">—</strong><span>Según PostgreSQL</span></article>
+                    <article><small>En limpieza</small><strong id="metric-limpieza">—</strong><span>Según PostgreSQL</span></article>
+                    <article><small>Mantenimiento</small><strong id="metric-mantenimiento">—</strong><span>Según PostgreSQL</span></article>
                 </div>
                 <div class="panel">
                     <div class="panel-head">
                         <h2>Monitoreo de recepción</h2><input class="search" placeholder="Buscar habitación o suite"
                             data-filter="rooms">
                     </div>
+                    <p id="room-status-notice" role="status" aria-live="polite">
+                        Consultando el estado actual de las habitaciones.
+                    </p>
                     <div class="room-grid" id="rooms" aria-live="polite"><p>Cargando habitaciones...</p></div>
                 </div>
             </div>
             <footer>Hotel Eclipse Sta. Clara · Rack conectado a PostgreSQL (consulta)</footer>
         </main>
-        <aside class="notifications">
+        <aside class="notifications"><div class="notification-feed">
             <h2>Notificaciones</h2>
-            <p>Actividad reciente del hotel</p>
-            <div class="notice"><b>🔔 Nueva reserva web</b><span>Habitación 401 · Reserva recibida</span><small>Hace un
-                    instante</small></div>
-            <div class="notice"><b>🍔 Nueva comanda</b><span>Habitación 301 · Pedido de Room Service</span><small>Hace
-                    30 minutos</small></div>
-            <div class="notice"><b>🧹 Check-out realizado</b><span>Habitación 503 · Pendiente de
-                    limpieza</span><small>Hace 2 horas</small></div>
-            <div class="notice"><b>⚠️ Avería técnica</b><span>Habitación 302 · Revisión
-                    pendiente</span><small>Hoy</small></div>
-        </aside>
+            <p>Reservas y room service en vivo</p>
+            <div class="notice"><b>🔔 Cargando novedades</b><span>Consultando el tablero del
+                    empleado</span><small>Ahora</small></div>
+        </div></aside>
     </div>
-    <dialog id="demo-dialog">
-        <h2>Vista de demostración</h2>
-        <p id="demo-message"></p>
-        <p>Esta acción se conectará al backend en la siguiente etapa. No se han guardado cambios.</p><button
-            id="close-dialog">Entendido</button>
-    </dialog>
-    <script th:src="@{/js/empleado-portal-demo.js}" defer></script>
+    <script th:src="@{/js/rack-empleado-api.js}" defer></script>
+    <script th:src="@{/js/empleado-notificaciones.js}" defer></script>
 <script src="/js/cuenta-eclipse.js" defer></script></body>
 
 </html>

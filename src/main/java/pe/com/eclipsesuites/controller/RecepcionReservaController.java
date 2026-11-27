@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import pe.com.eclipsesuites.entity.EstadoReserva;
-import pe.com.eclipsesuites.entity.EstadoExtensionReserva;
 import pe.com.eclipsesuites.service.IReservaService;
 
 @Controller
@@ -24,7 +23,8 @@ public class RecepcionReservaController {
     public String pendientes(Model model) {
         model.addAttribute("reservas", reservaService.listarReservasPendientes());
         model.addAttribute("reservasCheckIn", reservaService.listarReservasPendientesCheckIn());
-        model.addAttribute("extensionesPendientes", reservaService.listarExtensionesPendientes());
+        model.addAttribute("extensionesPendientes",
+                reservaService.listarExtensionesPendientesValidacion());
         return "recepcion/reservas-pendientes";
     }
 
@@ -64,27 +64,34 @@ public class RecepcionReservaController {
         return "redirect:/recepcion/reservas";
     }
 
-    @PostMapping("/extensiones/{id}/confirmar")
-    public String confirmarExtension(@PathVariable Long id,
-                                     RedirectAttributes redirectAttributes) {
+    @PostMapping("/{id}/extensiones")
+    public String extenderEstadia(@PathVariable Long id,
+                                  @RequestParam Integer horas,
+                                  RedirectAttributes redirectAttributes) {
         try {
-            reservaService.actualizarEstadoExtension(id, EstadoExtensionReserva.CONFIRMADA);
+            var extension = reservaService.extenderReservaRecepcion(id, horas);
             redirectAttributes.addFlashAttribute("mensaje",
-                    "Pago de ampliación validado y estadía extendida.");
-        } catch (IllegalArgumentException | IllegalStateException ex) {
-            redirectAttributes.addFlashAttribute("errorReserva", ex.getMessage());
+                    "Extensión registrada: nueva salida "
+                            + extension.getFechaFin().format(
+                            java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
+                            + " · S/ " + extension.getMontoTotal() + ".");
+        } catch (IllegalArgumentException | IllegalStateException exception) {
+            redirectAttributes.addFlashAttribute("errorReserva", exception.getMessage());
         }
-        return "redirect:/recepcion/reservas";
+        return "redirect:/empleado/extension";
     }
 
-    @PostMapping("/extensiones/{id}/cancelar")
-    public String cancelarExtension(@PathVariable Long id,
-                                    RedirectAttributes redirectAttributes) {
+    @PostMapping("/extensiones/{extensionId}/validar")
+    public String validarExtension(@PathVariable Long extensionId,
+                                   @RequestParam boolean aprobar,
+                                   RedirectAttributes redirectAttributes) {
         try {
-            reservaService.actualizarEstadoExtension(id, EstadoExtensionReserva.CANCELADA);
-            redirectAttributes.addFlashAttribute("mensaje", "Ampliación de estadía cancelada.");
-        } catch (IllegalArgumentException | IllegalStateException ex) {
-            redirectAttributes.addFlashAttribute("errorReserva", ex.getMessage());
+            var extension = reservaService.validarExtensionRecepcion(extensionId, aprobar);
+            redirectAttributes.addFlashAttribute("mensaje", aprobar
+                    ? "Extensión aprobada; nueva salida " + extension.getFechaFin() + "."
+                    : "Extensión rechazada y retención liberada.");
+        } catch (IllegalArgumentException | IllegalStateException exception) {
+            redirectAttributes.addFlashAttribute("errorReserva", exception.getMessage());
         }
         return "redirect:/recepcion/reservas";
     }

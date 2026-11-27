@@ -14,8 +14,8 @@
 </head>
 <body class="reserva-page">
     <header class="reserva-header">
-        <a class="reserva-brand" th:href="@{/inicio}">Eclipse <span>Recepcion</span></a>
-        <a class="reserva-header__link" th:href="@{/inicio}">Volver</a>
+        <a class="reserva-brand" th:href="@{/}">Eclipse <span>Recepcion</span></a>
+        <a class="reserva-header__link" th:href="@{/empleado}">Volver</a>
     </header>
     <main class="reserva-shell">
         <section class="reserva-intro">
@@ -44,6 +44,7 @@
                     <div><dt>Fecha y turno</dt><dd th:text="${#temporals.format(reserva.fechaInicio, 'dd/MM/yyyy HH:mm')}">Fecha</dd></div>
                     <div><dt>Personas</dt><dd th:text="${reserva.cantidadPersonas}">2</dd></div>
                     <div><dt>Metodo de pago</dt><dd th:text="${reserva.metodoPago.etiqueta}">Metodo</dd></div>
+                    <div><dt>Referencia</dt><dd th:text="${reserva.referenciaPago ?: 'No indicada'}">Referencia</dd></div>
                     <div><dt>Total a validar</dt><dd th:text="${'S/ ' + #numbers.formatDecimal(reserva.montoTotal, 1, 2)}">S/ 0.00</dd></div>
                 </dl>
                 <div class="reservation-card__actions">
@@ -58,42 +59,32 @@
         </section>
 
         <section class="reservation-list" th:if="${not #lists.isEmpty(extensionesPendientes)}"
-                 aria-label="Ampliaciones pendientes">
-            <div class="reserva-panel__heading">
-                <div>
-                    <h2>Ampliaciones por validar</h2>
-                    <p>Confirma el pago adicional antes de extender la salida de la habitación.</p>
-                </div>
-            </div>
+                 aria-label="Extensiones pendientes de validación">
+            <h2>Extensiones de estadía por validar</h2>
             <article class="reservation-card" th:each="extension : ${extensionesPendientes}">
                 <div class="reservation-card__top">
                     <div>
-                        <p class="reservation-code"
-                           th:text="${'Ampliación #' + extension.id + ' · Reserva #' + extension.reserva.id}">
-                            Ampliación
-                        </p>
-                        <h2 th:text="${extension.reserva.tipoHabitacion.nombreTematico}">Suite</h2>
+                        <p class="reservation-code" th:text="${'Reserva #' + extension.reserva.id}">Reserva</p>
+                        <h2 th:text="${extension.reserva.tipoHabitacion.nombreTematico + ' · Hab. ' + extension.reserva.habitacion.numHabitacion}">Suite</h2>
                     </div>
-                    <span class="status-pill status-pill--pendiente_pago">Pendiente de validación</span>
+                    <span class="status-pill status-pill--pendiente_pago">Extensión por validar</span>
                 </div>
                 <dl class="reservation-summary">
-                    <div><dt>Habitación</dt><dd th:text="${extension.reserva.habitacion.numHabitacion}">509</dd></div>
-                    <div><dt>Cliente</dt>
-                        <dd th:text="${extension.reserva.cliente.nombre + ' ' + extension.reserva.cliente.apellido}">Cliente</dd>
-                    </div>
-                    <div><dt>Desde</dt><dd th:text="${#temporals.format(extension.fechaInicio, 'dd/MM/yyyy HH:mm')}">Fecha</dd></div>
-                    <div><dt>Hasta</dt><dd th:text="${#temporals.format(extension.fechaFin, 'dd/MM/yyyy HH:mm')}">Fecha</dd></div>
+                    <div><dt>Huésped</dt><dd th:text="${extension.reserva.cliente.nombre + ' ' + extension.reserva.cliente.apellido}">Huésped</dd></div>
                     <div><dt>Método</dt><dd th:text="${extension.metodoPago.etiqueta}">Método</dd></div>
-                    <div><dt>Total adicional</dt>
-                        <dd th:text="${'S/ ' + #numbers.formatDecimal(extension.montoTotal, 1, 2)}">S/ 0.00</dd>
-                    </div>
+                    <div><dt>Referencia</dt><dd th:text="${extension.referenciaPago ?: 'No indicada'}">Referencia</dd></div>
+                    <div><dt>Salida anterior</dt><dd th:text="${#temporals.format(extension.fechaInicio, 'dd/MM/yyyy HH:mm')}">Fecha</dd></div>
+                    <div><dt>Nueva salida</dt><dd th:text="${#temporals.format(extension.fechaFin, 'dd/MM/yyyy HH:mm')}">Fecha</dd></div>
+                    <div><dt>Importe adicional</dt><dd th:text="${'S/ ' + #numbers.formatDecimal(extension.montoTotal, 1, 2)}">S/ 0.00</dd></div>
                 </dl>
                 <div class="reservation-card__actions">
-                    <form th:action="@{/recepcion/reservas/extensiones/{id}/confirmar(id=${extension.id})}" method="post">
-                        <button class="button button--primary" type="submit">Validar ampliación</button>
+                    <form th:action="@{/recepcion/reservas/extensiones/{id}/validar(id=${extension.id})}" method="post">
+                        <input type="hidden" name="aprobar" value="true">
+                        <button class="button button--primary" type="submit">Validar pago y aprobar</button>
                     </form>
-                    <form th:action="@{/recepcion/reservas/extensiones/{id}/cancelar(id=${extension.id})}" method="post">
-                        <button class="button button--secondary" type="submit">Cancelar ampliación</button>
+                    <form th:action="@{/recepcion/reservas/extensiones/{id}/validar(id=${extension.id})}" method="post">
+                        <input type="hidden" name="aprobar" value="false">
+                        <button class="button button--secondary" type="submit">Rechazar solicitud</button>
                     </form>
                 </div>
             </article>

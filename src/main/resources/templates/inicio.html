@@ -18,12 +18,23 @@
             <h1 class="inicio-header__title">Suites temáticas</h1>
             <p class="inicio-header__subtitle">Elige tu próxima habitación para reservar</p>
         </div>
-        <button class="inicio-header__user" type="button" aria-label="Usuario">
+        <a class="inicio-header__user" th:if="${esCliente}" th:href="@{/cliente/perfil}"
+           aria-label="Perfil de usuario">
             <span class="inicio-header__user-icon">
                 <i class="bi bi-person"></i>
             </span>
-            <span>Usuario</span>
-        </button>
+            <span th:text="${perfilCliente != null ? perfilCliente.nombreCompleto : 'Mi perfil'}">Usuario</span>
+        </a>
+        <a class="inicio-header__user" th:unless="${esCliente}" th:href="@{/empleado/perfil}"
+           aria-label="Mi cuenta">
+            <span class="inicio-header__user-icon">
+                <i class="bi bi-person"></i>
+            </span>
+            <span>Mi cuenta</span>
+        </a>
+        <a class="inicio-header__reservation-link" th:href="@{/}">
+            <i class="bi bi-house-door"></i> Inicio
+        </a>
         <a class="inicio-header__reservation-link" th:href="@{/catalogo}">Catálogo público</a>
         <a class="inicio-header__reservation-link" sec:authorize="hasAnyRole('RECEPCION', 'ADMIN')"
            th:href="@{/recepcion/reservas}">Validar reservas</a>
@@ -110,7 +121,7 @@
     </main>
 
     <nav class="bottom-nav" aria-label="Navegación inferior">
-        <a class="bottom-nav__item bottom-nav__item--active" href="#">
+        <a class="bottom-nav__item" th:href="@{/}">
             <span class="bottom-nav__icon">
                 <i class="bi bi-house-door"></i>
             </span>
@@ -122,7 +133,7 @@
             </span>
             <span>Reserva</span>
         </a>
-        <a class="bottom-nav__item" href="#">
+        <a class="bottom-nav__item" th:href="@{/menu-suite}">
             <span class="bottom-nav__icon">
                 <i class="bi bi-bell"></i>
             </span>

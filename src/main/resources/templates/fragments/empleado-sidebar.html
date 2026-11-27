@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<aside class="sidebar" th:fragment="sidebar(active)">
+    <div class="brand"><span class="brand-icon" aria-hidden="true"><span></span></span><span>Empleado</span></div>
+    <div class="role">Rol: <span sec:authorize="hasRole('ADMIN')">Admin</span><span sec:authorize="hasRole('RECEPCION')">Recepción</span><span sec:authorize="hasRole('LIMPIEZA')">Limpieza</span><span sec:authorize="hasRole('ROOMSERVICE')">Room Service</span></div>
+    <nav aria-label="Navegación del empleado">
+        <a sec:authorize="hasAnyRole('ADMIN','RECEPCION')" th:href="@{/empleado/recepcion}" th:classappend="${active == 'recepcion'} ? 'active' : ''" th:attr="aria-current=${active == 'recepcion' ? 'page' : null}">Rack y Recepción</a>
+        <a sec:authorize="hasAnyRole('ADMIN','LIMPIEZA')" th:href="@{/empleado/limpieza}" th:classappend="${active == 'limpieza'} ? 'active' : ''" th:attr="aria-current=${active == 'limpieza' ? 'page' : null}">Limpieza móvil</a>
+        <a sec:authorize="hasAnyRole('ADMIN','LIMPIEZA')" th:href="@{/empleado/averias}" th:classappend="${active == 'averias'} ? 'active' : ''" th:attr="aria-current=${active == 'averias' ? 'page' : null}">Reportar Averías</a>
+        <details class="sidebar-more" th:open="${active == 'checkout' or active == 'reportes' or active == 'roomservice' or active == 'extension' or active == 'admin' or active == 'agenda'}">
+            <summary>Más operaciones</summary>
+            <div class="sidebar-subnav">
+                <a sec:authorize="hasAnyRole('ADMIN','RECEPCION')" th:href="@{/empleado/checkout}" th:classappend="${active == 'checkout'} ? 'active' : ''">Check-out</a>
+                <a sec:authorize="hasRole('ADMIN')" th:href="@{/empleado/reportes}" th:classappend="${active == 'reportes'} ? 'active' : ''">Reportes</a>
+                <a sec:authorize="hasAnyRole('ADMIN','ROOMSERVICE')" th:href="@{/empleado/roomservice}" th:classappend="${active == 'roomservice'} ? 'active' : ''">Room Service</a>
+                <a sec:authorize="hasAnyRole('ADMIN','ROOMSERVICE')" th:href="@{/empleado/extension}" th:classappend="${active == 'extension'} ? 'active' : ''">Extensión de tiempo</a>
+                <a sec:authorize="hasRole('ADMIN')" th:href="@{/empleado/admin}" th:classappend="${active == 'admin'} ? 'active' : ''">Administración</a>
+                <a th:href="@{/empleado/agenda}" th:classappend="${active == 'agenda'} ? 'active' : ''">Agenda</a>
+            </div>
+        </details>
+    </nav>
+    <div class="sidebar-bottom">
+        <details class="sidebar-account" th:open="${active == 'perfil'}">
+            <summary>Más sobre tu cuenta</summary>
+            <div class="sidebar-subnav"><a th:href="@{/empleado/perfil}">Mi perfil</a><a th:href="@{/empleado/perfil#calendario}">Mi calendario</a><a th:href="@{/empleado/perfil#horarios}">Mis horarios</a><a th:href="@{/empleado/agenda#notificaciones}">Notificaciones</a></div>
+        </details>
+        <form th:action="@{/logout}" method="post"><button type="submit" class="logout">Cerrar sesión</button></form>
+    </div>
+</aside>
+</body></html>

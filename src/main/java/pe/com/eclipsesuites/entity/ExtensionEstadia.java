@@ -40,9 +40,12 @@ public class ExtensionEstadia {
     private ReservaEstadia reserva;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_modalidad", nullable = false)
+    @JoinColumn(name = "id_modalidad")
     @ToString.Exclude
     private ModalidadTurno modalidadTurno;
+
+    @Column(name = "duracion_horas", precision = 4, scale = 2)
+    private BigDecimal duracionHoras;
 
     @Column(name = "fecha_inicio", nullable = false)
     private LocalDateTime fechaInicio;
@@ -63,9 +66,18 @@ public class ExtensionEstadia {
     @Builder.Default
     private EstadoExtensionReserva estado = EstadoExtensionReserva.PENDIENTE_PAGO;
 
-    @Column(name = "reserva_temporal_hasta")
+    @Column(name = "reserva_temporal_hasta", nullable = false)
     private OffsetDateTime reservaTemporalHasta;
 
     @Column(name = "fecha_creacion", nullable = false)
     private LocalDateTime fechaCreacion;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado_pago", nullable = false,
+            columnDefinition = "varchar(20) default 'PENDIENTE'")
+    @Builder.Default
+    private EstadoPagoReserva estadoPago = EstadoPagoReserva.PENDIENTE;
+
+    @Column(name = "referencia_pago", length = 100)
+    private String referenciaPago;
 }

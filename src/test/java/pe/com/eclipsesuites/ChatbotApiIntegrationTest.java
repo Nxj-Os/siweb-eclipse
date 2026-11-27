@@ -44,10 +44,12 @@ class ChatbotApiIntegrationTest {
     void catalogoRespondeConSuitesSembradas() throws Exception {
         mockMvc.perform(get("/api/chatbot/catalogo"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.total").value(16))
+                .andExpect(jsonPath("$.total").value(17))
                 .andExpect(jsonPath("$.disponibles").value(16))
-                .andExpect(jsonPath("$.habitaciones[3].numHabitacion").value("302"))
-                .andExpect(jsonPath("$.habitaciones[3].disponible").value(true));
+                .andExpect(jsonPath("$.habitaciones[0].numHabitacion").value("101"))
+                .andExpect(jsonPath("$.habitaciones[0].disponible").value(false))
+                .andExpect(jsonPath("$.habitaciones[1].numHabitacion").value("201"))
+                .andExpect(jsonPath("$.habitaciones[1].disponible").value(true));
     }
 
     @Test

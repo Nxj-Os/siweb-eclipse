@@ -4,5 +4,6 @@ public enum EstadoExtensionReserva {
     PENDIENTE_PAGO,
     CONFIRMADA,
     CANCELADA,
+    RECHAZADA,
     EXPIRADA
 }

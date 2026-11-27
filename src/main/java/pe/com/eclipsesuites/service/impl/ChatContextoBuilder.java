@@ -21,8 +21,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Construye el catálogo visible del asistente y el resumen de datos reales
@@ -65,7 +63,8 @@ public class ChatContextoBuilder {
 
     @Transactional(readOnly = true)
     public CatalogoChatbotResponseDTO catalogo() {
-        List<HabitacionCardDTO> tarjetas = habitacionesDelCatalogo().stream()
+        List<HabitacionCardDTO> tarjetas = habitacionRepository.findAll().stream()
+                .sorted(Comparator.comparing(Habitacion::getNumHabitacion))
                 .map(this::aTarjeta)
                 .toList();
         int disponibles = (int) tarjetas.stream().filter(HabitacionCardDTO::disponible).count();
@@ -97,7 +96,9 @@ public class ChatContextoBuilder {
     @Transactional(readOnly = true)
     public String resumenCatalogo() {
         StringBuilder texto = new StringBuilder("SUITES Y DISPONIBILIDAD (estado actual):\n");
-        List<Habitacion> habitaciones = habitacionesDelCatalogo();
+        List<Habitacion> habitaciones = habitacionRepository.findAll().stream()
+                .sorted(Comparator.comparing(Habitacion::getNumHabitacion))
+                .toList();
         if (habitaciones.isEmpty()) {
             texto.append("- Sin habitaciones registradas.\n");
         }
@@ -156,9 +157,11 @@ public class ChatContextoBuilder {
     private HabitacionCardDTO aTarjeta(Habitacion habitacion) {
         TipoHabitacion tipo = habitacion.getTipoHabitacion();
         String estado = habitacion.getEstadoRack();
-        String estadoNormalizado = estado == null ? "" : estado.trim();
-        boolean disponible = "LIBRE".equalsIgnoreCase(estadoNormalizado)
-                || "DISPONIBLE".equalsIgnoreCase(estadoNormalizado);
+        String limpio = estado == null ? "" : estado.trim();
+        // LIBRE y DISPONIBLE son "sin huésped": el mismo criterio que usa
+        // la reserva para ofrecer la suite.
+        boolean disponible = "DISPONIBLE".equalsIgnoreCase(limpio)
+                || "LIBRE".equalsIgnoreCase(limpio);
         return new HabitacionCardDTO(
                 habitacion.getNumHabitacion(),
                 habitacion.getPiso(),
@@ -170,17 +173,6 @@ public class ChatContextoBuilder {
                 estado,
                 disponible,
                 badgePara(estado, disponible));
-    }
-
-    private List<Habitacion> habitacionesDelCatalogo() {
-        Set<Integer> tiposConTarifa = tarifaHabitacionRepository.findAll().stream()
-                .map(tarifa -> tarifa.getId().getIdTipoHabitacion())
-                .collect(Collectors.toSet());
-        return habitacionRepository.findAll().stream()
-                .filter(habitacion -> habitacion.getTipoHabitacion() != null
-                        && tiposConTarifa.contains(habitacion.getTipoHabitacion().getId()))
-                .sorted(Comparator.comparing(Habitacion::getNumHabitacion))
-                .toList();
     }
 
     private static String badgePara(String estado, boolean disponible) {

@@ -87,6 +87,15 @@ public class ReservaEstadia {
     @Column(name = "fecha_pago")
     private LocalDateTime fechaPago;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado_pago", nullable = false,
+            columnDefinition = "varchar(20) default 'PENDIENTE'")
+    @Builder.Default
+    private EstadoPagoReserva estadoPago = EstadoPagoReserva.PENDIENTE;
+
+    @Column(name = "referencia_pago", length = 100)
+    private String referenciaPago;
+
     @Column(name = "fecha_check_in")
     private LocalDateTime fechaCheckIn;
 }

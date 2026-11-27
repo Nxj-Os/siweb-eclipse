@@ -15,7 +15,14 @@ import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
+@SpringBootTest(properties = {
+        "spring.datasource.url=jdbc:h2:mem:siweb_catalogo;DB_CLOSE_DELAY=-1;MODE=PostgreSQL",
+        "spring.datasource.driver-class-name=org.h2.Driver",
+        "spring.datasource.username=sa",
+        "spring.datasource.password=",
+        "spring.jpa.hibernate.ddl-auto=create-drop",
+        "spring.jpa.show-sql=false"
+})
 @ActiveProfiles("demo")
 class DemoCatalogInitializerTest {
 
@@ -33,9 +40,9 @@ class DemoCatalogInitializerTest {
 
     @Test
     void demoProfileSeedsSuitesRatesAndRooms() {
-        var suites = suitesDelCatalogo();
+        var suites = tipoHabitacionRepository.findAll();
 
-        assertThat(suites).hasSize(7);
+        assertThat(suites).hasSize(8);
         assertThat(suites).extracting(TipoHabitacion::getNombreTematico)
                 .containsExactlyInAnyOrder(
                         "Suite Básica",
@@ -44,20 +51,19 @@ class DemoCatalogInitializerTest {
                         "Suite Roja",
                         "Suite Jacuzzi",
                         "Sauna con Jacuzzi",
-                        "Suite Presidencial");
+                        "Suite Presidencial",
+                        "Suite Eclipse Demo");
         assertThat(modalidadTurnoRepository.findAll()).hasSize(3);
         assertThat(tarifaHabitacionRepository.findAll()).hasSize(21);
-        assertThat(suites.stream()
-                .mapToInt(suite -> (int) habitacionRepository
-                        .countByTipoHabitacionId(suite.getId()))
-                .sum()).isEqualTo(16);
+        // 16 del catálogo de demo + la suite 101 de room service.
+        assertThat(habitacionRepository.findAll()).hasSize(17);
         assertThat(suites).allSatisfy(suite ->
                 assertThat(habitacionRepository.countByTipoHabitacionId(suite.getId())).isPositive());
     }
 
     @Test
     void demoProfileSeedsAmenitiesAndOfficialPrices() {
-        var suites = suitesDelCatalogo();
+        var suites = tipoHabitacionRepository.findAll();
         assertThat(suites).allSatisfy(suite ->
                 assertThat(suite.getAmenidades()).isNotBlank());
 
@@ -81,11 +87,5 @@ class DemoCatalogInitializerTest {
                 .findById(new TarifaHabitacionPK(tipoId, modalidadId))
                 .orElseThrow()
                 .getPrecioEstadiaBase();
-    }
-
-    private java.util.List<TipoHabitacion> suitesDelCatalogo() {
-        return tipoHabitacionRepository.findAll().stream()
-                .filter(suite -> !"SUITE-DEMO".equals(suite.getCodTipo()))
-                .toList();
     }
 }

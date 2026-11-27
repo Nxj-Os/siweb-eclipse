@@ -1,7 +1,6 @@
 package pe.com.eclipsesuites.service;
 
 import pe.com.eclipsesuites.dto.request.ReservaRequestDTO;
-import pe.com.eclipsesuites.entity.EstadoExtensionReserva;
 import pe.com.eclipsesuites.entity.EstadoReserva;
 import pe.com.eclipsesuites.entity.ExtensionEstadia;
 import pe.com.eclipsesuites.entity.Habitacion;
@@ -35,8 +34,14 @@ public interface IReservaService {
     ReservaEstadia simularPagoReserva(String correoCliente, Long reservaId,
                                       MetodoPagoReserva metodoPago);
 
+    ReservaEstadia simularPagoReserva(String correoCliente, Long reservaId,
+                                      MetodoPagoReserva metodoPago, String referenciaPago);
+
     ReservaEstadia registrarMetodoPagoReserva(String correoCliente, Long reservaId,
                                               MetodoPagoReserva metodoPago);
+
+    ReservaEstadia registrarMetodoPagoReserva(String correoCliente, Long reservaId,
+                                              MetodoPagoReserva metodoPago, String referenciaPago);
 
     List<ReservaEstadia> listarReservasCliente(String correoCliente);
 
@@ -50,9 +55,21 @@ public interface IReservaService {
 
     ReservaEstadia registrarCheckIn(String tokenQr);
 
+    /**
+     * Check-in hecho por el huésped desde su cuenta: valida propiedad y
+     * vigencia y deja la suite {@code OCUPADA} en el rack.
+     */
+    ReservaEstadia registrarCheckInCliente(Long reservaId, String correoCliente);
+
     List<ReservaEstadia> listarReservasPendientesCheckIn();
 
     List<ReservaEstadia> listarReservasEnCurso();
+
+    Habitacion bloquearHabitacion(Integer habitacionId, String motivo);
+
+    Habitacion liberarHabitacion(Integer habitacionId);
+
+    ExtensionEstadia extenderReservaRecepcion(Long reservaId, Integer horas);
 
     ExtensionEstadia crearExtension(String correoCliente, Long reservaId, Integer modalidadId);
 
@@ -61,10 +78,18 @@ public interface IReservaService {
     ExtensionEstadia simularPagoExtension(String correoCliente, Long extensionId,
                                           MetodoPagoReserva metodoPago);
 
+    ExtensionEstadia simularPagoExtension(String correoCliente, Long extensionId,
+                                          MetodoPagoReserva metodoPago, String referenciaPago);
+
     ExtensionEstadia registrarMetodoPagoExtension(String correoCliente, Long extensionId,
-                                                   MetodoPagoReserva metodoPago);
+                                                  MetodoPagoReserva metodoPago);
 
-    List<ExtensionEstadia> listarExtensionesPendientes();
+    ExtensionEstadia registrarMetodoPagoExtension(String correoCliente, Long extensionId,
+                                                  MetodoPagoReserva metodoPago, String referenciaPago);
 
-    ExtensionEstadia actualizarEstadoExtension(Long id, EstadoExtensionReserva nuevoEstado);
+    ExtensionEstadia cancelarExtensionCliente(String correoCliente, Long extensionId);
+
+    List<ExtensionEstadia> listarExtensionesPendientesValidacion();
+
+    ExtensionEstadia validarExtensionRecepcion(Long extensionId, boolean aprobar);
 }

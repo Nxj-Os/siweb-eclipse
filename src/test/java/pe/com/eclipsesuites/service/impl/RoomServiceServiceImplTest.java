@@ -11,6 +11,7 @@ import pe.com.eclipsesuites.dao.DetallePedidoRSRepository;
 import pe.com.eclipsesuites.dao.HabitacionRepository;
 import pe.com.eclipsesuites.dao.PedidoRoomServiceRepository;
 import pe.com.eclipsesuites.dao.ProductoRepository;
+import pe.com.eclipsesuites.dao.ReservaEstadiaRepository;
 import pe.com.eclipsesuites.dto.request.CrearPedidoRequestDTO;
 import pe.com.eclipsesuites.dto.request.PedidoItemDTO;
 import pe.com.eclipsesuites.dto.response.CartaResponseDTO;
@@ -29,6 +30,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -53,6 +55,8 @@ class RoomServiceServiceImplTest {
     private PedidoRoomServiceRepository pedidoRoomServiceRepository;
     @Mock
     private DetallePedidoRSRepository detallePedidoRSRepository;
+    @Mock
+    private ReservaEstadiaRepository reservaEstadiaRepository;
 
     @org.mockito.Captor
     private ArgumentCaptor<List<DetallePedidoRS>> detallesCaptor;
@@ -62,7 +66,8 @@ class RoomServiceServiceImplTest {
     @BeforeEach
     void setUp() {
         servicio = new RoomServiceServiceImpl(habitacionRepository, categoriaProductoRepository,
-                productoRepository, pedidoRoomServiceRepository, detallePedidoRSRepository);
+                productoRepository, pedidoRoomServiceRepository, detallePedidoRSRepository,
+                reservaEstadiaRepository);
         ReflectionTestUtils.setField(servicio, "minutosEnPreparacion", 3L);
         ReflectionTestUtils.setField(servicio, "minutosControlado", 7L);
         ReflectionTestUtils.setField(servicio, "minutosEntregado", 12L);
@@ -96,31 +101,38 @@ class RoomServiceServiceImplTest {
     // ---------------------------------------------------------- carta
 
     @Test
-    void obtenerCarta_tokenInexistenteBloqueaElAcceso() {
-        when(habitacionRepository.findByTokenQrDinamico(TOKEN))
-                .thenReturn(Optional.empty());
+    void obtenerCarta_sinTokenNoBloqueaYListaSuitesOcupadas() {
+        when(categoriaProductoRepository.findAllByOrderByNombreCategoria())
+                .thenReturn(List.of());
+        when(productoRepository.findAllConCategoria()).thenReturn(List.of());
+        when(habitacionRepository.findByEstadoRack("OCUPADA"))
+                .thenReturn(List.of(habitacionVigente()));
 
-        assertThrows(AccesoRoomServiceNoPermitidoException.class,
-                () -> servicio.obtenerCarta(TOKEN, null, null));
+        CartaResponseDTO carta = servicio.obtenerCarta(null, null, null);
+
+        assertNull(carta.getNumHabitacion());
+        assertEquals(List.of("101"), carta.getSuitesDisponibles());
+        assertNotNull(carta.getCategorias());
+        assertNotNull(carta.getProductos());
     }
 
     @Test
-    void obtenerCarta_tokenExpiradoBloqueaElAcceso() {
+    void obtenerCarta_tokenExpiradoSeIgnoraYNoBloquea() {
         Habitacion habitacion = habitacionVigente();
         habitacion.setFechaExpiracionToken(OffsetDateTime.now().minusMinutes(1));
         when(habitacionRepository.findByTokenQrDinamico(TOKEN))
                 .thenReturn(Optional.of(habitacion));
+        when(categoriaProductoRepository.findAllByOrderByNombreCategoria())
+                .thenReturn(List.of());
+        when(productoRepository.findAllConCategoria()).thenReturn(List.of());
+        when(habitacionRepository.findByEstadoRack("OCUPADA"))
+                .thenReturn(List.of(habitacion));
 
-        assertThrows(AccesoRoomServiceNoPermitidoException.class,
-                () -> servicio.obtenerCarta("  " + TOKEN + " ", null, null));
-    }
+        CartaResponseDTO carta = servicio.obtenerCarta("  " + TOKEN + " ", null, null);
 
-    @Test
-    void obtenerCarta_sinTokenBloqueaElAccesoSinConsultarRepositorios() {
-        assertThrows(AccesoRoomServiceNoPermitidoException.class,
-                () -> servicio.obtenerCarta(null, null, null));
-        assertThrows(AccesoRoomServiceNoPermitidoException.class,
-                () -> servicio.obtenerCarta("   ", null, null));
+        // El token expirado no identifica suite, pero la carta se sirve.
+        assertNull(carta.getNumHabitacion());
+        assertEquals(List.of("101"), carta.getSuitesDisponibles());
     }
 
     @Test
@@ -129,6 +141,8 @@ class RoomServiceServiceImplTest {
         CategoriaProducto bebidas = categoria(2, "Bebidas");
         when(habitacionRepository.findByTokenQrDinamico(TOKEN))
                 .thenReturn(Optional.of(habitacionVigente()));
+        when(habitacionRepository.findByEstadoRack("OCUPADA"))
+                .thenReturn(List.of(habitacionVigente()));
         when(categoriaProductoRepository.findAllByOrderByNombreCategoria())
                 .thenReturn(List.of(bebidas, platos));
         when(productoRepository.findAllConCategoria())
@@ -139,6 +153,7 @@ class RoomServiceServiceImplTest {
         CartaResponseDTO carta = servicio.obtenerCarta(TOKEN, null, null);
 
         assertEquals("101", carta.getNumHabitacion());
+        assertEquals(List.of("101"), carta.getSuitesDisponibles());
         assertEquals(2, carta.getCategorias().size());
         assertEquals(2, carta.getProductos().size());
         assertEquals("Bebidas", carta.getCategorias().get(0).getNombre());
@@ -151,6 +166,8 @@ class RoomServiceServiceImplTest {
         CategoriaProducto bebidas = categoria(2, "Bebidas");
         when(habitacionRepository.findByTokenQrDinamico(TOKEN))
                 .thenReturn(Optional.of(habitacionVigente()));
+        when(habitacionRepository.findByEstadoRack("OCUPADA"))
+                .thenReturn(List.of(habitacionVigente()));
         when(categoriaProductoRepository.findAllByOrderByNombreCategoria())
                 .thenReturn(List.of(bebidas, platos));
         when(productoRepository.findAllConCategoria())
@@ -213,6 +230,49 @@ class RoomServiceServiceImplTest {
     }
 
     @Test
+    void crearPedido_sinTokenUsaLaSuiteDelSelector() {
+        CategoriaProducto platos = categoria(1, "Platos fuertes");
+        Producto hamburguesa = producto(10, platos, "Hamburguesa clásica", "15.00", 25);
+        Habitacion suite202 = Habitacion.builder()
+                .id(2)
+                .numHabitacion("202")
+                .estadoRack("OCUPADA")
+                .build();
+        when(habitacionRepository.findByNumHabitacion("202"))
+                .thenReturn(Optional.of(suite202));
+        when(pedidoRoomServiceRepository.existsByCodigoPedido(any())).thenReturn(false);
+        when(pedidoRoomServiceRepository.save(any(PedidoRoomService.class)))
+                .thenAnswer(invocation -> {
+                    PedidoRoomService guardado = invocation.getArgument(0);
+                    guardado.setId(56);
+                    return guardado;
+                });
+        when(productoRepository.findById(10)).thenReturn(Optional.of(hamburguesa));
+        when(detallePedidoRSRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(productoRepository.descontarStock(10, 1)).thenReturn(1);
+
+        PedidoResponseDTO respuesta = servicio.crearPedido(CrearPedidoRequestDTO.builder()
+                .numHabitacion("202")
+                .items(List.of(PedidoItemDTO.builder().idProducto(10).cantidad(1).build()))
+                .build());
+
+        assertEquals("202", respuesta.getNumHabitacion());
+        assertEquals(new BigDecimal("15.00"), respuesta.getMontoTotal());
+        verify(productoRepository).descontarStock(10, 1);
+    }
+
+    @Test
+    void crearPedido_sinTokenNiSuitesOcupadasRechazaLaSolicitud() {
+        when(habitacionRepository.findByEstadoRack("OCUPADA")).thenReturn(List.of());
+
+        assertThrows(IllegalArgumentException.class,
+                () -> servicio.crearPedido(CrearPedidoRequestDTO.builder()
+                        .items(List.of(PedidoItemDTO.builder().idProducto(10).cantidad(1).build()))
+                        .build()));
+        verify(pedidoRoomServiceRepository, never()).save(any());
+    }
+
+    @Test
     void crearPedido_stockInsuficienteNoEscribeNada() {
         CategoriaProducto platos = categoria(1, "Platos fuertes");
         Producto almendras = producto(12, platos, "Almendras tostadas", "8.00", 1);
@@ -260,13 +320,33 @@ class RoomServiceServiceImplTest {
 
     @Test
     void obtenerPedido_codigoDesconocidoRetorna404() {
-        when(habitacionRepository.findByTokenQrDinamico(TOKEN))
-                .thenReturn(Optional.of(habitacionVigente()));
         when(pedidoRoomServiceRepository.findByCodigoPedido("A0000"))
                 .thenReturn(Optional.empty());
 
         assertThrows(PedidoNoEncontradoException.class,
                 () -> servicio.obtenerPedido(TOKEN, "A0000"));
+    }
+
+    @Test
+    void obtenerPedido_sinTokenSeConsultaPorCodigo() {
+        Habitacion habitacion = habitacionVigente();
+        PedidoRoomService pedido = PedidoRoomService.builder()
+                .id(7)
+                .habitacion(habitacion)
+                .codigoPedido("A1488")
+                .estadoPedido(EstadoPedido.RECIBIDO)
+                .montoTotal(new BigDecimal("15.00"))
+                .fHPedido(OffsetDateTime.now())
+                .fHUltimaTransicion(OffsetDateTime.now())
+                .build();
+        when(pedidoRoomServiceRepository.findByCodigoPedido("A1488"))
+                .thenReturn(Optional.of(pedido));
+        when(detallePedidoRSRepository.findByIdPedido(7)).thenReturn(List.of());
+
+        PedidoResponseDTO respuesta = servicio.obtenerPedido(null, "A1488");
+
+        assertEquals("A1488", respuesta.getCodigo());
+        assertEquals("101", respuesta.getNumHabitacion());
     }
 
     @Test

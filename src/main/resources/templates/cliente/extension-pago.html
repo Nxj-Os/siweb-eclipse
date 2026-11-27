@@ -13,7 +13,7 @@
 </head>
 <body class="reserva-page">
     <header class="reserva-header">
-        <a class="reserva-brand" th:href="@{/inicio}">Eclipse <span>Suites</span></a>
+        <a class="reserva-brand" th:href="@{/}">Eclipse <span>Suites</span></a>
         <a class="reserva-header__link" th:href="@{/cliente/reservas/{id}(id=${extension.reserva.id})}">Volver a la reserva</a>
     </header>
     <main class="reserva-shell reserva-shell--narrow">
@@ -22,9 +22,6 @@
             <h1>Confirma el tiempo extra</h1>
             <p>La habitación está retenida para ti durante cinco minutos.</p>
         </section>
-        <p class="reserva-demo-notice" th:if="${demoMode}" role="status">
-            Pago de demostración: no se realizará ningún cobro ni se solicitarán datos bancarios.
-        </p>
         <div class="reserva-alert reserva-alert--error" role="alert"
              th:if="${errorReserva}" th:text="${errorReserva}"></div>
         <section class="reservation-card hold-card"
@@ -47,7 +44,7 @@
                 <div><dt>Duración extra</dt><dd th:text="${extension.modalidadTurno.nombreTurno}">4 horas</dd></div>
                 <div><dt>Total adicional</dt><dd th:text="${'S/ ' + #numbers.formatDecimal(extension.montoTotal, 1, 2)}">S/ 0.00</dd></div>
             </dl>
-            <form class="hold-payment-form"
+            <form class="hold-payment-form" th:attr="data-demo=${demoMode}"
                   th:action="@{/cliente/reservas/extensiones/{id}/pagar(id=${extension.id})}"
                   th:object="${pago}" method="post">
                 <fieldset class="duration-selection">
@@ -60,19 +57,66 @@
                         </label>
                     </div>
                 </fieldset>
-                <p class="payment-disclaimer" th:unless="${demoMode}">
-                    Completa el pago por el método elegido. Recepción validará la operación antes de confirmar la ampliación.
+                <span class="visually-hidden" id="payment-method-help" role="status" aria-live="polite"></span>
+                <p class="payment-instruction payment-instruction--cash" id="cash-instructions" hidden>
+                    Acércate al área de recepción para realizar el pago; se notificará al personal sobre tu visita.
                 </p>
+                <div class="card-fields" id="card-fields" hidden aria-label="Datos de tarjeta">
+                    <label class="reserva-field card-field card-field--wide">
+                        <span>Número de tarjeta</span>
+                        <input id="card-number" type="text" inputmode="numeric" autocomplete="cc-number"
+                               maxlength="23" placeholder="1234 5678 9012 3456" aria-describedby="card-number-error">
+                        <small class="field-error" id="card-number-error" hidden></small>
+                    </label>
+                    <label class="reserva-field card-field">
+                        <span>Vencimiento</span>
+                        <input id="card-expiry" type="text" inputmode="numeric" autocomplete="cc-exp"
+                               maxlength="5" placeholder="MM/AA" aria-describedby="card-expiry-error">
+                        <small class="field-error" id="card-expiry-error" hidden></small>
+                    </label>
+                    <label class="reserva-field card-field">
+                        <span>CVC</span>
+                        <input id="card-cvc" type="password" inputmode="numeric" autocomplete="cc-csc"
+                               maxlength="4" placeholder="3 o 4 dígitos" aria-describedby="card-cvc-error">
+                        <small class="field-error" id="card-cvc-error" hidden></small>
+                    </label>
+                    <label class="reserva-field card-field card-field--wide">
+                        <span>Nombre del titular</span>
+                        <input id="cardholder-name" type="text" autocomplete="cc-name" maxlength="80"
+                               placeholder="Como aparece en la tarjeta" aria-describedby="cardholder-name-error">
+                        <small class="field-error" id="cardholder-name-error" hidden></small>
+                    </label>
+                </div>
+                <div class="card-fields yape-fields" id="yape-fields" hidden aria-label="Datos de pago con Yape">
+                    <label class="reserva-field card-field card-field--wide">
+                        <span>Número de celular asociado a Yape</span>
+                        <input id="yape-phone" name="numeroYape" type="tel" th:value="*{numeroYape}" inputmode="numeric"
+                               autocomplete="tel-national" maxlength="9" placeholder="9 dígitos"
+                               aria-describedby="yape-phone-error">
+                        <small class="field-error" id="yape-phone-error" hidden></small>
+                    </label>
+                    <label class="reserva-field card-field card-field--wide">
+                        <span>Código de aprobación</span>
+                        <input id="yape-approval-code" name="codigoAprobacion" type="text" th:value="*{codigoAprobacion}"
+                               inputmode="numeric" autocomplete="off" maxlength="6" placeholder="6 dígitos"
+                               aria-describedby="yape-approval-code-error">
+                        <small class="field-error" id="yape-approval-code-error" hidden></small>
+                    </label>
+                </div>
                 <div class="reservation-card__actions">
-                    <a class="button button--secondary"
-                       th:href="@{/cliente/reservas/{id}(id=${extension.reserva.id})}">Cancelar</a>
-                    <button class="button button--primary" type="submit"
+                    <button class="button button--primary" id="submit-payment" type="submit"
+                            data-label-cash="Confirmar ampliación"
                             th:text="${demoMode ? 'Simular pago y ampliar' : 'Enviar pago a validar'}">
                         Simular pago y ampliar
                     </button>
                 </div>
+                <p class="payment-invoice-note">Se emitirá la boleta de pago una vez realizado.</p>
+            </form>
+            <form class="reservation-card__cancel-form" th:action="@{/cliente/reservas/extensiones/{id}/cancelar(id=${extension.id})}" method="post">
+                <button class="button button--secondary" type="submit">Cancelar y liberar extensión</button>
             </form>
         </section>
     </main>
+    <script th:src="@{/js/payment-method.js}" defer></script>
 </body>
 </html>

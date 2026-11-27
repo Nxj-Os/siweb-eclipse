@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,11 +19,13 @@ import pe.com.eclipsesuites.dto.response.CartaResponseDTO;
 import pe.com.eclipsesuites.dto.response.PedidoResponseDTO;
 import pe.com.eclipsesuites.service.IRoomServiceService;
 
+import java.util.List;
+
 /**
- * API de la carta de room service para el huésped. Los endpoints de
- * carta, creación y consulta funcionan con el token de check-in (sin
- * sesión) y quedan habilitados en SecurityConfig; el PATCH de estado
- * exige empleado autenticado (ROOMSERVICE o ADMIN).
+ * API de la carta de room service para el huésped. Carta, creación y
+ * consulta funcionan sin sesión (el token de check-in es opcional hasta
+ * que se integre el QR) y quedan habilitados en SecurityConfig; el PATCH
+ * de estado exige empleado autenticado (ROOMSERVICE o ADMIN).
  */
 @RestController
 @RequestMapping("/api/roomservice")
@@ -32,10 +35,12 @@ public class RoomServiceController {
     private final IRoomServiceService roomServiceService;
 
     @GetMapping("/menu")
-    public CartaResponseDTO obtenerCarta(@RequestParam String token,
+    public CartaResponseDTO obtenerCarta(@RequestParam(required = false) String token,
                                          @RequestParam(required = false) String q,
-                                         @RequestParam(required = false) Integer idCategoria) {
-        return roomServiceService.obtenerCarta(token, q, idCategoria);
+                                         @RequestParam(required = false) Integer idCategoria,
+                                         Authentication authentication) {
+        return roomServiceService.obtenerCarta(token, q, idCategoria,
+                authentication == null ? null : authentication.getName());
     }
 
     @PostMapping("/pedidos")
@@ -45,9 +50,14 @@ public class RoomServiceController {
         return ResponseEntity.status(HttpStatus.CREATED).body(pedido);
     }
 
+    @GetMapping("/pedidos")
+    public List<PedidoResponseDTO> listarPedidos() {
+        return roomServiceService.listarPedidos();
+    }
+
     @GetMapping("/pedidos/{codigo}")
     public PedidoResponseDTO obtenerPedido(@PathVariable String codigo,
-                                           @RequestParam String token) {
+                                           @RequestParam(required = false) String token) {
         return roomServiceService.obtenerPedido(token, codigo);
     }
 

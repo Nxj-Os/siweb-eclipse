@@ -120,7 +120,10 @@
                 const available = availableIds.has(String(input.value));
                 if (available) availableCount += 1;
                 option.classList.toggle("room-option--unavailable", !available);
-                option.querySelector("[data-room-status]").textContent = available ? "Disponible" : "Ocupada";
+                const estadoRack = (option.dataset.roomState || "").toUpperCase();
+                option.querySelector("[data-room-status]").textContent = available
+                    ? "Disponible"
+                    : estadoRack === "BLOQUEADA" ? "Bloqueada" : "No disponible";
                 input.disabled = !available;
                 if (!available && input.checked) input.checked = false;
             });
@@ -174,5 +177,5 @@
     updatePreview();
     updatePrice();
     refreshAvailability();
-    window.setInterval(refreshAvailability, 15000);
+    window.setInterval(refreshAvailability, 5000);
 })();

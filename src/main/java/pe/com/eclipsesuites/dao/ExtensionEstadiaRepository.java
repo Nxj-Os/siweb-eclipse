@@ -1,6 +1,7 @@
 package pe.com.eclipsesuites.dao;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -9,8 +10,9 @@ import pe.com.eclipsesuites.entity.ExtensionEstadia;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.Optional;
+import java.util.List;
+import jakarta.persistence.LockModeType;
 
 public interface ExtensionEstadiaRepository extends JpaRepository<ExtensionEstadia, Long> {
 
@@ -45,7 +47,22 @@ public interface ExtensionEstadiaRepository extends JpaRepository<ExtensionEstad
     Optional<ExtensionEstadia> findByIdAndReservaClienteCorreoElectronicoIgnoreCase(
             Long id, String correoElectronico);
 
-    List<ExtensionEstadia> findByEstadoOrderByFechaCreacionAsc(EstadoExtensionReserva estado);
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select e from ExtensionEstadia e where e.id = :id")
+    Optional<ExtensionEstadia> findByIdForUpdate(@Param("id") Long id);
+
+    @Query("""
+            select e from ExtensionEstadia e
+            join fetch e.reserva r
+            join fetch r.cliente
+            join fetch r.habitacion
+            join fetch r.tipoHabitacion
+            where e.estado = :estado and e.estadoPago = :estadoPago
+            order by e.fechaCreacion asc
+            """)
+    List<ExtensionEstadia> listarPendientesDeValidacion(
+            @Param("estado") EstadoExtensionReserva estado,
+            @Param("estadoPago") pe.com.eclipsesuites.entity.EstadoPagoReserva estadoPago);
 
     @Modifying
     @Query("""

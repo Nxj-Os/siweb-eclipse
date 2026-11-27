@@ -15,13 +15,11 @@ import pe.com.eclipsesuites.dto.response.PedidoResponseDTO;
 import pe.com.eclipsesuites.dto.response.ProductoCartaDTO;
 import pe.com.eclipsesuites.service.IEmpleadoAuthService;
 import pe.com.eclipsesuites.service.IRoomServiceService;
-import pe.com.eclipsesuites.service.impl.AccesoRoomServiceNoPermitidoException;
 
 import java.math.BigDecimal;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -80,16 +78,17 @@ class RoomServiceControllerTest {
     }
 
     @Test
-    void menu_sinTokenRetorna400() throws Exception {
-        mockMvc.perform(get("/api/roomservice/menu"))
-                .andExpect(status().isBadRequest());
+    void menu_sinTokenRetornaLaCarta() throws Exception {
+        when(roomServiceService.obtenerCarta(null, null, null, null)).thenReturn(carta());
 
-        verifyNoInteractions(roomServiceService);
+        mockMvc.perform(get("/api/roomservice/menu"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.categorias[0].nombre").value("Platos fuertes"));
     }
 
     @Test
     void menu_conTokenRetornaLaCarta() throws Exception {
-        when(roomServiceService.obtenerCarta(TOKEN, null, null)).thenReturn(carta());
+        when(roomServiceService.obtenerCarta(TOKEN, null, null, null)).thenReturn(carta());
 
         mockMvc.perform(get("/api/roomservice/menu").param("token", TOKEN))
                 .andExpect(status().isOk())
@@ -98,19 +97,6 @@ class RoomServiceControllerTest {
                 .andExpect(jsonPath("$.productos[0].nombre").value("Hamburguesa clásica"))
                 .andExpect(jsonPath("$.productos[0].precio").value(15.00))
                 .andExpect(jsonPath("$.productos[0].stockDisponible").value(25));
-    }
-
-    @Test
-    void menu_tokenBloqueadoRetorna403() throws Exception {
-        when(roomServiceService.obtenerCarta(eq(TOKEN), any(), any()))
-                .thenThrow(new AccesoRoomServiceNoPermitidoException(
-                        "Necesitas validar el check-in de tu reserva para acceder"));
-
-        mockMvc.perform(get("/api/roomservice/menu").param("token", TOKEN))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.error").value("Servicio bloqueado"))
-                .andExpect(jsonPath("$.mensaje")
-                        .value("Necesitas validar el check-in de tu reserva para acceder"));
     }
 
     @Test
@@ -162,6 +148,50 @@ class RoomServiceControllerTest {
                 .andExpect(jsonPath("$.codigo").value("A1488"))
                 .andExpect(jsonPath("$.estadoEtiqueta").value("Recibido"))
                 .andExpect(jsonPath("$.items[0].nombre").value("Hamburguesa clásica"));
+    }
+
+    @Test
+    void crearPedido_sinTokenYConSuiteDeEntregaRetorna201() throws Exception {
+        when(roomServiceService.crearPedido(any())).thenReturn(pedido());
+
+        mockMvc.perform(post("/api/roomservice/pedidos").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"numHabitacion":"101",
+                                 "items":[{"idProducto":10,"cantidad":1}]}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.codigo").value("A1488"));
+    }
+
+    @Test
+    void consultarPedido_sinTokenRetornaElEstado() throws Exception {
+        when(roomServiceService.obtenerPedido(null, "A1488")).thenReturn(pedido());
+
+        mockMvc.perform(get("/api/roomservice/pedidos/A1488"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.codigo").value("A1488"));
+    }
+
+    @Test
+    void listarPedidos_sinSesionRetorna401() throws Exception {
+        mockMvc.perform(get("/api/roomservice/pedidos"))
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(roomServiceService);
+    }
+
+    @Test
+    void listarPedidos_empleadoRoomserviceRetorna200() throws Exception {
+        when(roomServiceService.listarPedidos()).thenReturn(List.of(pedido()));
+
+        mockMvc.perform(get("/api/roomservice/pedidos")
+                        .with(user("luis").roles("ROOMSERVICE")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].codigo").value("A1488"))
+                .andExpect(jsonPath("$[0].numHabitacion").value("101"));
+
+        verify(roomServiceService).listarPedidos();
     }
 
     @Test

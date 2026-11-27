@@ -11,6 +11,7 @@ import pe.com.eclipsesuites.dao.DetallePedidoRSRepository;
 import pe.com.eclipsesuites.dao.HabitacionRepository;
 import pe.com.eclipsesuites.dao.PedidoRoomServiceRepository;
 import pe.com.eclipsesuites.dao.ProductoRepository;
+import pe.com.eclipsesuites.dao.ReservaEstadiaRepository;
 import pe.com.eclipsesuites.dto.request.CrearPedidoRequestDTO;
 import pe.com.eclipsesuites.dto.request.PedidoItemDTO;
 import pe.com.eclipsesuites.dto.response.CartaResponseDTO;
@@ -21,9 +22,11 @@ import pe.com.eclipsesuites.dto.response.ProductoCartaDTO;
 import pe.com.eclipsesuites.entity.CategoriaProducto;
 import pe.com.eclipsesuites.entity.DetallePedidoRS;
 import pe.com.eclipsesuites.entity.EstadoPedido;
+import pe.com.eclipsesuites.entity.EstadoReserva;
 import pe.com.eclipsesuites.entity.Habitacion;
 import pe.com.eclipsesuites.entity.PedidoRoomService;
 import pe.com.eclipsesuites.entity.Producto;
+import pe.com.eclipsesuites.entity.ReservaEstadia;
 import pe.com.eclipsesuites.service.IRoomServiceService;
 
 import java.math.BigDecimal;
@@ -39,9 +42,10 @@ import java.util.Map;
 
 /**
  * Implementación de la carta de room service (flujo S2 del informe):
- * acceso solo con check-in validado (token de la habitación), comanda
- * con precio congelado y descuento atómico de stock, y estado que
- * avanza automáticamente con el tiempo (sin depender del rack).
+ * la carta y la comanda no exigen check-in (el QR se integrará luego);
+ * el huésped elige la suite de entrega desde el selector. Comanda con
+ * precio congelado y descuento atómico de stock, y estado que avanza
+ * automáticamente con el tiempo (sin depender del rack).
  */
 @Slf4j
 @Service
@@ -58,6 +62,7 @@ public class RoomServiceServiceImpl implements IRoomServiceService {
     private final ProductoRepository productoRepository;
     private final PedidoRoomServiceRepository pedidoRoomServiceRepository;
     private final DetallePedidoRSRepository detallePedidoRSRepository;
+    private final ReservaEstadiaRepository reservaEstadiaRepository;
 
     /** Minutos acumulados desde la última transición para cada avance. */
     @Value("${app.roomservice.estados.minutos-en-preparacion:3}")
@@ -72,7 +77,17 @@ public class RoomServiceServiceImpl implements IRoomServiceService {
     @Override
     @Transactional(readOnly = true)
     public CartaResponseDTO obtenerCarta(String token, String busqueda, Integer idCategoria) {
-        Habitacion habitacion = validarAcceso(token);
+        return obtenerCarta(token, busqueda, idCategoria, null);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CartaResponseDTO obtenerCarta(String token, String busqueda, Integer idCategoria,
+                                         String correoCliente) {
+        Habitacion habitacion = resolverHabitacionPorToken(token);
+        if (habitacion == null) {
+            habitacion = suiteCheckeadaDelCliente(correoCliente);
+        }
 
         List<CategoriaCartaDTO> categorias = categoriaProductoRepository
                 .findAllByOrderByNombreCategoria()
@@ -95,7 +110,8 @@ public class RoomServiceServiceImpl implements IRoomServiceService {
                 .toList();
 
         return CartaResponseDTO.builder()
-                .numHabitacion(habitacion.getNumHabitacion())
+                .numHabitacion(habitacion == null ? null : habitacion.getNumHabitacion())
+                .suitesDisponibles(suitesOcupadas())
                 .categorias(categorias)
                 .productos(productos)
                 .build();
@@ -107,7 +123,11 @@ public class RoomServiceServiceImpl implements IRoomServiceService {
         if (request == null || request.getItems() == null || request.getItems().isEmpty()) {
             throw new IllegalArgumentException("El pedido debe incluir al menos un producto");
         }
-        Habitacion habitacion = validarAcceso(request.getToken());
+        Habitacion habitacion = resolverHabitacionParaPedido(request);
+        if (habitacion == null) {
+            throw new IllegalArgumentException(
+                    "Elige la suite a la que quieres que entreguemos el pedido");
+        }
 
         // Consolidar cantidades por producto (el cliente puede repetir ítems).
         Map<Integer, Integer> cantidades = new LinkedHashMap<>();
@@ -187,13 +207,33 @@ public class RoomServiceServiceImpl implements IRoomServiceService {
     @Override
     @Transactional(readOnly = true)
     public PedidoResponseDTO obtenerPedido(String token, String codigoPedido) {
-        Habitacion habitacion = validarAcceso(token);
         PedidoRoomService pedido = buscarPedido(codigoPedido);
-        if (!pedido.getHabitacion().getId().equals(habitacion.getId())) {
-            // No filtrar la existencia de pedidos de otras suites.
+        Habitacion habitacion = resolverHabitacionPorToken(token);
+        // Si el huésped llega con token de check-in, solo puede ver
+        // los pedidos de su propia suite; sin token se consulta por código.
+        if (habitacion != null
+                && !pedido.getHabitacion().getId().equals(habitacion.getId())) {
             throw new PedidoNoEncontradoException(codigoPedido);
         }
         return construirRespuesta(pedido, null);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PedidoResponseDTO> listarPedidos() {
+        return pedidoRoomServiceRepository.findAllConDetalles().stream()
+                .map(pedido -> {
+                    List<PedidoItemResponseDTO> items = pedido.getDetalles().stream()
+                            .map(detalle -> PedidoItemResponseDTO.builder()
+                                    .nombre(detalle.getProducto() == null ? null
+                                            : detalle.getProducto().getNombre())
+                                    .cantidad(detalle.getCantidadSolicitada())
+                                    .subtotal(detalle.getSubtotalLinea())
+                                    .build())
+                            .toList();
+                    return construirRespuesta(pedido, items);
+                })
+                .toList();
     }
 
     @Override
@@ -217,25 +257,68 @@ public class RoomServiceServiceImpl implements IRoomServiceService {
     }
 
     /**
-     * Valida que el token exista y no haya expirado: el room service
-     * solo se activa con check-in validado (RNF-08: el token se
-     * invalida al check-out).
+     * Resuelve la suite del pedido: primero por token de check-in
+     * (cuando se integre el QR) y, sin check-in, por el número de
+     * suite elegido en el selector de la carta.
      */
-    private Habitacion validarAcceso(String token) {
+    private Habitacion resolverHabitacionParaPedido(CrearPedidoRequestDTO request) {
+        Habitacion porToken = resolverHabitacionPorToken(request.getToken());
+        if (porToken != null) {
+            return porToken;
+        }
+        String numHabitacion = StringUtils.trimToEmpty(request.getNumHabitacion());
+        if (!numHabitacion.isEmpty()) {
+            return habitacionRepository.findByNumHabitacion(numHabitacion)
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "La suite " + numHabitacion + " no está disponible"));
+        }
+        List<String> ocupadas = suitesOcupadas();
+        return ocupadas.isEmpty()
+                ? null
+                : habitacionRepository.findByNumHabitacion(ocupadas.get(0))
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "No hay suites disponibles para la entrega"));
+    }
+
+    /**
+     * Suite por token de check-in: {@code null} cuando no hay token
+     * (el QR se integrará después) o el token no corresponde a ninguna
+     * suite vigente.
+     */
+    private Habitacion resolverHabitacionPorToken(String token) {
         String tokenLimpio = StringUtils.trimToEmpty(token);
         if (tokenLimpio.isEmpty()) {
-            throw new AccesoRoomServiceNoPermitidoException(
-                    "Necesitas validar el check-in de tu reserva para acceder");
+            return null;
         }
-        Habitacion habitacion = habitacionRepository.findByTokenQrDinamico(tokenLimpio)
-                .orElseThrow(() -> new AccesoRoomServiceNoPermitidoException(
-                        "Necesitas validar el check-in de tu reserva para acceder"));
-        if (habitacion.getFechaExpiracionToken() == null
-                || !habitacion.getFechaExpiracionToken().isAfter(OffsetDateTime.now())) {
-            throw new AccesoRoomServiceNoPermitidoException(
-                    "Tu acceso expiró; valida tu check-in nuevamente para usar el room service");
+        return habitacionRepository.findByTokenQrDinamico(tokenLimpio)
+                .filter(habitacion -> habitacion.getFechaExpiracionToken() == null
+                        || habitacion.getFechaExpiracionToken().isAfter(OffsetDateTime.now()))
+                .orElse(null);
+    }
+
+    /**
+     * Suite del huésped autenticado: la reserva que ya hizo check-in.
+     * Es la que se precarga en el selector de entrega de la carta.
+     */
+    private Habitacion suiteCheckeadaDelCliente(String correoCliente) {
+        if (StringUtils.isBlank(correoCliente)) {
+            return null;
         }
-        return habitacion;
+        return reservaEstadiaRepository
+                .findByClienteCorreoElectronicoIgnoreCaseOrderByFechaCreacionDesc(correoCliente)
+                .stream()
+                .filter(reserva -> reserva.getEstadoReserva() == EstadoReserva.CHECKED_IN)
+                .map(ReservaEstadia::getHabitacion)
+                .filter(java.util.Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+    }
+
+    /** Suites ocupadas para el selector de entrega de la carta. */
+    private List<String> suitesOcupadas() {
+        return habitacionRepository.findByEstadoRack("OCUPADA").stream()
+                .map(Habitacion::getNumHabitacion)
+                .toList();
     }
 
     private ProductoCartaDTO aProductoCarta(Producto producto) {

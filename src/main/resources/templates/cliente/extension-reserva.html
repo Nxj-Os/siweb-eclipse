@@ -12,7 +12,7 @@
 </head>
 <body class="reserva-page">
     <header class="reserva-header">
-        <a class="reserva-brand" th:href="@{/inicio}">Eclipse <span>Suites</span></a>
+        <a class="reserva-brand" th:href="@{/}">Eclipse <span>Suites</span></a>
         <a class="reserva-header__link" th:href="@{/cliente/reservas/{id}(id=${reserva.id})}">Volver a la reserva</a>
     </header>
     <main class="reserva-shell reserva-shell--narrow">
@@ -22,7 +22,10 @@
             <p>La ampliación está sujeta a disponibilidad de la misma habitación.</p>
         </section>
         <p class="reserva-demo-notice" th:if="${demoMode}" role="status">
-            Modo demo: se simulará el pago y se actualizará la hora de salida de tu reserva.
+            Modo demo: el pago se simulará y se actualizará la hora de salida.
+        </p>
+        <p class="payment-disclaimer" th:unless="${demoMode}" role="status">
+            La extensión queda retenida cinco minutos. Recepción validará el método de pago antes de actualizar tu salida.
         </p>
         <div class="reserva-alert reserva-alert--error" role="alert"
              th:if="${errorReserva}" th:text="${errorReserva}"></div>

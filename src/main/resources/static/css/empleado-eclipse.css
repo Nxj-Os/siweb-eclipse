@@ -526,3 +526,116 @@ dialog h2 {
         display: none
     }
 }
+/* Portal operativo: composición de tres columnas del prototipo E-02/E-03/E-04. */
+.employee-portal { background:#f5f7f9; color:#171717; }
+.employee-portal .layout { grid-template-columns:clamp(172px,15.5vw,220px) minmax(0,1fr) clamp(195px,19.85vw,286px); min-height:100vh; align-items:start; }
+.employee-portal .sidebar { position:sticky; top:0; height:100vh; overflow-y:auto; padding:24px 14px 22px; gap:19px; background:#0d0d0d; border-right:1px solid #ddb04f30; }
+.employee-portal .brand { gap:8px; font-size:16px; font-weight:400; }
+.employee-portal .brand-icon { position:relative; flex:none; width:32px; height:32px; border-radius:3px; background:#fff; overflow:hidden; }
+.employee-portal .brand-icon::before { content:""; position:absolute; inset:3px; border-radius:50%; background:#a4a4a4; }
+.employee-portal .brand-icon::after { content:""; position:absolute; width:9px; height:9px; left:12px; top:6px; border-radius:50%; background:#fff; }
+.employee-portal .brand-icon span { position:absolute; z-index:1; width:17px; height:12px; left:8px; bottom:5px; border-radius:50% 50% 40% 40%; background:#fff; }
+.employee-portal .role { font-size:14px; margin:3px 0 2px; }
+.employee-portal .sidebar nav { gap:7px; }
+.employee-portal .sidebar nav a,.employee-portal .sidebar summary { display:block; text-align:center; font-size:13px; font-weight:500; padding:10px 6px; line-height:1.25; background:#78787833; color:#fffef0; border-radius:30px; cursor:pointer; }
+.employee-portal .sidebar nav a.active { background:#ffcf36; color:#111; font-weight:600; }
+.employee-portal .sidebar summary { list-style:none; }
+.employee-portal .sidebar summary::-webkit-details-marker { display:none; }
+.employee-portal .sidebar summary::after { content:' ▾'; font-size:10px; }
+.employee-portal .sidebar details[open]>summary::after { content:' ▴'; }
+.employee-portal .sidebar-more summary { background:transparent; color:#d1c9b8; font-size:12px; }
+.employee-portal .sidebar-subnav { display:grid; gap:5px; margin-top:6px; }
+.employee-portal .sidebar-subnav a { font-size:12px!important; padding:8px 6px!important; }
+.employee-portal .sidebar-bottom { gap:7px; justify-items:center; width:100%; }
+.employee-portal .sidebar-account { width:100%; }
+.employee-portal .sidebar-account summary { background:#fff2ce59; font-size:12px; }
+.employee-portal .sidebar-account a { display:block; font-size:12px; background:#ffffff18; }
+.employee-portal .sidebar-bottom form { margin:0; }
+.employee-portal .logout { width:auto; font-size:12px; font-weight:500; padding:8px 13px; background:#d76c70; color:#fffef0; }
+.employee-portal .main { min-height:100vh; }
+.employee-portal .top { justify-content:center; text-align:center; padding:20px 20px 6px; }
+.employee-portal .top h1 { font-size:clamp(23px,2.35vw,34px); color:#111; line-height:1.15; }
+.employee-portal .top .eyebrow { display:none; }
+.employee-portal .subtitle { margin:5px 0 0; font-size:12px; color:#444; }
+.employee-portal .content { padding:12px clamp(12px,2.4vw,36px) 22px; gap:12px; }
+.employee-portal .portal-banner { padding:8px 11px; font-size:11px; margin:0; gap:6px; border-radius:9px; }
+.employee-portal .portal-banner button { font-size:11px; padding:6px 9px; }
+.employee-portal .metrics { gap:8px; margin:0; }
+.employee-portal .metrics article { padding:10px 12px; border-radius:12px; }
+.employee-portal .metrics small { font-size:11px; }
+.employee-portal .metrics strong { font-size:23px; margin:2px 0; }
+.employee-portal .metrics span { font-size:10px; }
+.employee-portal .panel { padding:15px; margin:0; border-radius:14px; box-shadow:none; }
+.employee-portal .panel-head { margin-bottom:10px; flex-wrap:wrap; }
+.employee-portal .panel h2 { font-size:18px; }
+.employee-portal .portal-form { padding:10px 0 4px; margin:0; }
+.employee-portal .portal-form .demo-field { min-width:130px; }
+.employee-portal .panel button,.employee-portal .portal-form button { border-radius:22px; }
+.employee-portal .notifications { position:sticky; top:0; height:100vh; overflow:auto; padding:20px 13px; display:flex; flex-direction:column; gap:12px; background:#07365a; border-left:1px solid #ddb04f30; color:#fff; grid-column:auto; }
+.employee-portal .notification-feed { min-width:0; }
+.employee-portal .notifications h2 { text-align:center; font-size:clamp(17px,1.65vw,25px); margin:0 0 4px; color:#fff2ce; }
+.employee-portal .notifications p { color:#ffe555; font-size:11px; line-height:1.4; text-align:center; margin:0 0 16px; }
+.employee-portal .notice { width:100%; text-align:left; color:#fff; background:#fff2ce19; border-radius:8px; margin:0 0 8px; padding:10px; font-size:11px; gap:4px; font-weight:400; overflow-wrap:anywhere; }
+.employee-portal .notice b { font-weight:600; }
+.employee-portal .notice span { color:#e0e7ee; }
+.employee-portal .notice small { color:#e6c16c; font-size:10px; }
+.employee-portal .notification-footer { text-align:center; margin-top:auto; display:grid; justify-items:center; gap:13px; padding:6px 0 0; }
+.employee-portal .notification-more { background:#a28a36; color:#fff; font-size:11px; border-radius:30px; padding:8px 12px; }
+.employee-portal .eclipse-wordmark { display:flex; align-items:center; justify-content:center; color:#c4e0ef; font:clamp(22px,2.5vw,36px)/1 Georgia,serif; letter-spacing:2px; }
+.employee-portal .eclipse-wordmark>span { font-size:1.9em; line-height:1; }
+.employee-portal .eclipse-wordmark small { display:block; font:8px Inter,Arial,sans-serif; letter-spacing:3px; text-align:right; margin-top:4px; }
+.employee-portal .notification-footer>small { color:#d5e1eb; font-size:10px; line-height:1.4; }
+.employee-rack .content>.panel:has(.rack-grid) { background:transparent; border:0; padding:0; }
+.employee-rack .content>.panel:has(.rack-grid)>.panel-head { display:none; }
+.employee-portal .rack-tools { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:9px; }
+.employee-portal .rack-tools .portal-search { margin:0; width:min(100%,360px); padding:8px 10px; font-size:12px; }
+.employee-portal .rack-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+.employee-portal .rack-card { display:block; width:100%; padding:0; position:relative; overflow:hidden; border:2px solid transparent; border-radius:15px!important; aspect-ratio:2/1; background:#333; color:#fff; text-align:left; }
+.employee-portal .rack-card[hidden] { display:none; }
+.employee-portal .rack-card:hover,.employee-portal .rack-card:focus-visible { border-color:#fc0; filter:none; outline:none; }
+.employee-portal .rack-card img,.employee-portal .cleaning-photo img { width:100%; height:100%; display:block; object-fit:cover; }
+.employee-portal .rack-out img { filter:grayscale(1); }
+.employee-portal .rack-caption { position:absolute; bottom:0; left:0; right:0; display:flex; justify-content:space-between; align-items:end; gap:5px; padding:18px 7px 6px; background:linear-gradient(transparent,#000c); }
+.employee-portal .rack-caption strong { font:700 clamp(14px,1.5vw,23px)/1 Georgia,serif; color:#ffcf36; }
+.employee-portal .rack-state { font:600 11px/1.1 Inter,Arial,sans-serif; text-align:right; }
+.employee-portal .state-disponible { color:#91e5ac; }.employee-portal .state-ocupada { color:#e5bcff; }.employee-portal .state-limpieza { color:#fff1cc; }.employee-portal .state-averia { color:#ffb1b1; }
+.employee-portal .cleaning-list { display:grid; gap:12px; }
+.employee-portal .cleaning-card { border-radius:14px; overflow:hidden; background:#25231e; color:#fff2ce; }
+.employee-portal .cleaning-photo { display:block; width:100%; height:130px; position:relative; padding:0; border-radius:0!important; text-align:left; overflow:hidden; }
+.employee-portal .cleaning-photo strong { position:absolute; left:12px; bottom:12px; color:white; background:#000a; padding:5px 8px; border-radius:5px; }
+.employee-portal .cleaning-photo .status { position:absolute; right:10px; bottom:12px; }
+.employee-portal .cleaning-body { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; gap:10px; flex-wrap:wrap; }
+.employee-portal .cleaning-body p { margin:0; font-size:13px; }
+.employee-portal .eclipse-detail-dialog { background:#25231e; color:#fff2ce; border:1px solid #b5a57e; border-radius:20px; max-width:620px; width:min(620px,94vw); }
+.employee-portal .eclipse-detail-dialog dt { color:#d2c8b1; font-weight:600; }
+.employee-portal .suite-detail-photo { display:block; width:100%; height:clamp(130px,24vh,220px); object-fit:cover; border-radius:12px; margin:0 0 16px; }
+.employee-portal .eclipse-detail-dialog h3 { color:#fc0; font-size:16px; }
+.employee-portal .eclipse-detail-dialog .detail-close { background:#66615a; color:#fff; margin:5px; }
+.employee-portal .cleaning-check { display:flex; align-items:center; gap:9px; padding:6px 0; }
+.employee-portal .cleaning-check input { accent-color:#fc0; width:17px; height:17px; }
+.employee-portal .cleaning-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:5px; margin-top:14px; }
+.employee-portal :focus-visible { outline:2px solid #c69200; outline-offset:2px; }
+@media(max-width:1000px) and (min-width:761px) { .employee-portal .layout { grid-template-columns:172px minmax(0,1fr) 185px; } .employee-portal .sidebar {padding:20px 9px;} .employee-portal .notifications {padding:16px 9px;} .employee-portal .rack-caption { flex-wrap:wrap; } }
+@media(max-width:760px) { .employee-portal .layout {display:block;} .employee-portal .sidebar,.employee-portal .notifications { position:static; height:auto; overflow:visible; } .employee-portal .sidebar {padding:14px; gap:10px;} .employee-portal .sidebar nav { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); overflow:visible; } .employee-portal .sidebar nav a {white-space:normal;} .employee-portal .sidebar-bottom { display:flex; align-items:flex-start; justify-content:space-between; } .employee-portal .sidebar-account {width:auto; flex:1;} .employee-portal .main {min-height:0;} .employee-portal .metrics {grid-template-columns:repeat(3,minmax(0,1fr));} .employee-portal .notification-footer {margin-top:0;} .employee-portal .notifications {padding:18px;} .employee-portal .rack-caption {flex-wrap:wrap;} }
+@media(max-width:360px) { .employee-portal .rack-grid {grid-template-columns:1fr;} }
+.employee-portal .rack-card { height:clamp(105px,16vh,180px); aspect-ratio:auto; }
+.employee-portal .incident-list { display:grid; gap:12px; }
+.employee-portal .incident-card { border:1px solid #c8b47a; border-radius:14px; overflow:hidden; }
+.employee-portal .incident-body { background:#704141; color:#fff2ce; padding:12px 15px; }
+.employee-portal .incident-body h3 { margin:0 0 6px; font-size:16px; }
+.employee-portal .incident-body p { margin:0 0 12px; font-size:13px; }
+.employee-account-page .layout { grid-template-columns:clamp(172px,15.5vw,220px) minmax(0,1fr); }
+.employee-account-page .account-main { min-width:0; }
+.employee-account-page .account-main>.bar { background:#07365a; color:#fff2ce; padding:12px 20px; font-weight:600; }
+.employee-account-page .account-main>main { margin:18px auto; max-width:1250px; }
+.employee-account-page .account-main .heading p { color:#625c4b; }
+.employee-account-page .account-main .panel { background:#fff; color:#222; border-color:#ded8cb; margin-bottom:15px; }
+.employee-account-page .account-main .panel a { color:#855c00; }
+.employee-account-page .account-main .day { background:#f5f2eb; color:#292620; border-color:#d9d1c4; }
+.employee-account-page .account-main .day.selected,.employee-account-page .account-main .day:hover { background:#fff0b7; border-color:#d1a400; }
+.employee-account-page .account-main .day .dots { color:#375d3c; }
+.employee-account-page .account-main .weekday,.employee-account-page .account-main .profile dt { color:#625c4b; }
+.employee-account-page .account-main .event { background:#25231e; color:#fff2ce; border-color:#8c7d5e; }
+.employee-account-page .account-main .primary { background:#ffcf36; color:#111; border-color:#d8ac19; }
+.employee-account-page .account-main .bar button { color:#171717; }
+@media(max-width:760px) { .employee-portal .rack-card {height:auto;aspect-ratio:2/1;} .employee-account-page .account-main>main {margin:10px auto;} }

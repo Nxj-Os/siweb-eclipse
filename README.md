@@ -15,8 +15,9 @@ Aplicación web para la gestión de un hotel. El proyecto usa Spring Boot y est�
 - Sesiones HTTP para los accesos de cliente y empleado.
 - Catálogo de siete suites y flujo de reserva por habitación física, con disponibilidad por intervalo, duración de 4, 6 o 12 horas y vista previa.
 - Catálogo público `/catalogo` con disponibilidad operativa y por fecha/hora, filtros por texto, disponibilidad, duración y orden, ficha de detalle por suite, amenidades y API JSON reutilizable.
-- Retención de cinco minutos mientras se paga; en el perfil `demo` los métodos de pago se simulan y no se captura ni procesa dinero.
-- Código QR tras el pago para check-in de recepción; ampliaciones de estadía disponibles en el flujo demo después del check-in.
+- La reserva usa una retención transaccional de cinco minutos y queda en pago pendiente (`APP_RESERVA_PAGO_DIRECTO=false`, valor predeterminado). El estado de pago se conserva separado del estado de la reserva. `APP_RESERVA_PAGO_DIRECTO=true` mantiene compatibilidad con la confirmación inmediata sin integración de cobro.
+- Código QR desde el alta de la reserva para el check-in del huésped o de recepción; ampliaciones de estadía disponibles en el flujo demo después del check-in.
+- Tablero de novedades del portal del empleado: últimas reservas y comandas de room service en un solo panel, con conteos y refresco automático.
 - Catálogo de demostración con precios de muestra e inventario aislados en el perfil `demo`.
 - Bloqueo temporal de 3 minutos a partir del quinto fallo para la combinación de IP y usuario/correo.
 - Validación de datos, normalización de correos, rechazo de correo/documento duplicados y respuestas JSON de error.
@@ -29,13 +30,20 @@ Aplicación web para la gestión de un hotel. El proyecto usa Spring Boot y est�
 - Preguntas libres de clientes logueados contra la API de Gemini (`GEMINI_API_KEY`), con respaldo automático a respuestas predefinidas si el servicio falla.
 - Límites de uso: 10 mensajes/minuto por IP y 12 por conversación anónima; 30/minuto para clientes.
 - Derivación a recepción registrada en la conversación con cola de espera estimada de 2 minutos.
+- Perfil de usuario del cliente en `/cliente/perfil` con cuatro secciones: consultar información, historial de reservas, configurar datos y eliminar cuenta.
+- Cabecera de `/inicio` y de la portada con el nombre real del cliente y enlace a su perfil; los empleados ven el enlace a `/empleado/perfil`.
+- Tras iniciar sesión, el cliente aterriza en la portada `/` (no en la página de suites); el empleado cae en `/empleado`. Todos los enlaces rotulados "Inicio" o "Volver al inicio" apuntan a `/`, y los rotulados "suites", "Nueva reserva" o "Explorar suites" apuntan a `/catalogo`.
+- Galería de suites en vivo en la portada: `js/landing-suites.js` pide `GET /api/catalogo` y pinta hasta seis tarjetas con imagen real, disponibilidad y precio desde, más un CTA hacia `/catalogo/{codTipo}`.
+- Edición de nombre, apellido, teléfono en formato internacional E.164 y edad desde el perfil, con validación en servidor.
+- Eliminación de cuenta: desactiva la cuenta (no borra las reservas), cierra la sesión y libera correo, documento y teléfono para volver a registrarse con el mismo correo.
+- Boleta en pantalla con número `001-00000NN`, subtotal, IGV 18 % y total; la emisión de PDF y el envío por correo siguen fuera de la demo.
 
 ### Pendiente o limitado
 
 - Recuperación de contraseña y controles independientes contra abuso distribuido (los límites actuales viven en memoria).
-- Paneles distintos por rol y controles visibles para cerrar sesión. El login redirige a `/inicio`, pero esa página no diferencia todavía las capacidades por rol.
-- Activar checkout, rack, room service, operaciones y reportes. Esos módulos todavía no tienen implementación activa ni rutas MVC registradas.
-- Cargar en PostgreSQL el catálogo, inventario e importes reales del hotel. El perfil `demo` solo usa precios de muestra.
+- Paneles distintos por rol. `/inicio` ya enlaza al perfil correcto según el rol, pero todavía no hay un panel o dashboard propio por rol.
+- Activar checkout, rack, operaciones y los módulos de reportes que faltan. `ReporteExcelController` ya tiene ruta; `RoomServiceController` está completo y sus pruebas están en verde.
+- Cargar en PostgreSQL el catálogo, inventario e importes reales del hotel. Los perfiles `demo` y el por defecto siembran un catálogo de demostración (7 suites + la suite 101 de room service) con precios de muestra; sobrescríbelo con los datos reales del hotel.
 - Validar la actualización del esquema sobre una copia de la base PostgreSQL usada por el equipo. Las pruebas automáticas usan H2 y no modifican esa base.
 - Cambiar o eliminar las credenciales de empleados de prueba antes de desplegar.
 - Conectar la cola de derivación del asistente a una pantalla de recepción. Hoy solo se registra `derivo_a_reserva` y el estado de cola en memoria.
@@ -90,11 +98,11 @@ La cadena API mantiene CSRF activo también para los endpoints públicos de logi
 
 | Método | Ruta | Uso |
 | --- | --- | --- |
-| `GET` | `/` | Portada pública. |
+| `GET` | `/` | Portada pública; incluye la galería de suites en vivo y el CTA de reserva. |
 | `GET` | `/login?tipo=empleado` | Formulario de login de empleado. |
 | `GET` | `/login?tipo=cliente` | Formulario de login de cliente. |
 | `GET` | `/registro` | Formulario de registro de cliente. |
-| `GET` | `/inicio` | Página de entrada con sesión; redirige al login si no hay sesión autenticada. |
+| `GET` | `/inicio` | Página de suites temáticas con sesión; redirige al login si no hay sesión autenticada. |
 | `GET` | `/catalogo` | Catálogo público con filtros `q`, `fecha`, `hora`, `modalidadId`, `soloDisponibles` y `orden`. |
 | `GET` | `/catalogo/{codTipo}` | Ficha pública de una suite con amenidades, tarifas y habitaciones. |
 | `GET` | `/api/catalogo` | API JSON pública con los mismos filtros del catálogo. |
@@ -102,8 +110,8 @@ La cadena API mantiene CSRF activo también para los endpoints públicos de logi
 | `GET` | `/api/catalogo/disponibilidad?tipoHabitacionId=...&fecha=...&hora=...` | Disponibilidad pública por intervalo; acepta `modalidadId` y limita consultas por IP. |
 | `GET` | `/cliente/reservas/nueva?tipoId={id}` | Requiere rol `CLIENTE`; permite elegir habitación física, fecha, hora y duración. |
 | `GET` | `/cliente/reservas/disponibilidad` | Devuelve habitaciones libres para el intervalo seleccionado. |
-| `POST` | `/cliente/reservas` | Retiene una habitación durante cinco minutos y crea la reserva pendiente de pago. |
-| `GET` | `/cliente/reservas/{id}/pago` | Muestra el método de pago y la cuenta regresiva de la retención. |
+| `POST` | `/cliente/reservas` | Con `app.reserva.pago-directo=false` (por defecto), retiene la habitación cinco minutos y crea la reserva `PENDIENTE_PAGO`. Tras validación, recepción la confirma y registra el pago como `PAGADO`. `true` mantiene el flujo legado de confirmación inmediata sin pasarela. |
+| `GET` | `/cliente/reservas/{id}/pago` | Muestra el método de pago y la cuenta regresiva de la retención (solo si la reserva sigue pendiente). |
 | `POST` | `/cliente/reservas/{id}/pagar` | Simula el pago en demo; en modo normal registra el método para validación manual. |
 | `GET` | `/cliente/reservas/{id}/qr` | Entrega el QR privado de una reserva pagada. |
 | `GET` | `/cliente/reservas` | Lista las reservas del cliente autenticado. |
@@ -121,8 +129,23 @@ La cadena API mantiene CSRF activo también para los endpoints públicos de logi
 | `POST` | `/api/auth/client/register` | Crea la cuenta de cliente e inicia su sesión. |
 | `POST` | `/api/auth/client/login` | Login de cliente; recibe `correoElectronico` y `password`. |
 | `GET` | `/api/auth/client/me` | Datos del cliente autenticado. |
+| `GET` | `/cliente/perfil` | Requiere rol `CLIENTE`; página de perfil con información, historial, edición y borrado de cuenta. |
+| `GET` | `/api/auth/client/perfil` | Requiere rol `CLIENTE`; datos del cliente, su reserva activa y el total de reservas. |
+| `PUT` | `/api/auth/client/perfil` | Requiere rol `CLIENTE` y `X-XSRF-TOKEN`; actualiza nombre, apellido, teléfono y edad. |
+| `GET` | `/api/auth/client/reservas` | Requiere rol `CLIENTE`; historial de reservas en JSON. |
+| `GET` | `/api/auth/client/reservas/{id}/boleta` | Requiere rol `CLIENTE`; boleta con subtotal, IGV y total de una reserva propia. |
+| `DELETE` | `/api/auth/client/cuenta` | Requiere rol `CLIENTE` y `X-XSRF-TOKEN`; desactiva la cuenta y cierra la sesión. |
 | `POST` | `/api/auth/logout` | Cierra la sesión API actual (filtro de logout de Spring Security). |
 | `POST` | `/logout` | Cierra sesión mediante la cadena web de Spring Security. |
+| `GET` | `/menu-suite?token=...` | Carta pública de room service para el huésped; el token de check-in (opcional) llega en la URL del QR cuando existe. Barra superior estilo C-09: Inicio, Reserva, Servicio y Ayuda. |
+| `GET` | `/empleado/roomservice` | Panel del empleado (rol `ROOMSERVICE` o `ADMIN`) con las comandas reales: métricas, tabla, filtro y avance de estado. |
+| `GET` | `/api/roomservice/menu?token=...` | Carta JSON con categorías, productos (precio y stock) y `suitesDisponibles` para el selector de entrega. El token es opcional; acepta `q` (búsqueda) e `idCategoria`. Si el cliente tiene sesión y una reserva en `CHECKED_IN`, su suite se devuelve en `numHabitacion` para precargar el selector. |
+| `POST` | `/api/roomservice/pedidos` | Crea la comanda desde la suite: acepta `token` (opcional) o `numHabitacion` del selector, congela precios, descuenta stock y devuelve el código. |
+| `GET` | `/api/roomservice/pedidos` | Listado de comandas para el panel del empleado; requiere rol `ROOMSERVICE` o `ADMIN`. |
+| `GET` | `/api/roomservice/pedidos/{codigo}?token=...` | Estado de la comanda del huésped con avance automático; sin token se consulta solo por código. |
+| `PATCH` | `/api/roomservice/pedidos/{codigo}/estado` | Fuerza el estado desde el sistema de empleado (rol ROOMSERVICE o ADMIN); solo permite avances. |
+| `POST` | `/cliente/reservas/{id}/check-in` | Check-in hecho por el huésped desde su cuenta: valida propiedad, deja la reserva en `CHECKED_IN` y marca la suite `OCUPADA` en el rack. Se permite check-in anticipado mientras la estadía no haya terminado. |
+| `GET` | `/api/empleado/novedades` | Tablero del empleado (roles ADMIN, RECEPCION, LIMPIEZA y ROOMSERVICE): `{resumen, notificaciones}` con las últimas reservas y comandas de room service. El panel del rack y el de comandas lo consultan cada 20 s. |
 | `GET` | `/asistente` | Página pública del asistente con catálogo de suites y chat. |
 | `GET` | `/api/chatbot/catalogo` | Suites, tarifas y disponibilidad tomadas de la base de datos. |
 | `GET` | `/api/chatbot/estado` | Estado de cola, modo, uso de mensajes y bandera de derivación. |
@@ -133,6 +156,12 @@ La cadena API mantiene CSRF activo también para los endpoints públicos de logi
 El registro de cliente recibe `tipoDocumento`, `numDocumento`, `paisEmisionDoc`, `correoElectronico`, `nombre`, `apellido`, `telefono`, `edad` y `password`. El formulario pide repetir el correo y la contraseña; compara ambos valores en el navegador y no envía los campos de confirmación al servidor.
 
 Las rutas API usan sesión HTTP y responden JSON. CSRF también está activo para la API; la interfaz obtiene el token con `GET /api/auth/csrf` y lo envía como `X-XSRF-TOKEN`. Las contraseñas se almacenan con BCrypt. Los clientes tienen autoridad `ROLE_CLIENTE`; los empleados reciben sus roles y permisos desde la base.
+
+La carta de room service no exige sesión ni check-in: el token de check-in (`token_qr_dinamico`) es opcional y, cuando llega en la URL del QR, solo identifica la suite del huésped (un token inválido o expirado se ignora en vez de bloquear). Si el cliente tiene sesión y una reserva `CHECKED_IN`, esa suite se precarga en el selector. Sin token, el huésped elige la suite de entrega en el selector de la carta, que muestra las suites con estado `OCUPADA`; si el pedido no incluye ninguna suite, responde `400`. Con token, `GET /api/roomservice/pedidos/{codigo}` solo devuelve los pedidos de la suite dueña (`404` en caso contrario). La comanda guarda el precio congelado al momento del pedido y descuenta el stock de forma atómica (si otra comanda se adelantó, revierte con `409 Stock insuficiente`). El estado `RECIBIDO → EN_PREPARACION → CONTROLADO → ENTREGADO` avanza solo con el tiempo según `app.roomservice.estados.minutos-*` en `application.properties`; el `PATCH` autenticado solo permite avanzar, nunca retroceder. El panel del empleado (`/empleado/roomservice`, template propio `roomservice/comandas.html`) consulta `GET /api/roomservice/pedidos` y avanza estados con el mismo `PATCH`.
+
+La reserva y el room service están unidos: `POST /cliente/reservas/{id}/check-in` (o el check-in de recepción con el QR) deja la suite en `OCUPADA` en el rack y liga `token_qr_dinamico` de la habitación al token de la reserva, por lo que la carta la reconoce y la reserva de esa suite queda bloqueada mientras esté ocupada. Cancelar una reserva pendiente devuelve la suite a `LIBRE`. En el perfil `demo` la suite 101 se siembra con el token `demo-suite-101`, por lo que puedes abrir `http://localhost:8080/menu-suite` (o con `?token=demo-suite-101`) para recorrer el flujo completo. La carta usa fotos de stock de Pexels guardadas como URL directa en `producto.imagen`, sin archivos locales.
+
+El panel de recepción (`/empleado/recepcion`) y el de room service (`/empleado/roomservice`) muestran el mismo tablero de novedades: `static/js/empleado-notificaciones.js` consulta `GET /api/empleado/novedades`, que mezcla las últimas diez reservas con las comandas reales, las ordena por fecha y devuelve un resumen de reservas pendientes, confirmadas, en curso y comandas activas. Cada aviso incluye `id`, `tipo` (`RESERVA`, `CHECK_IN` o `COMANDA`), `titulo`, `detalle`, `estado` y `fecha`. El bloque se actualiza solo cada 20 segundos. `GET /api/empleado/notificaciones` sigue siendo el feed del módulo de agenda y no cambió de formato.
 
 ### Asistente Eclipse
 
@@ -164,8 +193,8 @@ Los tres modos posibles de `modo`:
 5. Para una cuenta de cliente existente, abre `/login?tipo=cliente` y usa el correo y la contraseña elegidos al registrarse.
 6. Para empleados, abre `/login?tipo=empleado` y usa username y contraseña de desarrollo o las credenciales de la base configurada.
 7. El cliente elige una suite, una habitación libre, la fecha, la hora y una duración de 4, 6 o 12 horas.
-8. El pago simulado retiene la habitación por cinco minutos; al confirmarse se muestra el QR para presentarlo a recepción.
-9. Recepción escanea el QR con la cámara cuando el navegador lo permite o introduce el token manualmente. Tras validar el check-in, el cliente puede solicitar y pagar tiempo extra en demo.
+8. La habitación se retiene cinco minutos mientras se registra el método de pago. Yape se registra para validación manual de recepción. La tarjeta no se procesa hasta configurar una pasarela segura; no se transmiten ni almacenan datos de tarjeta. En modo demo se puede simular el pago.
+9. El cliente pulsa **Realizar check-in** en `mis-reservas` o en el detalle (también puede hacerlo recepción con el QR). La suite pasa a `OCUPADA`, aparece en el tablero de novedades del empleado y se precarga en el selector de `/menu-suite`; desde ahí puede pedir room service y, en demo, solicitar tiempo extra.
 10. La emisión de boletas PDF y el envío por correo quedan fuera de esta demo.
 
 ### Contratos JSON
@@ -204,18 +233,60 @@ Login de empleado, `POST /api/auth/login`:
 }
 ```
 
+Crear pedido de room service, `POST /api/roomservice/pedidos` (sin check-in se envía la suite del selector; con QR futuro se agrega `token`):
+Actualizar perfil, `PUT /api/auth/client/perfil` (cabecera `X-XSRF-TOKEN`):
+
+```json
+{
+  "nombre": "Ana María",
+  "apellido": "Rojas Quispe",
+  "telefono": "+51999123456",
+  "edad": 31
+}
+```
+
+La respuesta es el mismo objeto que `GET /api/auth/client/perfil`: `id`, `nombre`, `apellido`, `nombreCompleto`, `correoElectronico`, `tipoDocumento`, `numDocumento`, `paisEmisionDoc`, `telefono`, `edad`, `rol`, `fechaRegistro`, `activo`, `reservaActiva` y `totalReservas`. `reservaActiva` es `null` cuando no hay ninguna reserva vigente.
+
+Boleta, `GET /api/auth/client/reservas/{id}/boleta`:
+
+```json
+{
+  "idReserva": 17,
+  "numeroBoleta": "001-0000017",
+  "hotel": "ECLIPSE SUITES HOTEL",
+  "cliente": "Ana Rojas",
+  "tipoDocumento": "DNI",
+  "numDocumento": "12345678",
+  "correoElectronico": "cliente@example.com",
+  "suite": "Suite Galaxia",
+  "habitacion": "509",
+  "modalidad": "4 horas",
+  "fechaInicio": "15/06/2099 18:00",
+  "fechaFin": "15/06/2099 22:00",
+  "estado": "Confirmada",
+  "metodoPago": "Yape",
+  "cantidadPersonas": 2,
+  "subtotal": 100.00,
+  "igv": 18.00,
+  "total": 118.00,
+  "fechaEmision": "10/06/2099 09:30"
+}
+```
+
+`DELETE /api/auth/client/cuenta` responde `{"mensaje": "Tu cuenta fue eliminada correctamente"}`. Después de la baja, el login devuelve `400` con «Tu cuenta fue eliminada. Puedes crear una nueva con el mismo correo», `GET /api/auth/client/disponibilidad?campo=correo` vuelve a marcar el correo como disponible y el registro reactiva la misma cuenta conservando sus reservas.
+
 Crear pedido de room service, `POST /api/roomservice/pedidos`:
 
 ```json
 {
-  "token": "demo-suite-101",
+  "numHabitacion": "101",
   "items": [
     { "idProducto": 4, "cantidad": 2 }
   ]
 }
 ```
 
-La respuesta (`201`) incluye `codigo` (formato `A1488`), `estado`, `estadoEtiqueta`, `montoTotal`, `numHabitacion` e `items` con `nombre`, `cantidad` y `subtotal`. El mismo cuerpo de `items` sirve para consultar el seguimiento en `GET /api/roomservice/pedidos/{codigo}?token=...`.
+La respuesta (`201`) incluye `codigo` (formato `A1488`), `estado`, `estadoEtiqueta`, `montoTotal`, `numHabitacion` e `items` con `nombre`, `cantidad` y `subtotal`. El mismo cuerpo de `items` sirve para consultar el seguimiento en `GET /api/roomservice/pedidos/{codigo}`.
 
 Los logins y el registro devuelven datos básicos del usuario y guardan la autenticación en la sesión HTTP. En JavaScript las solicitudes usan `credentials: same-origin`, por lo que el navegador conserva la cookie de sesión. No se devuelve el hash de contraseña.
 
@@ -300,7 +371,7 @@ Notas importantes:
 
 Otras variables del asistente, todas opcionales y con valores en `application.properties`: `app.chat.base-url`, `app.chat.timeout-ms`, `app.chat.max-historial`, `app.chat.max-entrada`, `app.chat.limite-publico-min`, `app.chat.limite-cliente-min` y `app.chat.max-mensajes-anonimos`. También se pueden definir en el `.env`.
 
-`DemoCatalogInitializer` siembra las 7 suites, 3 modalidades, 21 tarifas y 16 habitaciones del catálogo cuando `app.catalog.seed-demo-data=true`; está activo en el perfil normal y en `demo`, y desactivado en `prod`. El asistente usa ese inventario y cuenta `LIBRE` y `DISPONIBLE` como estados disponibles. `RoomServiceDataInitializer` agrega la habitación 101 y la carta de demostración. `ChatbotDemoDataInitializer` queda limitado al perfil `dev` y solo siembra su inventario legado cuando no hay habitaciones.
+Con los perfiles `demo` y `dev`, `ChatbotDemoDataInitializer` crea 3 tipos de suite, 2 modalidades, 6 tarifas y 8 habitaciones (4 disponibles) si las tablas están vacías. Esas suites también son las que alimentan el catálogo del asistente.
 
 ### Ejecución con PostgreSQL
 
@@ -432,7 +503,9 @@ En Linux/macOS:
 ./mvnw test
 ```
 
-Las pruebas de contexto e integración configuran H2 en memoria. No requieren `DB_PASSWORD` ni escriben en PostgreSQL. La última ejecución completa pasó 126 pruebas.
+Las pruebas de contexto e integración configuran H2 en memoria. No requieren `DB_PASSWORD` ni escriben en PostgreSQL (`DemoCatalogInitializerTest` y `ChatbotApiIntegrationTest` declaran su propio H2 en línea). La última ejecución completa corre 259 pruebas, 0 fallos y 0 errores.
+
+Las pruebas del perfil cubren el controlador (`ClientePerfilControllerTest`, 12 casos: página, API, CSRF, validación, boleta y borrado), el servicio (`ClientePerfilServiceImplTest`, 6 casos: reserva activa, IGV y boleta) y la cuenta (`ClienteAuthServiceImplTest`, 11 casos: registro reactivo, edición, baja y disponibilidad).
 
 Las pruebas del asistente cubren la clasificación de intenciones, el límite de mensajes, la cola de derivación, el servicio y el contrato JSON del controlador; `ChatbotApiIntegrationTest` arranca el contexto completo con el perfil `demo` y verifica catálogo, límite 429 y accesos públicos.
 

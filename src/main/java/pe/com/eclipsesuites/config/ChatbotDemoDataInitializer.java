@@ -24,12 +24,12 @@ import java.util.UUID;
 
 /**
  * Suites, tarifas y habitaciones de demostración para que el catálogo del
- * asistente tenga datos de prueba que consultar en desarrollo. Solo actúa con
- * el perfil {@code dev}, y únicamente si la base está vacía.
+ * asistente tenga datos reales que consultar. Solo actúa con los perfiles
+ * {@code demo} y {@code dev}, y únicamente si la base está vacía.
  */
 @Slf4j
 @Configuration
-@Profile("dev")
+@Profile({"demo", "dev"})
 @RequiredArgsConstructor
 public class ChatbotDemoDataInitializer {
 
@@ -90,6 +90,7 @@ public class ChatbotDemoDataInitializer {
                 .descripcionTematica(descripcion)
                 .galeriaFotos(galeria)
                 .capacidadMaxima(capacidad)
+                .amenidades("Wi-Fi|Smart TV|Agua caliente|Frigobar")
                 .build());
     }
 
