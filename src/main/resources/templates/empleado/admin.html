@@ -1,21 +1,2 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Administración - Hotel Eclipse</title>
-    <link rel="stylesheet"
-          th:href="@{/css/empleado.css}">
-<link rel="stylesheet" href="/css/cuenta-eclipse.css"></head>
-<body>
-    <h1>Hotel Eclipse</h1>
-    <h2>Portal de Administración</h2>
-
-    <nav>
-        <a th:href="@{/empleado/admin}">
-            Administración
-        </a>
-    </nav>
-
-    <p>Bienvenido al módulo de administración.</p>
-<script src="/js/cuenta-eclipse.js" defer></script></body>
-</html>
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Administración | Hotel Eclipse</title><link rel="stylesheet" th:href="@{/css/empleado-eclipse.css}"></head><body class="employee-portal employee-account-page"><div class="layout"><aside th:replace="~{fragments/empleado-sidebar :: sidebar('admin')}"></aside><main class="main"><header class="top"><div><h1>Administración</h1><p class="subtitle">Portal de empleados · Hotel Eclipse</p></div></header><div class="content"><section class="panel"><h2>Bienvenido al módulo de administración</h2><p>Accede a las operaciones desde el menú lateral.</p><p><a th:href="@{/empleado/reportes}">Ver reportes</a> · <a th:href="@{/empleado/agenda}">Ver agenda</a></p></section></div></main></div></body></html>
